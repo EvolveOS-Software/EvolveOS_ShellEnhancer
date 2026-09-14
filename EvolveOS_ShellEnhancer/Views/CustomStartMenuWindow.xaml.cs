@@ -35,8 +35,11 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
-            ExtendsContentIntoTitleBar = true;
 
+            _appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
+            _appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+
+            Win32Helper.RemoveWindowBorders(_hWnd);
             TaskbarOverlayManager.ApplyWidgetStyles(_hWnd);
 
             _appWindow.Hide();
@@ -58,7 +61,16 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void ShowMenu()
         {
-            TaskbarOverlayManager.PositionInsideTaskbar(_hWnd, 20, 600, 700);
+            var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+
+            int menuWidth = (int)MenuContainer.Width;
+            int menuHeight = (int)MenuContainer.Height;
+            int taskbarOffset = 60;
+
+            int x = displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2;
+            int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - menuHeight - taskbarOffset;
+
+            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, menuWidth, menuHeight));
 
             _appWindow.Show();
             _isVisible = true;
@@ -70,6 +82,20 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             _appWindow.Hide();
             _isVisible = false;
+        }
+
+        public void SetStyle(string style)
+        {
+            if (style == "Compact")
+            {
+                MenuContainer.Width = 400;
+                MenuContainer.Height = 550;
+            }
+            else if (style == "Standard")
+            {
+                MenuContainer.Width = 600;
+                MenuContainer.Height = 700;
+            }
         }
 
         private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
