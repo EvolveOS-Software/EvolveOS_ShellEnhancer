@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "EvolveOS_ShellEnhancer (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "EvolveOS_ShellEnhancer (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

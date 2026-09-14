@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="EvolveOS_ShellEnhancer.Views.CustomStartMenuWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:EvolveOS_ShellEnhancer.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="CustomStartMenuWindow">
+
+    <Grid Background="Transparent" PointerPressed="RootGrid_PointerPressed">
+
+        <Border Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="8" Height="700" Width="600" x:Name="MenuContainer">
+
+            <StackPanel Padding="24" Spacing="16">
+                <TextBlock FontSize="24" FontWeight="SemiBold" Text="EvolveOS Start"/>
+
+                <TextBox Height="40" Margin="0,10,0,20" PlaceholderText="Type here to search..."/>
+
+                <TextBlock FontWeight="Bold" Text="Pinned Apps"/>
+                <Grid Background="#1AFFFFFF" CornerRadius="4" Height="200"/>
+
+                <TextBlock FontWeight="Bold" Text="All Apps"/>
+                <Grid Background="#1AFFFFFF" CornerRadius="4" Height="200"/>
+            </StackPanel>
+
+        </Border>
+    </Grid>
+</Window>
