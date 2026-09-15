@@ -7,13 +7,14 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using UIAutomationClient;
 using Windows.System;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {
     public static class Win32Helper
     {
+        #region Native Methods & P/Invokes
+
         [DllImport("user32.dll", SetLastError = true)]
         private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
@@ -33,8 +34,17 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string className, string? windowTitle);
 
+        // ---- EXPOSED FOR PROCESS MANAGEMENT ----
         [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsIconic(IntPtr hWnd);
+        // ----------------------------------------
 
         [DllImport("user32.dll")]
         private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
@@ -46,7 +56,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool IsWindowVisible(IntPtr hWnd);
 
-        // ---- NEW DllImports for Focus Management ----
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
@@ -80,9 +89,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
         public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
 
         [DllImport("user32.dll")]
@@ -94,6 +100,40 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         [DllImport("user32.dll")]
         private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+
+        #endregion
+
+        #region DWM Thumbnail API
+
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmRegisterThumbnail(IntPtr dest, IntPtr src, out IntPtr thumb);
+
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmUnregisterThumbnail(IntPtr thumb);
+
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmUpdateThumbnailProperties(IntPtr hThumb, ref DWM_THUMBNAIL_PROPERTIES props);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DWM_THUMBNAIL_PROPERTIES
+        {
+            public int dwFlags;
+            public RECT rcDestination;
+            public RECT rcSource;
+            public byte opacity;
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool fVisible;
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool fSourceClientAreaOnly;
+        }
+
+        public const int DWM_TNP_RECTDESTINATION = 0x00000001;
+        public const int DWM_TNP_VISIBLE = 0x00000008;
+        public const int DWM_TNP_OPACITY = 0x00000004;
+
+        #endregion
+
+        #region Structs
 
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT
@@ -110,6 +150,12 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             public int X;
             public int Y;
         }
+
+        #endregion
+
+        #region Constants
+
+        public const int SW_RESTORE = 9;
 
         // Base Styles
         private const int GWL_STYLE = -16;
@@ -151,7 +197,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         private const uint MOUSEEVENTF_MOVE = 0x0001;
         private const uint MOUSEEVENTF_WHEEL = 0x0800;
-
         private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
         private const uint MOUSEEVENTF_LEFTUP = 0x0004;
 
@@ -161,8 +206,15 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         private const uint WM_CHANGEUISTATE = 0x0127;
         private const uint LWA_ALPHA = 0x2;
 
-        // ---- ADDED FLAG ----
+        #endregion
+
+        #region Fields
+
         public static bool IsSimulating = false;
+
+        #endregion
+
+        #region Window Management
 
         public static void RemoveWindowBorders(IntPtr hWnd)
         {
@@ -230,15 +282,15 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             SetWindowLong(hWnd, GWL_EXSTYLE, exStyle);
         }
 
-        // ---- WRAPPED METHODS ----
+        #endregion
+
+        #region Shell Interaction Methods
 
         public static void OpenNativeStartMenu()
         {
             IsSimulating = true;
-
             keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
             keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-
             IsSimulating = false;
         }
 
@@ -371,8 +423,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Registry Error: " + ex.Message);
+                Debug.WriteLine("Registry Error: " + ex.Message);
             }
         }
+
+        #endregion
     }
 }

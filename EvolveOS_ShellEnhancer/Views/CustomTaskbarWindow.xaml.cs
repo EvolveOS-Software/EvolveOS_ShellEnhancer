@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,6 +24,10 @@ namespace EvolveOS_ShellEnhancer.Views
         private readonly IntPtr _hWnd;
         private string _currentStyle = "Standard";
         private DispatcherTimer _clockTimer;
+
+        private readonly LivePreviewWindow _previewWindow;
+
+        private readonly List<(string targetExe, Rectangle indicator)> _appIndicators = new();
 
         public CustomTaskbarWindow()
         {
@@ -43,10 +48,11 @@ namespace EvolveOS_ShellEnhancer.Views
             this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
             Win32Helper.RemoveWindowBorders(_hWnd);
-
             Win32Helper.PreventFocusStealing(_hWnd);
 
             TaskbarOverlayManager.ApplyWidgetStyles(_hWnd);
+
+            _previewWindow = new LivePreviewWindow();
 
             _clockTimer = new DispatcherTimer();
             _clockTimer.Interval = TimeSpan.FromSeconds(1);
@@ -83,21 +89,18 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 LeftPanel.Children.Insert(0, BtnStart);
                 LeftPanel.Children.Add(PinnedAppsPanel);
-
                 Win32Helper.SetNativeStartMenuAlignment(true);
             }
             else if (alignment == "Center")
             {
                 CenterPanel.Children.Insert(0, BtnStart);
                 CenterPanel.Children.Add(PinnedAppsPanel);
-
                 Win32Helper.SetNativeStartMenuAlignment(false);
             }
             else
             {
                 LeftPanel.Children.Insert(0, BtnStart);
                 CenterPanel.Children.Add(PinnedAppsPanel);
-
                 Win32Helper.SetNativeStartMenuAlignment(true);
             }
         }
@@ -106,7 +109,7 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             List<string> pinnedApps = new List<string>();
 
-            string taskbarPath = Path.Combine(
+            string taskbarPath = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
             );
@@ -142,6 +145,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private async void LoadPinnedAppsAsync()
         {
             PinnedAppsPanel.Children.Clear();
+            _appIndicators.Clear();
 
             List<string> shortcuts = GetPinnedTaskbarApps();
 
@@ -155,14 +159,33 @@ namespace EvolveOS_ShellEnhancer.Views
 
                     if (File.Exists(targetExe))
                     {
+                        Grid iconGrid = new Grid();
+
                         Image appIcon = new Image
                         {
                             Width = 24,
                             Height = 24,
                             Stretch = Stretch.Uniform,
                             HorizontalAlignment = HorizontalAlignment.Center,
-                            VerticalAlignment = VerticalAlignment.Center
+                            VerticalAlignment = VerticalAlignment.Center,
+                            Margin = new Thickness(0, 0, 0, 0)
                         };
+
+                        Rectangle indicator = new Rectangle
+                        {
+                            Width = 17,
+                            Height = 3,
+                            RadiusX = 1.5,
+                            RadiusY = 1.5,
+                            Fill = new SolidColorBrush(Colors.LightGray),
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Bottom,
+                            Margin = new Thickness(0, 0, 0, 0),
+                            Visibility = Visibility.Collapsed
+                        };
+
+                        iconGrid.Children.Add(appIcon);
+                        iconGrid.Children.Add(indicator);
 
                         Button appButton = new Button
                         {
@@ -174,22 +197,78 @@ namespace EvolveOS_ShellEnhancer.Views
                             Margin = new Thickness(2, 0, 2, 0),
                             Background = new SolidColorBrush(Colors.Transparent),
                             BorderThickness = new Thickness(0),
-                            CornerRadius = new CornerRadius(8),
-                            Content = appIcon
+                            CornerRadius = new CornerRadius(4),
+
+                            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                            VerticalContentAlignment = VerticalAlignment.Stretch,
+
+                            Content = iconGrid
                         };
 
-                        ToolTipService.SetToolTip(appButton, Path.GetFileNameWithoutExtension(targetExe));
+                        ToolTipService.SetToolTip(appButton, System.IO.Path.GetFileNameWithoutExtension(targetExe));
+
+                        _appIndicators.Add((targetExe, indicator));
 
                         appButton.Click += (s, e) =>
                         {
-                            try
+                            _previewWindow.HidePreview();
+
+                            string processName = System.IO.Path.GetFileNameWithoutExtension(targetExe);
+                            var runningProcesses = Process.GetProcessesByName(processName);
+                            bool activatedExisting = false;
+
+                            foreach (var p in runningProcesses)
                             {
-                                Process.Start(new ProcessStartInfo(targetExe) { UseShellExecute = true });
+                                if (p.MainWindowHandle != IntPtr.Zero)
+                                {
+                                    if (Win32Helper.IsIconic(p.MainWindowHandle))
+                                    {
+                                        Win32Helper.ShowWindow(p.MainWindowHandle, Win32Helper.SW_RESTORE);
+                                    }
+
+                                    Win32Helper.SetForegroundWindow(p.MainWindowHandle);
+                                    activatedExisting = true;
+                                    break;
+                                }
                             }
-                            catch (Exception ex)
+
+                            if (!activatedExisting)
                             {
-                                Debug.WriteLine($"Failed to launch {targetExe}: {ex.Message}");
+                                try
+                                {
+                                    Process.Start(new ProcessStartInfo(targetExe) { UseShellExecute = true });
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"Failed to launch {targetExe}: {ex.Message}");
+                                }
                             }
+                        };
+
+                        appButton.PointerEntered += (s, e) =>
+                        {
+                            string processName = System.IO.Path.GetFileNameWithoutExtension(targetExe);
+                            var runningProcesses = Process.GetProcessesByName(processName);
+
+                            foreach (var p in runningProcesses)
+                            {
+                                if (p.MainWindowHandle != IntPtr.Zero)
+                                {
+                                    var transform = appButton.TransformToVisual(null);
+                                    var localPoint = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
+
+                                    int btnScreenX = _appWindow.Position.X + (int)localPoint.X;
+                                    int taskbarScreenY = _appWindow.Position.Y;
+
+                                    _previewWindow.ShowPreview(p.MainWindowHandle, btnScreenX, taskbarScreenY, (int)appButton.Width);
+                                    break;
+                                }
+                            }
+                        };
+
+                        appButton.PointerExited += (s, e) =>
+                        {
+                            _previewWindow.StartHideTimer();
                         };
 
                         PinnedAppsPanel.Children.Add(appButton);
@@ -212,6 +291,30 @@ namespace EvolveOS_ShellEnhancer.Views
                         }
                     }
                 }
+            }
+
+            UpdateAppIndicators();
+        }
+
+        private void UpdateAppIndicators()
+        {
+            foreach (var item in _appIndicators)
+            {
+                string processName = System.IO.Path.GetFileNameWithoutExtension(item.targetExe);
+                var processes = Process.GetProcessesByName(processName);
+
+                bool isRunning = false;
+
+                foreach (var p in processes)
+                {
+                    if (p.MainWindowHandle != IntPtr.Zero)
+                    {
+                        isRunning = true;
+                        break;
+                    }
+                }
+
+                item.indicator.Visibility = isRunning ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -253,7 +356,6 @@ namespace EvolveOS_ShellEnhancer.Views
         public void HideDock()
         {
             _appWindow.Hide();
-
             Win32Helper.ShowNativeTaskbar();
         }
 
@@ -262,6 +364,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private void ClockTimer_Tick(object? sender, object e)
         {
             UpdateClock();
+            UpdateAppIndicators();
         }
 
         private void UpdateClock()
@@ -284,12 +387,6 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             await Win32Helper.OpenTrayOverflowAsync();
         }
-
-        /*private void BtnTrayOverflow_Click(object sender, RoutedEventArgs e)
-        {
-            // Now awaits the async hardware teleport click!
-            NativeTrayOpener.OpenNativeOverflow();
-        }*/
 
         #endregion
     }
