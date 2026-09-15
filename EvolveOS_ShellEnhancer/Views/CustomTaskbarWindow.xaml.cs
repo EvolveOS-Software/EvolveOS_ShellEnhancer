@@ -45,7 +45,12 @@ namespace EvolveOS_ShellEnhancer.Views
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
         private const uint GW_OWNER = 4;
+        private const uint WM_CLOSE = 0x0010;
         #endregion
 
         #region Fields & Properties
@@ -154,7 +159,6 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
 
                 List<IntPtr> handles = GetAppWindowHandles(item.processName);
-
                 item.indicator.Visibility = (handles.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
             }
         }
@@ -354,6 +358,35 @@ namespace EvolveOS_ShellEnhancer.Views
                 };
 
                 ToolTipService.SetToolTip(appCard, System.IO.Path.GetFileNameWithoutExtension(lnk));
+
+                MenuFlyout contextFlyout = new MenuFlyout();
+
+                var closeItem = new MenuFlyoutItem { Text = "Close window", Icon = new FontIcon { Glyph = "\uE8BB" } };
+                closeItem.Click += (s, e) =>
+                {
+                    var handles = GetAppWindowHandles(processName);
+                    foreach (var h in handles) { SendMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero); }
+                };
+
+                var unpinItem = new MenuFlyoutItem { Text = "Unpin from taskbar", Icon = new FontIcon { Glyph = "\uE196" } };
+                unpinItem.Click += (s, e) =>
+                {
+                    try
+                    {
+                        if (File.Exists(lnk)) File.Delete(lnk);
+                        LoadPinnedAppsAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to unpin: {ex.Message}");
+                    }
+                };
+
+                contextFlyout.Items.Add(closeItem);
+                contextFlyout.Items.Add(new MenuFlyoutSeparator());
+                contextFlyout.Items.Add(unpinItem);
+
+                appCard.ContextFlyout = contextFlyout;
 
                 _appIndicators.Add((processName, indicator, backIcon));
 

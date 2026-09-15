@@ -27,6 +27,9 @@ namespace EvolveOS_ShellEnhancer.Views
         [DllImport("user32.dll", SetLastError = true)]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
         private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_NOSIZE = 0x0001;
@@ -45,9 +48,10 @@ namespace EvolveOS_ShellEnhancer.Views
         public static bool EnableActionButtons { get; set; } = true;
 
         private const int ThumbWidth = 220;
-        private const int ThumbHeight = 118;
+        private const int ThumbHeight = 142;
         private const int ActionPanelHeight = 40;
         private const int SlotMargin = 10;
+        private const int HighlightPaddingX = 5;
         #endregion
 
         #region Constructor
@@ -121,8 +125,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
             _currentSourceHwnds.AddRange(sourceHwnds);
 
+            int itemWidth = ThumbWidth + (HighlightPaddingX * 2);
             int itemHeight = ThumbHeight + ActionPanelHeight;
-            int totalWidth = SlotMargin + (sourceHwnds.Count * ThumbWidth) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
+            int totalWidth = SlotMargin + (sourceHwnds.Count * itemWidth) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
             int totalHeight = SlotMargin + itemHeight + SlotMargin;
 
             int x = buttonScreenX - (totalWidth / 2) + (buttonWidth / 2);
@@ -141,10 +146,28 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 Grid slotGrid = new Grid
                 {
-                    Width = ThumbWidth,
+                    Width = itemWidth,
                     Height = itemHeight,
                     CornerRadius = new CornerRadius(8),
                     Background = new SolidColorBrush(Colors.Transparent)
+                };
+
+                System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+                GetWindowText(targetHwnd, sb, 256);
+                string windowTitle = sb.ToString();
+                if (string.IsNullOrWhiteSpace(windowTitle)) windowTitle = "Application";
+
+                TextBlock titleBlock = new TextBlock
+                {
+                    Text = windowTitle,
+                    FontSize = 12,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(Colors.White),
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(HighlightPaddingX, 3, 12, 0),
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    MaxLines = 1
                 };
 
                 StackPanel actionPanel = new StackPanel
@@ -167,6 +190,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 actionPanel.Children.Add(closeBtn);
                 actionPanel.Children.Add(killBtn);
+
+                slotGrid.Children.Add(titleBlock);
                 slotGrid.Children.Add(actionPanel);
 
                 slotGrid.PointerEntered += (s, e) =>
@@ -200,8 +225,8 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     _thumbHandles.Add(thumbHandle);
 
-                    int leftOffset = SlotMargin + (i * (ThumbWidth + SlotMargin));
-                    int topOffset = SlotMargin;
+                    int leftOffset = SlotMargin + (i * (itemWidth + SlotMargin)) + HighlightPaddingX;
+                    int topOffset = SlotMargin + 24;
 
                     Win32Helper.DWM_THUMBNAIL_PROPERTIES props = new Win32Helper.DWM_THUMBNAIL_PROPERTIES
                     {
@@ -213,7 +238,7 @@ namespace EvolveOS_ShellEnhancer.Views
                             Left = leftOffset,
                             Top = topOffset,
                             Right = leftOffset + ThumbWidth,
-                            Bottom = topOffset + ThumbHeight
+                            Bottom = topOffset + (ThumbHeight - 24)
                         }
                     };
 
