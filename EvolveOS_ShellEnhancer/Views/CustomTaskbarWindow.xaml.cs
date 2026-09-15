@@ -29,6 +29,23 @@ namespace EvolveOS_ShellEnhancer.Views
         #region P/Invoke Definitions
         [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
         private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+        private const uint GW_OWNER = 4;
         #endregion
 
         #region Fields & Properties
@@ -39,11 +56,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private readonly LivePreviewWindow _previewWindow;
 
-        private readonly List<(string processName, Rectangle indicator)> _appIndicators = new();
+        private readonly List<(string processName, Rectangle indicator, Image backIcon)> _appIndicators = new();
 
         private Border? _activeDraggedCard = null;
         private Point _dragStartPoint;
         private bool _isTrackingDrag = false;
+
+        public static bool ShowSeconds = false;
         #endregion
 
         #region Initialization
@@ -83,27 +102,45 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region Process & Window Management
-        private IntPtr GetAppWindowHandle(string processName)
+        private List<IntPtr> GetAppWindowHandles(string processName)
         {
-            if (processName.Equals("explorer", StringComparison.OrdinalIgnoreCase))
+            List<IntPtr> handles = new List<IntPtr>();
+            bool isExplorer = processName.Equals("explorer", StringComparison.OrdinalIgnoreCase);
+
+            HashSet<uint> targetPids = new HashSet<uint>();
+            if (!isExplorer)
             {
-                return FindWindow("CabinetWClass", null);
+                var procs = Process.GetProcessesByName(processName);
+                if (procs.Length == 0) return handles;
+                foreach (var p in procs) targetPids.Add((uint)p.Id);
             }
 
-            try
+            EnumWindows((hWnd, lParam) =>
             {
-                var runningProcesses = Process.GetProcessesByName(processName);
-                foreach (var p in runningProcesses)
+                if (!IsWindowVisible(hWnd)) return true;
+                if (GetWindow(hWnd, GW_OWNER) != IntPtr.Zero) return true;
+
+                if (isExplorer)
                 {
-                    if (p.MainWindowHandle != IntPtr.Zero)
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+                    GetClassName(hWnd, sb, sb.Capacity);
+                    if (sb.ToString() == "CabinetWClass")
                     {
-                        return p.MainWindowHandle;
+                        handles.Add(hWnd);
                     }
                 }
-            }
-            catch { }
+                else
+                {
+                    GetWindowThreadProcessId(hWnd, out uint pid);
+                    if (targetPids.Contains(pid))
+                    {
+                        handles.Add(hWnd);
+                    }
+                }
+                return true;
+            }, IntPtr.Zero);
 
-            return IntPtr.Zero;
+            return handles;
         }
 
         private void UpdateAppIndicators()
@@ -116,8 +153,9 @@ namespace EvolveOS_ShellEnhancer.Views
                     continue;
                 }
 
-                IntPtr handle = GetAppWindowHandle(item.processName);
-                item.indicator.Visibility = (handle != IntPtr.Zero) ? Visibility.Visible : Visibility.Collapsed;
+                List<IntPtr> handles = GetAppWindowHandles(item.processName);
+
+                item.indicator.Visibility = (handles.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
             }
         }
         #endregion
@@ -254,6 +292,26 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 Grid iconGrid = new Grid();
 
+                Grid iconContainer = new Grid
+                {
+                    Width = 32,
+                    Height = 32,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+
+                Image backIcon = new Image
+                {
+                    Width = 24,
+                    Height = 24,
+                    Stretch = Stretch.Uniform,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(6, -6, 0, 0),
+                    Opacity = 0.5,
+                    Visibility = Visibility.Collapsed
+                };
+
                 Image appIcon = new Image
                 {
                     Width = 24,
@@ -263,6 +321,9 @@ namespace EvolveOS_ShellEnhancer.Views
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(0, 0, 0, 0)
                 };
+
+                iconContainer.Children.Add(backIcon);
+                iconContainer.Children.Add(appIcon);
 
                 Rectangle indicator = new Rectangle
                 {
@@ -277,7 +338,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     Visibility = Visibility.Collapsed
                 };
 
-                iconGrid.Children.Add(appIcon);
+                iconGrid.Children.Add(iconContainer);
                 iconGrid.Children.Add(indicator);
 
                 Border appCard = new Border
@@ -294,7 +355,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 ToolTipService.SetToolTip(appCard, System.IO.Path.GetFileNameWithoutExtension(lnk));
 
-                _appIndicators.Add((processName, indicator));
+                _appIndicators.Add((processName, indicator, backIcon));
 
                 appCard.Tapped += (s, e) =>
                 {
@@ -304,9 +365,10 @@ namespace EvolveOS_ShellEnhancer.Views
                     bool activatedExisting = false;
                     if (!string.IsNullOrEmpty(processName))
                     {
-                        IntPtr handle = GetAppWindowHandle(processName);
-                        if (handle != IntPtr.Zero)
+                        var handles = GetAppWindowHandles(processName);
+                        if (handles.Count > 0)
                         {
+                            IntPtr handle = handles[0];
                             if (Win32Helper.IsIconic(handle))
                             {
                                 Win32Helper.ShowWindow(handle, Win32Helper.SW_RESTORE);
@@ -335,8 +397,15 @@ namespace EvolveOS_ShellEnhancer.Views
 
                     if (_isTrackingDrag || string.IsNullOrEmpty(processName)) return;
 
-                    IntPtr handle = GetAppWindowHandle(processName);
-                    if (handle != IntPtr.Zero)
+                    var handles = GetAppWindowHandles(processName);
+
+                    if (handles.Count > 1)
+                    {
+                        backIcon.Visibility = Visibility.Visible;
+                        appIcon.Margin = new Thickness(-4, 4, 0, 0);
+                    }
+
+                    if (handles.Count > 0)
                     {
                         var transform = appCard.TransformToVisual(null);
                         var localPoint = transform.TransformPoint(new Point(0, 0));
@@ -344,13 +413,17 @@ namespace EvolveOS_ShellEnhancer.Views
                         int btnScreenX = _appWindow.Position.X + (int)localPoint.X;
                         int taskbarScreenY = _appWindow.Position.Y;
 
-                        _previewWindow.ShowPreview(handle, btnScreenX, taskbarScreenY, (int)appCard.Width);
+                        _previewWindow.ShowPreviews(handles, btnScreenX, taskbarScreenY, (int)appCard.Width);
                     }
                 };
 
                 appCard.PointerExited += (s, e) =>
                 {
                     appCard.Background = new SolidColorBrush(Colors.Transparent);
+
+                    backIcon.Visibility = Visibility.Collapsed;
+                    appIcon.Margin = new Thickness(0, 0, 0, 0);
+
                     _previewWindow.StartHideTimer();
                 };
 
@@ -469,6 +542,7 @@ namespace EvolveOS_ShellEnhancer.Views
                             var bitmapImage = new BitmapImage();
                             await bitmapImage.SetSourceAsync(thumbnail);
                             appIcon.Source = bitmapImage;
+                            backIcon.Source = bitmapImage;
                             iconLoaded = true;
                         }
                     }
@@ -497,6 +571,7 @@ namespace EvolveOS_ShellEnhancer.Views
                                 var bitmapImage = new BitmapImage();
                                 await bitmapImage.SetSourceAsync(ras);
                                 appIcon.Source = bitmapImage;
+                                backIcon.Source = bitmapImage;
                             }
                         }
                         catch (Exception fallbackEx)
@@ -567,7 +642,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void UpdateClock()
         {
-            ClockText.Text = DateTime.Now.ToShortTimeString();
+            ClockText.Text = ShowSeconds ? DateTime.Now.ToLongTimeString() : DateTime.Now.ToShortTimeString();
             DateText.Text = DateTime.Now.ToShortDateString();
         }
 

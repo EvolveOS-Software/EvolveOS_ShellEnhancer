@@ -8,6 +8,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using WinRT.Interop;
 
@@ -18,21 +20,34 @@ namespace EvolveOS_ShellEnhancer.Views
         #region P/Invokes and Fields
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
         private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOACTIVATE = 0x0010;
+        private const uint WM_CLOSE = 0x0010;
 
         private readonly IntPtr _hWnd;
         private readonly AppWindow _appWindow;
-        private IntPtr _thumbHandle = IntPtr.Zero;
 
-        private IntPtr _currentSourceHwnd = IntPtr.Zero;
+        private List<IntPtr> _thumbHandles = new();
+        private List<IntPtr> _currentSourceHwnds = new();
+
         private DispatcherTimer _hideTimer;
-        private Grid _contentGrid;
+        private StackPanel _rootStackPanel;
 
-        private const int WindowWidth = 240;
-        private const int WindowHeight = 150;
+        public static bool EnableActionButtons { get; set; } = true;
+
+        private const int ThumbWidth = 220;
+        private const int ThumbHeight = 118;
+        private const int ActionPanelHeight = 40;
+        private const int SlotMargin = 10;
         #endregion
 
         #region Constructor
@@ -55,17 +70,15 @@ namespace EvolveOS_ShellEnhancer.Views
 
             this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
-            _contentGrid = new Grid
+            _rootStackPanel = new StackPanel
             {
+                Orientation = Orientation.Horizontal,
                 Background = new SolidColorBrush(Colors.Transparent),
-                CornerRadius = new CornerRadius(8)
+                Padding = new Thickness(SlotMargin),
+                Spacing = SlotMargin
             };
 
-            _contentGrid.PointerEntered += ContentGrid_PointerEntered;
-            _contentGrid.PointerExited += ContentGrid_PointerExited;
-            _contentGrid.PointerReleased += ContentGrid_PointerReleased;
-
-            this.Content = _contentGrid;
+            this.Content = _rootStackPanel;
 
             _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
             _hideTimer.Tick += (s, e) =>
@@ -74,98 +87,121 @@ namespace EvolveOS_ShellEnhancer.Views
                 HidePreview();
             };
 
-            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, WindowWidth, WindowHeight));
+            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
             _appWindow.Show();
         }
         #endregion
 
-        #region Event Handlers
-        private void ContentGrid_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            _hideTimer.Stop();
-
-            _contentGrid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
-
-            if (_currentSourceHwnd != IntPtr.Zero)
-            {
-                if (Win32Helper.IsIconic(_currentSourceHwnd))
-                {
-                    Win32Helper.ShowWindow(_currentSourceHwnd, Win32Helper.SW_RESTORE);
-                }
-                Win32Helper.SetForegroundWindow(_currentSourceHwnd);
-
-                SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-            }
-        }
-
-        private void ContentGrid_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            _contentGrid.Background = new SolidColorBrush(Colors.Transparent);
-            StartHideTimer();
-        }
-
-        private void ContentGrid_PointerReleased(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            if (_currentSourceHwnd != IntPtr.Zero)
-            {
-                IntPtr targetHwnd = _currentSourceHwnd;
-
-                try { _contentGrid.ReleasePointerCaptures(); } catch { }
-
-                if (Win32Helper.IsIconic(targetHwnd))
-                {
-                    Win32Helper.ShowWindow(targetHwnd, Win32Helper.SW_RESTORE);
-                }
-                Win32Helper.SetForegroundWindow(targetHwnd);
-
-                this.DispatcherQueue.TryEnqueue(() => ExecuteHide());
-            }
-        }
-        #endregion
-
         #region Preview Methods
-        public void ShowPreview(IntPtr sourceHwnd, int buttonScreenX, int taskbarScreenY, int buttonWidth)
+        public void ShowPreviews(List<IntPtr> sourceHwnds, int buttonScreenX, int taskbarScreenY, int buttonWidth)
         {
             if (this.DispatcherQueue.HasThreadAccess)
             {
-                ExecuteShow(sourceHwnd, buttonScreenX, taskbarScreenY, buttonWidth);
+                ExecuteShow(sourceHwnds, buttonScreenX, taskbarScreenY, buttonWidth);
             }
             else
             {
-                this.DispatcherQueue.TryEnqueue(() => ExecuteShow(sourceHwnd, buttonScreenX, taskbarScreenY, buttonWidth));
+                this.DispatcherQueue.TryEnqueue(() => ExecuteShow(sourceHwnds, buttonScreenX, taskbarScreenY, buttonWidth));
             }
         }
 
-        private void ExecuteShow(IntPtr sourceHwnd, int buttonScreenX, int taskbarScreenY, int buttonWidth)
+        private void ExecuteShow(List<IntPtr> sourceHwnds, int buttonScreenX, int taskbarScreenY, int buttonWidth)
         {
             _hideTimer.Stop();
 
-            IntPtr currentHwnd = WindowNative.GetWindowHandle(this);
-
-            if (_thumbHandle != IntPtr.Zero)
+            foreach (var thumb in _thumbHandles)
             {
-                Win32Helper.DwmUnregisterThumbnail(_thumbHandle);
-                _thumbHandle = IntPtr.Zero;
+                Win32Helper.DwmUnregisterThumbnail(thumb);
             }
+            _thumbHandles.Clear();
+            _currentSourceHwnds.Clear();
+            _rootStackPanel.Children.Clear();
 
-            _currentSourceHwnd = sourceHwnd;
+            if (sourceHwnds == null || sourceHwnds.Count == 0) return;
 
-            int margin = 10;
-            int x = buttonScreenX - (WindowWidth / 2) + (buttonWidth / 2);
-            int y = taskbarScreenY - WindowHeight - margin;
+            _currentSourceHwnds.AddRange(sourceHwnds);
 
-            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, WindowWidth, WindowHeight));
+            int itemHeight = ThumbHeight + ActionPanelHeight;
+            int totalWidth = SlotMargin + (sourceHwnds.Count * ThumbWidth) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
+            int totalHeight = SlotMargin + itemHeight + SlotMargin;
+
+            int x = buttonScreenX - (totalWidth / 2) + (buttonWidth / 2);
+            int y = taskbarScreenY - totalHeight - SlotMargin;
+
+            if (x < 10) x = 10;
+
+            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, totalWidth, totalHeight));
             SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-            if (sourceHwnd != IntPtr.Zero)
+            IntPtr currentHwnd = WindowNative.GetWindowHandle(this);
+
+            for (int i = 0; i < sourceHwnds.Count; i++)
             {
-                int hr = Win32Helper.DwmRegisterThumbnail(currentHwnd, sourceHwnd, out _thumbHandle);
-                if (hr == 0 && _thumbHandle != IntPtr.Zero)
+                IntPtr targetHwnd = sourceHwnds[i];
+
+                Grid slotGrid = new Grid
                 {
-                    int thumbWidth = 220;
-                    int thumbHeight = 118;
-                    int leftOffset = (WindowWidth - thumbWidth) / 2;
-                    int topOffset = 12;
+                    Width = ThumbWidth,
+                    Height = itemHeight,
+                    CornerRadius = new CornerRadius(8),
+                    Background = new SolidColorBrush(Colors.Transparent)
+                };
+
+                StackPanel actionPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Bottom,
+                    Margin = new Thickness(0, 0, 0, 8),
+                    Spacing = 16,
+                    Visibility = Visibility.Visible
+                };
+
+                var closeBtn = new Button { Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { new FontIcon { Glyph = "\uE8BB", FontSize = 12 }, new TextBlock { Text = "Close", FontSize = 12 } } }, Height = 28, Padding = new Thickness(8, 0, 8, 0), CornerRadius = new CornerRadius(4) };
+                var killBtn = new Button { Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { new FontIcon { Glyph = "\uE74D", FontSize = 12 }, new TextBlock { Text = "Kill", FontSize = 12 } } }, Height = 28, Padding = new Thickness(8, 0, 8, 0), CornerRadius = new CornerRadius(4), Background = new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 0, 0)) };
+
+                killBtn.Visibility = EnableActionButtons ? Visibility.Visible : Visibility.Collapsed;
+
+                closeBtn.Click += (s, e) => CloseWindow(targetHwnd);
+                killBtn.Click += (s, e) => KillProcess(targetHwnd);
+
+                actionPanel.Children.Add(closeBtn);
+                actionPanel.Children.Add(killBtn);
+                slotGrid.Children.Add(actionPanel);
+
+                slotGrid.PointerEntered += (s, e) =>
+                {
+                    _hideTimer.Stop();
+                    slotGrid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
+
+                    if (Win32Helper.IsIconic(targetHwnd)) Win32Helper.ShowWindow(targetHwnd, Win32Helper.SW_RESTORE);
+                    Win32Helper.SetForegroundWindow(targetHwnd);
+                    SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                };
+
+                slotGrid.PointerExited += (s, e) =>
+                {
+                    slotGrid.Background = new SolidColorBrush(Colors.Transparent);
+                    StartHideTimer();
+                };
+
+                slotGrid.PointerReleased += (s, e) =>
+                {
+                    try { slotGrid.ReleasePointerCaptures(); } catch { }
+                    if (Win32Helper.IsIconic(targetHwnd)) Win32Helper.ShowWindow(targetHwnd, Win32Helper.SW_RESTORE);
+                    Win32Helper.SetForegroundWindow(targetHwnd);
+                    this.DispatcherQueue.TryEnqueue(() => ExecuteHide());
+                };
+
+                _rootStackPanel.Children.Add(slotGrid);
+
+                int hr = Win32Helper.DwmRegisterThumbnail(currentHwnd, targetHwnd, out IntPtr thumbHandle);
+                if (hr == 0 && thumbHandle != IntPtr.Zero)
+                {
+                    _thumbHandles.Add(thumbHandle);
+
+                    int leftOffset = SlotMargin + (i * (ThumbWidth + SlotMargin));
+                    int topOffset = SlotMargin;
 
                     Win32Helper.DWM_THUMBNAIL_PROPERTIES props = new Win32Helper.DWM_THUMBNAIL_PROPERTIES
                     {
@@ -176,52 +212,62 @@ namespace EvolveOS_ShellEnhancer.Views
                         {
                             Left = leftOffset,
                             Top = topOffset,
-                            Right = leftOffset + thumbWidth,
-                            Bottom = topOffset + thumbHeight
+                            Right = leftOffset + ThumbWidth,
+                            Bottom = topOffset + ThumbHeight
                         }
                     };
 
-                    Win32Helper.DwmUpdateThumbnailProperties(_thumbHandle, ref props);
+                    Win32Helper.DwmUpdateThumbnailProperties(thumbHandle, ref props);
                 }
             }
         }
 
+        private void CloseWindow(IntPtr handle)
+        {
+            SendMessage(handle, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+            ExecuteHide();
+        }
+
+        private void KillProcess(IntPtr handle)
+        {
+            GetWindowThreadProcessId(handle, out uint pid);
+            if (pid > 0)
+            {
+                try
+                {
+                    Process p = Process.GetProcessById((int)pid);
+                    p.Kill();
+                }
+                catch { }
+            }
+            ExecuteHide();
+        }
+
         public void StartHideTimer()
         {
-            if (this.DispatcherQueue.HasThreadAccess)
-            {
-                _hideTimer.Start();
-            }
-            else
-            {
-                this.DispatcherQueue.TryEnqueue(() => _hideTimer.Start());
-            }
+            if (this.DispatcherQueue.HasThreadAccess) _hideTimer.Start();
+            else this.DispatcherQueue.TryEnqueue(() => _hideTimer.Start());
         }
 
         public void HidePreview()
         {
-            if (this.DispatcherQueue.HasThreadAccess)
-            {
-                ExecuteHide();
-            }
-            else
-            {
-                this.DispatcherQueue.TryEnqueue(ExecuteHide);
-            }
+            if (this.DispatcherQueue.HasThreadAccess) ExecuteHide();
+            else this.DispatcherQueue.TryEnqueue(ExecuteHide);
         }
 
         private void ExecuteHide()
         {
             _hideTimer.Stop();
 
-            if (_thumbHandle != IntPtr.Zero)
+            foreach (var thumb in _thumbHandles)
             {
-                Win32Helper.DwmUnregisterThumbnail(_thumbHandle);
-                _thumbHandle = IntPtr.Zero;
+                Win32Helper.DwmUnregisterThumbnail(thumb);
             }
+            _thumbHandles.Clear();
+            _currentSourceHwnds.Clear();
+            _rootStackPanel.Children.Clear();
 
-            _currentSourceHwnd = IntPtr.Zero;
-            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, WindowWidth, WindowHeight));
+            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
         }
         #endregion
     }
