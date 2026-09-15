@@ -7,6 +7,7 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Shapes;
@@ -14,7 +15,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Graphics;
 using Windows.Storage;
@@ -27,30 +31,49 @@ namespace EvolveOS_ShellEnhancer.Views
     public sealed partial class CustomTaskbarWindow : Window
     {
         #region P/Invoke Definitions
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [DllImport("user32.dll")]
         private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [DllImport("user32.dll")]
         private static extern bool IsWindowVisible(IntPtr hWnd);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [DllImport("user32.dll")]
         private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 
         private const uint GW_OWNER = 4;
         private const uint WM_CLOSE = 0x0010;
+        private const int GWL_EXSTYLE = -20;
+        private const long WS_EX_TOOLWINDOW = 0x00000080L;
+        private const int DWMWA_CLOAKED = 14;
         #endregion
 
         #region Fields & Properties
@@ -68,6 +91,37 @@ namespace EvolveOS_ShellEnhancer.Views
         private bool _isTrackingDrag = false;
 
         public static bool ShowSeconds = false;
+
+        public static bool ShowUnpinnedApps = true;
+        public static string UnpinnedDisplayMode = "Inline";
+        private bool _showingAllRunningView = false;
+
+        private bool _isLoadingApps = false;
+        private bool _reloadRequested = false;
+
+        private int _lastUnpinnedCount = -1;
+
+        private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "SystemSettings",
+            "ApplicationFrameHost",
+            "SearchHost",
+            "StartMenuExperienceHost",
+            "ShellExperienceHost",
+            "TextInputHost",
+            "LockApp",
+            "RuntimeBroker",
+            "dwm",
+            "csrss",
+            "taskhostw",
+            "EvolveOS_ShellEnhancer",
+            "EvolveOS_Optimizer",
+            "Progman",
+            "WorkerW",
+            "cmd",
+            "conhost",
+            "explorer"
+        };
         #endregion
 
         #region Initialization
@@ -107,23 +161,80 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region Process & Window Management
+        private static bool IsRealTopLevelWindow(IntPtr hWnd)
+        {
+            if (!IsWindowVisible(hWnd)) return false;
+            if (GetWindow(hWnd, GW_OWNER) != IntPtr.Zero) return false;
+
+            long exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE).ToInt64();
+            if ((exStyle & WS_EX_TOOLWINDOW) != 0) return false;
+
+            if (DwmGetWindowAttribute(hWnd, DWMWA_CLOAKED, out int cloaked, sizeof(int)) == 0 && cloaked != 0)
+            {
+                return false;
+            }
+
+            if (GetWindowRect(hWnd, out RECT r))
+            {
+                if (r.Right - r.Left <= 0 || r.Bottom - r.Top <= 0) return false;
+            }
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+            GetWindowText(hWnd, sb, 256);
+            if (string.IsNullOrWhiteSpace(sb.ToString()))
+            {
+                System.Text.StringBuilder cb = new System.Text.StringBuilder(256);
+                GetClassName(hWnd, cb, 256);
+                if (cb.ToString() != "CabinetWClass") return false;
+            }
+
+            return true;
+        }
+
+        private static string NormalizeProcessName(string rawName, string shortcutTitle = "", string targetExePath = "")
+        {
+            if (!string.IsNullOrWhiteSpace(targetExePath) && File.Exists(targetExePath))
+            {
+                string exeName = System.IO.Path.GetFileNameWithoutExtension(targetExePath);
+                if (!string.IsNullOrEmpty(exeName))
+                {
+                    return exeName.ToLowerInvariant();
+                }
+            }
+
+            string name = rawName.Trim();
+            if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                name = System.IO.Path.GetFileNameWithoutExtension(name);
+            }
+
+            if (name.Equals("File Explorer", StringComparison.OrdinalIgnoreCase) ||
+                name.Equals("Windows Explorer", StringComparison.OrdinalIgnoreCase) ||
+                shortcutTitle.Contains("Explorer", StringComparison.OrdinalIgnoreCase) ||
+                name.Equals("explorer", StringComparison.OrdinalIgnoreCase))
+            {
+                return "explorer";
+            }
+
+            return name.ToLowerInvariant();
+        }
+
         private List<IntPtr> GetAppWindowHandles(string processName)
         {
             List<IntPtr> handles = new List<IntPtr>();
-            bool isExplorer = processName.Equals("explorer", StringComparison.OrdinalIgnoreCase);
+            string norm = NormalizeProcessName(processName);
+            bool isExplorer = norm.Equals("explorer", StringComparison.OrdinalIgnoreCase);
 
             HashSet<uint> targetPids = new HashSet<uint>();
             if (!isExplorer)
             {
-                var procs = Process.GetProcessesByName(processName);
-                if (procs.Length == 0) return handles;
+                var procs = Process.GetProcessesByName(norm);
                 foreach (var p in procs) targetPids.Add((uint)p.Id);
             }
 
             EnumWindows((hWnd, lParam) =>
             {
-                if (!IsWindowVisible(hWnd)) return true;
-                if (GetWindow(hWnd, GW_OWNER) != IntPtr.Zero) return true;
+                if (!IsRealTopLevelWindow(hWnd)) return true;
 
                 if (isExplorer)
                 {
@@ -148,6 +259,51 @@ namespace EvolveOS_ShellEnhancer.Views
             return handles;
         }
 
+        private List<(string processName, string exePath, string windowTitle)> GetUnpinnedRunningApps(HashSet<string> pinnedNormalizedNames)
+        {
+            var unpinned = new List<(string processName, string exePath, string windowTitle)>();
+
+            EnumWindows((hWnd, lParam) =>
+            {
+                if (!IsRealTopLevelWindow(hWnd)) return true;
+
+                System.Text.StringBuilder cb = new System.Text.StringBuilder(256);
+                GetClassName(hWnd, cb, cb.Capacity);
+                if (cb.ToString() == "CabinetWClass") return true;
+
+                GetWindowThreadProcessId(hWnd, out uint pid);
+                try
+                {
+                    var proc = Process.GetProcessById((int)pid);
+                    string procName = proc.ProcessName;
+                    string normProc = NormalizeProcessName(procName);
+
+                    if (IgnoredSystemProcesses.Contains(procName) || IgnoredSystemProcesses.Contains(normProc))
+                    {
+                        return true;
+                    }
+
+                    if (!pinnedNormalizedNames.Contains(normProc) &&
+                        !unpinned.Any(x => x.processName.Equals(normProc, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        string exePath = string.Empty;
+                        try { exePath = proc.MainModule?.FileName ?? string.Empty; } catch { }
+
+                        System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+                        GetWindowText(hWnd, sb, 256);
+                        string title = sb.ToString();
+
+                        unpinned.Add((normProc, exePath, title));
+                    }
+                }
+                catch { }
+
+                return true;
+            }, IntPtr.Zero);
+
+            return unpinned;
+        }
+
         private void UpdateAppIndicators()
         {
             foreach (var item in _appIndicators)
@@ -161,6 +317,56 @@ namespace EvolveOS_ShellEnhancer.Views
                 List<IntPtr> handles = GetAppWindowHandles(item.processName);
                 item.indicator.Visibility = (handles.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
             }
+
+            if (ShowUnpinnedApps)
+            {
+                bool isScrollMode = UnpinnedDisplayMode.Equals("Scroll", StringComparison.OrdinalIgnoreCase);
+                var cardsToRemove = new List<UIElement>();
+
+                foreach (var child in PinnedAppsPanel.Children)
+                {
+                    if (child is Border card && card.Tag is string tagStr)
+                    {
+                        bool isUnpinned = tagStr.StartsWith("UNPINNED:");
+                        string processName = isUnpinned ? tagStr.Substring("UNPINNED:".Length) : GetProcessNameFromShortcut(tagStr);
+
+                        var handles = GetAppWindowHandles(processName);
+                        if (handles.Count == 0)
+                        {
+                            if (isUnpinned || (isScrollMode && _showingAllRunningView))
+                            {
+                                cardsToRemove.Add(card);
+                            }
+                        }
+                    }
+                }
+
+                if (cardsToRemove.Count > 0)
+                {
+                    foreach (var card in cardsToRemove)
+                    {
+                        PinnedAppsPanel.Children.Remove(card);
+                    }
+                    _appIndicators.RemoveAll(i => GetAppWindowHandles(i.processName).Count == 0);
+                }
+
+                if (!isScrollMode || _showingAllRunningView)
+                {
+                    var shortcuts = GetPinnedTaskbarApps();
+                    var pinnedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (string lnk in shortcuts)
+                    {
+                        pinnedNames.Add(GetProcessNameFromShortcut(lnk));
+                    }
+
+                    int currentUnpinnedCount = GetUnpinnedRunningApps(pinnedNames).Count;
+                    if (currentUnpinnedCount != _lastUnpinnedCount)
+                    {
+                        _lastUnpinnedCount = currentUnpinnedCount;
+                        LoadPinnedAppsAsync();
+                    }
+                }
+            }
         }
         #endregion
 
@@ -170,6 +376,24 @@ namespace EvolveOS_ShellEnhancer.Views
             if (Application.Current is App currentApp)
             {
                 currentApp.ToggleStartMenu();
+            }
+        }
+
+        public void ResetUnpinnedScrollView()
+        {
+            _showingAllRunningView = false;
+        }
+
+        private void TaskbarBorder_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            if (ShowUnpinnedApps && UnpinnedDisplayMode.Equals("Scroll", StringComparison.OrdinalIgnoreCase))
+            {
+                var delta = e.GetCurrentPoint(TaskbarBorder).Properties.MouseWheelDelta;
+                if (delta != 0)
+                {
+                    _showingAllRunningView = !_showingAllRunningView;
+                    LoadPinnedAppsAsync();
+                }
             }
         }
 
@@ -237,7 +461,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
                 IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
 
-                return shortcut.TargetPath;
+                string target = shortcut.TargetPath ?? string.Empty;
+                target = target.Trim().Trim('"', '\'');
+                return target;
             }
             catch (Exception ex)
             {
@@ -245,15 +471,60 @@ namespace EvolveOS_ShellEnhancer.Views
                 return string.Empty;
             }
         }
+
+        private string GetProcessNameFromShortcut(string lnkPath)
+        {
+            string shortcutName = System.IO.Path.GetFileNameWithoutExtension(lnkPath);
+            string targetExe = ParseShortcut(lnkPath);
+            if (!string.IsNullOrWhiteSpace(targetExe))
+            {
+                targetExe = Environment.ExpandEnvironmentVariables(targetExe);
+            }
+            return NormalizeProcessName(shortcutName, shortcutName, targetExe);
+        }
         #endregion
 
         #region App Loading & Icon Extraction
+        public void ReloadTaskbar()
+        {
+            LoadPinnedAppsAsync();
+        }
+
         private async void LoadPinnedAppsAsync()
+        {
+            if (_isLoadingApps)
+            {
+                _reloadRequested = true;
+                return;
+            }
+
+            _isLoadingApps = true;
+            try
+            {
+                do
+                {
+                    _reloadRequested = false;
+                    await LoadPinnedAppsInternalAsync();
+                } while (_reloadRequested);
+            }
+            finally
+            {
+                _isLoadingApps = false;
+            }
+        }
+
+        private async Task LoadPinnedAppsInternalAsync()
         {
             PinnedAppsPanel.Children.Clear();
             _appIndicators.Clear();
 
             List<string> shortcuts = GetPinnedTaskbarApps();
+            var pinnedNormalizedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (string lnk in shortcuts)
+            {
+                pinnedNormalizedNames.Add(GetProcessNameFromShortcut(lnk));
+            }
 
             string savedOrderStr = SettingsEngine.TaskbarPinnedAppsOrder;
             if (!string.IsNullOrWhiteSpace(savedOrderStr))
@@ -274,106 +545,161 @@ namespace EvolveOS_ShellEnhancer.Views
                 shortcuts = sortedShortcuts;
             }
 
-            foreach (string lnk in shortcuts)
+            bool isScrollMode = UnpinnedDisplayMode.Equals("Scroll", StringComparison.OrdinalIgnoreCase);
+
+            if (!isScrollMode)
             {
-                if (!File.Exists(lnk)) continue;
-
-                string targetExe = ParseShortcut(lnk);
-                if (!string.IsNullOrWhiteSpace(targetExe))
+                foreach (string lnk in shortcuts)
                 {
-                    targetExe = Environment.ExpandEnvironmentVariables(targetExe);
+                    if (!File.Exists(lnk)) continue;
+                    await CreateAppCardAsync(lnk, lnk, isShortcut: true);
                 }
 
-                bool isModernApp = string.IsNullOrWhiteSpace(targetExe) || !File.Exists(targetExe);
-                string processName = isModernApp ? System.IO.Path.GetFileNameWithoutExtension(lnk) : System.IO.Path.GetFileNameWithoutExtension(targetExe);
-
-                string shortcutName = System.IO.Path.GetFileNameWithoutExtension(lnk);
-                if (shortcutName.Equals("File Explorer", StringComparison.OrdinalIgnoreCase) ||
-                    shortcutName.Equals("Windows Explorer", StringComparison.OrdinalIgnoreCase))
+                if (ShowUnpinnedApps)
                 {
-                    processName = "explorer";
+                    var unpinnedApps = GetUnpinnedRunningApps(pinnedNormalizedNames);
+                    foreach (var unpinned in unpinnedApps)
+                    {
+                        var handles = GetAppWindowHandles(unpinned.processName);
+                        if (handles.Count > 0)
+                        {
+                            await CreateAppCardAsync(unpinned.processName, unpinned.exePath, isShortcut: false, windowTitle: unpinned.windowTitle);
+                        }
+                    }
                 }
-
-                Grid iconGrid = new Grid();
-
-                Grid iconContainer = new Grid
+            }
+            else
+            {
+                if (!_showingAllRunningView)
                 {
-                    Width = 32,
-                    Height = 32,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-
-                Image backIcon = new Image
+                    foreach (string lnk in shortcuts)
+                    {
+                        if (!File.Exists(lnk)) continue;
+                        await CreateAppCardAsync(lnk, lnk, isShortcut: true);
+                    }
+                }
+                else
                 {
-                    Width = 24,
-                    Height = 24,
-                    Stretch = Stretch.Uniform,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(6, -6, 0, 0),
-                    Opacity = 0.5,
-                    Visibility = Visibility.Collapsed
-                };
+                    foreach (string lnk in shortcuts)
+                    {
+                        if (!File.Exists(lnk)) continue;
+                        string pName = GetProcessNameFromShortcut(lnk);
+                        if (GetAppWindowHandles(pName).Count > 0)
+                        {
+                            await CreateAppCardAsync(lnk, lnk, isShortcut: true);
+                        }
+                    }
 
-                Image appIcon = new Image
-                {
-                    Width = 24,
-                    Height = 24,
-                    Stretch = Stretch.Uniform,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, 0)
-                };
+                    if (ShowUnpinnedApps)
+                    {
+                        var unpinnedApps = GetUnpinnedRunningApps(pinnedNormalizedNames);
+                        foreach (var unpinned in unpinnedApps)
+                        {
+                            var handles = GetAppWindowHandles(unpinned.processName);
+                            if (handles.Count > 0)
+                            {
+                                await CreateAppCardAsync(unpinned.processName, unpinned.exePath, isShortcut: false, windowTitle: unpinned.windowTitle);
+                            }
+                        }
+                    }
+                }
+            }
 
-                iconContainer.Children.Add(backIcon);
-                iconContainer.Children.Add(appIcon);
+            UpdateAppIndicators();
+        }
 
-                Rectangle indicator = new Rectangle
-                {
-                    Width = 17,
-                    Height = 3,
-                    RadiusX = 1.5,
-                    RadiusY = 1.5,
-                    Fill = new SolidColorBrush(Colors.LightGray),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Bottom,
-                    Margin = new Thickness(0, 0, 0, 0),
-                    Visibility = Visibility.Collapsed
-                };
+        private async Task CreateAppCardAsync(string identifier, string pathOrLnk, bool isShortcut, string windowTitle = "")
+        {
+            string targetExe = isShortcut ? ParseShortcut(pathOrLnk) : pathOrLnk;
+            if (!string.IsNullOrWhiteSpace(targetExe)) targetExe = Environment.ExpandEnvironmentVariables(targetExe);
 
-                iconGrid.Children.Add(iconContainer);
-                iconGrid.Children.Add(indicator);
+            string processName = isShortcut ? GetProcessNameFromShortcut(pathOrLnk) : NormalizeProcessName(identifier, targetExePath: targetExe);
+            string shortcutName = isShortcut ? System.IO.Path.GetFileNameWithoutExtension(pathOrLnk) : identifier;
 
-                Border appCard = new Border
-                {
-                    Width = 40,
-                    Height = 40,
-                    Padding = new Thickness(0),
-                    Margin = new Thickness(2, 0, 2, 0),
-                    Background = new SolidColorBrush(Colors.Transparent),
-                    CornerRadius = new CornerRadius(4),
-                    Child = iconGrid,
-                    Tag = lnk
-                };
+            Grid iconGrid = new Grid();
 
-                ToolTipService.SetToolTip(appCard, System.IO.Path.GetFileNameWithoutExtension(lnk));
+            Grid iconContainer = new Grid
+            {
+                Width = 32,
+                Height = 32,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
 
-                MenuFlyout contextFlyout = new MenuFlyout();
+            Image backIcon = new Image
+            {
+                Width = 24,
+                Height = 24,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(6, -6, 0, 0),
+                Opacity = 0.5,
+                Visibility = Visibility.Collapsed
+            };
 
-                var closeItem = new MenuFlyoutItem { Text = "Close window", Icon = new FontIcon { Glyph = "\uE8BB" } };
-                closeItem.Click += (s, e) =>
-                {
-                    var handles = GetAppWindowHandles(processName);
-                    foreach (var h in handles) { SendMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero); }
-                };
+            Image appIcon = new Image
+            {
+                Width = 24,
+                Height = 24,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
 
+            iconContainer.Children.Add(backIcon);
+            iconContainer.Children.Add(appIcon);
+
+            Rectangle indicator = new Rectangle
+            {
+                Width = 17,
+                Height = 3,
+                RadiusX = 1.5,
+                RadiusY = 1.5,
+                Fill = new SolidColorBrush(Colors.LightGray),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 0, 0),
+                Visibility = Visibility.Collapsed
+            };
+
+            iconGrid.Children.Add(iconContainer);
+            iconGrid.Children.Add(indicator);
+
+            Border appCard = new Border
+            {
+                Width = 40,
+                Height = 40,
+                Padding = new Thickness(0),
+                Margin = new Thickness(2, 0, 2, 0),
+                Background = new SolidColorBrush(Colors.Transparent),
+                CornerRadius = new CornerRadius(4),
+                Child = iconGrid,
+                Tag = isShortcut ? pathOrLnk : $"UNPINNED:{processName}"
+            };
+
+            ToolTipService.SetToolTip(appCard, isShortcut ? shortcutName : (string.IsNullOrEmpty(windowTitle) ? processName : windowTitle));
+
+            MenuFlyout contextFlyout = new MenuFlyout();
+
+            var closeItem = new MenuFlyoutItem { Text = "Close window", Icon = new FontIcon { Glyph = "\uE8BB" } };
+            closeItem.Click += (s, e) =>
+            {
+                var handles = GetAppWindowHandles(processName);
+                foreach (var h in handles) { SendMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero); }
+            };
+
+            contextFlyout.Items.Add(closeItem);
+
+            if (isShortcut)
+            {
                 var unpinItem = new MenuFlyoutItem { Text = "Unpin from taskbar", Icon = new FontIcon { Glyph = "\uE196" } };
                 unpinItem.Click += (s, e) =>
                 {
                     try
                     {
-                        if (File.Exists(lnk)) File.Delete(lnk);
+                        if (File.Exists(pathOrLnk)) File.Delete(pathOrLnk);
                         LoadPinnedAppsAsync();
                     }
                     catch (Exception ex)
@@ -381,85 +707,86 @@ namespace EvolveOS_ShellEnhancer.Views
                         Debug.WriteLine($"Failed to unpin: {ex.Message}");
                     }
                 };
-
-                contextFlyout.Items.Add(closeItem);
                 contextFlyout.Items.Add(new MenuFlyoutSeparator());
                 contextFlyout.Items.Add(unpinItem);
+            }
 
-                appCard.ContextFlyout = contextFlyout;
+            appCard.ContextFlyout = contextFlyout;
 
-                _appIndicators.Add((processName, indicator, backIcon));
+            _appIndicators.Add((processName, indicator, backIcon));
 
-                appCard.Tapped += (s, e) =>
+            appCard.Tapped += (s, e) =>
+            {
+                if (_isTrackingDrag) return;
+                _previewWindow.HidePreview();
+
+                bool activatedExisting = false;
+                if (!string.IsNullOrEmpty(processName))
                 {
-                    if (_isTrackingDrag) return;
-                    _previewWindow.HidePreview();
-
-                    bool activatedExisting = false;
-                    if (!string.IsNullOrEmpty(processName))
-                    {
-                        var handles = GetAppWindowHandles(processName);
-                        if (handles.Count > 0)
-                        {
-                            IntPtr handle = handles[0];
-                            if (Win32Helper.IsIconic(handle))
-                            {
-                                Win32Helper.ShowWindow(handle, Win32Helper.SW_RESTORE);
-                            }
-                            Win32Helper.SetForegroundWindow(handle);
-                            activatedExisting = true;
-                        }
-                    }
-
-                    if (!activatedExisting)
-                    {
-                        try
-                        {
-                            Process.Start(new ProcessStartInfo(lnk) { UseShellExecute = true });
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Failed to launch {lnk}: {ex.Message}");
-                        }
-                    }
-                };
-
-                appCard.PointerEntered += (s, e) =>
-                {
-                    appCard.Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255));
-
-                    if (_isTrackingDrag || string.IsNullOrEmpty(processName)) return;
-
                     var handles = GetAppWindowHandles(processName);
-
-                    if (handles.Count > 1)
-                    {
-                        backIcon.Visibility = Visibility.Visible;
-                        appIcon.Margin = new Thickness(-4, 4, 0, 0);
-                    }
-
                     if (handles.Count > 0)
                     {
-                        var transform = appCard.TransformToVisual(null);
-                        var localPoint = transform.TransformPoint(new Point(0, 0));
-
-                        int btnScreenX = _appWindow.Position.X + (int)localPoint.X;
-                        int taskbarScreenY = _appWindow.Position.Y;
-
-                        _previewWindow.ShowPreviews(handles, btnScreenX, taskbarScreenY, (int)appCard.Width);
+                        IntPtr handle = handles[0];
+                        if (Win32Helper.IsIconic(handle))
+                        {
+                            Win32Helper.ShowWindow(handle, Win32Helper.SW_RESTORE);
+                        }
+                        Win32Helper.SetForegroundWindow(handle);
+                        activatedExisting = true;
                     }
-                };
+                }
 
-                appCard.PointerExited += (s, e) =>
+                if (!activatedExisting && isShortcut)
                 {
-                    appCard.Background = new SolidColorBrush(Colors.Transparent);
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo(pathOrLnk) { UseShellExecute = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to launch {pathOrLnk}: {ex.Message}");
+                    }
+                }
+            };
 
-                    backIcon.Visibility = Visibility.Collapsed;
-                    appIcon.Margin = new Thickness(0, 0, 0, 0);
+            appCard.PointerEntered += (s, e) =>
+            {
+                appCard.Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255));
 
-                    _previewWindow.StartHideTimer();
-                };
+                if (_isTrackingDrag || string.IsNullOrEmpty(processName)) return;
 
+                var handles = GetAppWindowHandles(processName);
+
+                if (handles.Count > 1)
+                {
+                    backIcon.Visibility = Visibility.Visible;
+                    appIcon.Margin = new Thickness(-4, 4, 0, 0);
+                }
+
+                if (handles.Count > 0)
+                {
+                    var transform = appCard.TransformToVisual(null);
+                    var localPoint = transform.TransformPoint(new Point(0, 0));
+
+                    int btnScreenX = _appWindow.Position.X + (int)localPoint.X;
+                    int taskbarScreenY = _appWindow.Position.Y;
+
+                    _previewWindow.ShowPreviews(handles, btnScreenX, taskbarScreenY, (int)appCard.Width);
+                }
+            };
+
+            appCard.PointerExited += (s, e) =>
+            {
+                appCard.Background = new SolidColorBrush(Colors.Transparent);
+
+                backIcon.Visibility = Visibility.Collapsed;
+                appIcon.Margin = new Thickness(0, 0, 0, 0);
+
+                _previewWindow.StartHideTimer();
+            };
+
+            if (isShortcut)
+            {
                 appCard.PointerPressed += (s, e) =>
                 {
                     var props = e.GetCurrentPoint(PinnedAppsPanel).Properties;
@@ -545,81 +872,103 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 appCard.PointerReleased += (s, e) => releaseDrag();
                 appCard.PointerCanceled += (s, e) => releaseDrag();
+            }
 
-                PinnedAppsPanel.Children.Add(appCard);
+            PinnedAppsPanel.Children.Add(appCard);
 
-                try
+            try
+            {
+                StorageFile? file = null;
+                bool iconLoaded = false;
+
+                if (!string.IsNullOrWhiteSpace(targetExe) && File.Exists(targetExe))
                 {
-                    StorageFile? file = null;
-                    bool iconLoaded = false;
+                    try { file = await StorageFile.GetFileFromPathAsync(targetExe); } catch { }
+                }
 
-                    if (!isModernApp)
+                if (file == null && isShortcut && File.Exists(pathOrLnk))
+                {
+                    try { file = await StorageFile.GetFileFromPathAsync(pathOrLnk); } catch { }
+                }
+
+                if (file != null)
+                {
+                    var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.SingleItem, 32);
+                    if (thumbnail == null) thumbnail = await file.GetThumbnailAsync(ThumbnailMode.ListView, 32);
+
+                    if (thumbnail != null)
                     {
-                        try { file = await StorageFile.GetFileFromPathAsync(targetExe); } catch { }
+                        var bitmapImage = new BitmapImage();
+                        await bitmapImage.SetSourceAsync(thumbnail);
+                        appIcon.Source = bitmapImage;
+                        backIcon.Source = bitmapImage;
+                        iconLoaded = true;
                     }
+                }
 
-                    if (file == null)
+                if (!iconLoaded && (processName.Equals("explorer", StringComparison.OrdinalIgnoreCase) ||
+                                    shortcutName.Contains("Explorer", StringComparison.OrdinalIgnoreCase)))
+                {
+                    try
                     {
-                        try { file = await StorageFile.GetFileFromPathAsync(lnk); } catch { }
-                    }
-
-                    if (file != null)
-                    {
-                        var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.SingleItem, 32);
-
-                        if (thumbnail == null)
-                            thumbnail = await file.GetThumbnailAsync(ThumbnailMode.ListView, 32);
-
-                        if (thumbnail != null)
+                        string explorerPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\explorer.exe");
+                        var icon = System.Drawing.Icon.ExtractAssociatedIcon(explorerPath);
+                        if (icon != null)
                         {
+                            using var bmp = icon.ToBitmap();
+                            using var ms = new MemoryStream();
+                            bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                            ms.Position = 0;
+
+                            var ras = new Windows.Storage.Streams.InMemoryRandomAccessStream();
+                            using (var writer = new Windows.Storage.Streams.DataWriter(ras.GetOutputStreamAt(0)))
+                            {
+                                writer.WriteBytes(ms.ToArray());
+                                await writer.StoreAsync();
+                            }
+
                             var bitmapImage = new BitmapImage();
-                            await bitmapImage.SetSourceAsync(thumbnail);
+                            await bitmapImage.SetSourceAsync(ras);
                             appIcon.Source = bitmapImage;
                             backIcon.Source = bitmapImage;
                             iconLoaded = true;
                         }
                     }
+                    catch { }
+                }
 
-                    if (!iconLoaded && shortcutName.Contains("Explorer", StringComparison.OrdinalIgnoreCase))
+                if (!iconLoaded && !string.IsNullOrEmpty(targetExe) && File.Exists(targetExe))
+                {
+                    try
                     {
-                        try
+                        var icon = System.Drawing.Icon.ExtractAssociatedIcon(targetExe);
+                        if (icon != null)
                         {
-                            string explorerPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\explorer.exe");
-                            var icon = System.Drawing.Icon.ExtractAssociatedIcon(explorerPath);
+                            using var bmp = icon.ToBitmap();
+                            using var ms = new MemoryStream();
+                            bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                            ms.Position = 0;
 
-                            if (icon != null)
+                            var ras = new Windows.Storage.Streams.InMemoryRandomAccessStream();
+                            using (var writer = new Windows.Storage.Streams.DataWriter(ras.GetOutputStreamAt(0)))
                             {
-                                using var bmp = icon.ToBitmap();
-                                using var ms = new MemoryStream();
-                                bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                                ms.Position = 0;
-
-                                var ras = new Windows.Storage.Streams.InMemoryRandomAccessStream();
-                                using (var writer = new Windows.Storage.Streams.DataWriter(ras.GetOutputStreamAt(0)))
-                                {
-                                    writer.WriteBytes(ms.ToArray());
-                                    await writer.StoreAsync();
-                                }
-
-                                var bitmapImage = new BitmapImage();
-                                await bitmapImage.SetSourceAsync(ras);
-                                appIcon.Source = bitmapImage;
-                                backIcon.Source = bitmapImage;
+                                writer.WriteBytes(ms.ToArray());
+                                await writer.StoreAsync();
                             }
-                        }
-                        catch (Exception fallbackEx)
-                        {
-                            Debug.WriteLine($"Fallback Explorer icon load error: {fallbackEx.Message}");
+
+                            var bitmapImage = new BitmapImage();
+                            await bitmapImage.SetSourceAsync(ras);
+                            appIcon.Source = bitmapImage;
+                            backIcon.Source = bitmapImage;
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Icon load error for {lnk}: {ex.Message}");
+                    catch { }
                 }
             }
-
-            UpdateAppIndicators();
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Icon load error: {ex.Message}");
+            }
         }
         #endregion
 

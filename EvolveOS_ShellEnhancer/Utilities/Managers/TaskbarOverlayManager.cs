@@ -187,11 +187,16 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #endregion
 
         #region Method 2: The "Floating Phantom" Approach (Legacy)
+        private const long WS_EX_NOREDIRECTIONBITMAP = 0x00200000L;
+
         public static void ApplyWidgetStyles(IntPtr monitorHwnd)
         {
             long exStyle = GetWindowLongPtr(monitorHwnd, GWL_EXSTYLE).ToInt64();
-            exStyle |= WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
+            exStyle |= WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOREDIRECTIONBITMAP;
             SetWindowLongPtr(monitorHwnd, GWL_EXSTYLE, new IntPtr(exStyle));
+            
+            SetWindowPos(monitorHwnd, IntPtr.Zero, 0, 0, 0, 0, 
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
 
         public static void SnapToCoordinates(IntPtr monitorHwnd, int x, int y)

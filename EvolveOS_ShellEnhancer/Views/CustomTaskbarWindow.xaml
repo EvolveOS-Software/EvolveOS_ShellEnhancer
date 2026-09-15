@@ -5,13 +5,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="CustomTaskbarWindow">
 
-    <Grid Background="Transparent">
+    <Grid Background="#01000000">
         <Border x:Name="TaskbarBorder"
-                Background="Transparent" 
+                Background="#20000000" 
                 BorderBrush="Transparent"
                 BorderThickness="0" CornerRadius="0" 
                 Height="48" Padding="16,0"
-                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0">
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0"
+                PointerWheelChanged="TaskbarBorder_PointerWheelChanged">
 
             <Grid>
                 <!-- Left Panel -->

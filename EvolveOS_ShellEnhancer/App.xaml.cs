@@ -92,6 +92,20 @@ namespace EvolveOS_ShellEnhancer
                     case "Taskbar_ClockSeconds":
                         CustomTaskbarWindow.ShowSeconds = bool.Parse(value);
                         break;
+
+                    case "Taskbar_ShowUnpinned":
+                        CustomTaskbarWindow.ShowUnpinnedApps = bool.Parse(value);
+                        if (!CustomTaskbarWindow.ShowUnpinnedApps)
+                        {
+                            _taskbarWindow?.ResetUnpinnedScrollView();
+                        }
+                        _taskbarWindow?.ReloadTaskbar();
+                        break;
+
+                    case "Taskbar_UnpinnedMode":
+                        CustomTaskbarWindow.UnpinnedDisplayMode = value;
+                        _taskbarWindow?.ReloadTaskbar();
+                        break;
                 }
             });
         }
