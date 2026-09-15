@@ -30,6 +30,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+        [DllImport("user32.dll")]
+        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
         // Base Styles
         private const int GWL_STYLE = -16;
         private const int WS_THICKFRAME = 0x00040000;
@@ -62,6 +65,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         private const int SW_HIDE = 0;
         private const int SW_SHOW = 5;
+
+        private const byte VK_LWIN = 0x5B;
+        private const uint KEYEVENTF_KEYUP = 0x0002;
 
         public static void RemoveWindowBorders(IntPtr hWnd)
         {
@@ -107,6 +113,33 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             {
                 ShowWindow(secondaryTray, SW_SHOW);
             }
+        }
+
+        public static void OpenNativeStartMenu()
+        {
+            keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        }
+
+        public static void OpenQuickSettings()
+        {
+            keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
+            keybd_event((byte)'A', 0, 0, UIntPtr.Zero);
+            keybd_event((byte)'A', 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        }
+
+        public static void OpenTrayOverflow()
+        {
+            keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
+            keybd_event((byte)'B', 0, 0, UIntPtr.Zero);
+            keybd_event((byte)'B', 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+            System.Threading.Thread.Sleep(50);
+
+            keybd_event(0x0D, 0, 0, UIntPtr.Zero);
+            keybd_event(0x0D, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
         }
     }
 }

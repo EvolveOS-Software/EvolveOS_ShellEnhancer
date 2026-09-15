@@ -4,11 +4,13 @@
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
 using WinRT.Interop;
+using Microsoft.UI.Xaml.Input;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
@@ -64,6 +66,28 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        public void SetAlignment(string alignment)
+        {
+            if (BtnStart.Parent is Panel startParent) startParent.Children.Remove(BtnStart);
+            if (PinnedAppsPanel.Parent is Panel pinnedParent) pinnedParent.Children.Remove(PinnedAppsPanel);
+
+            if (alignment == "Left")
+            {
+                LeftPanel.Children.Insert(0, BtnStart);
+                LeftPanel.Children.Add(PinnedAppsPanel);
+            }
+            else if (alignment == "Center")
+            {
+                CenterPanel.Children.Insert(0, BtnStart);
+                CenterPanel.Children.Add(PinnedAppsPanel);
+            }
+            else
+            {
+                LeftPanel.Children.Insert(0, BtnStart);
+                CenterPanel.Children.Add(PinnedAppsPanel);
+            }
+        }
+
         public void ShowDock()
         {
             Win32Helper.HideNativeTaskbar();
@@ -74,10 +98,10 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (_currentStyle == "Floating")
             {
-                Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUND);
+                Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
                 TaskbarBorder.CornerRadius = new CornerRadius(4);
 
-                int margin = 10;
+                int margin = 5;
                 int floatingWidth = screenWidth - (margin * 2);
                 int x = displayArea.OuterBounds.X + margin;
                 int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight - margin;
@@ -131,16 +155,14 @@ namespace EvolveOS_ShellEnhancer.Views
             catch (Exception ex) { Debug.WriteLine(ex.Message); }
         }
 
-        private async void BtnNetwork_Click(object sender, RoutedEventArgs e)
+        private void BtnQuickSettings_Click(object sender, RoutedEventArgs e)
         {
-            try { await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-availablenetworks:")); }
-            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+            Win32Helper.OpenQuickSettings();
         }
 
-        private void BtnVolume_Click(object sender, RoutedEventArgs e)
+        private void BtnTrayOverflow_Click(object sender, RoutedEventArgs e)
         {
-            try { Process.Start("sndvol.exe"); }
-            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+            Win32Helper.OpenTrayOverflow();
         }
 
         #endregion

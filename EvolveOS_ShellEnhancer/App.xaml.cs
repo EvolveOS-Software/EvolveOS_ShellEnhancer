@@ -41,6 +41,10 @@ namespace EvolveOS_ShellEnhancer
                     _startMenuWindow.ToggleVisibility();
                 });
             }
+            else
+            {
+                EvolveOS_ShellEnhancer.Utilities.Helpers.Win32Helper.OpenNativeStartMenu();
+            }
         }
 
         private void OnIpcCommandReceived(string command, string value)
@@ -71,6 +75,10 @@ namespace EvolveOS_ShellEnhancer
 
                     case "Taskbar_Style":
                         _taskbarWindow?.SetStyle(value);
+                        break;
+
+                    case "Taskbar_Alignment":
+                        _taskbarWindow?.SetAlignment(value);
                         break;
                 }
             });
