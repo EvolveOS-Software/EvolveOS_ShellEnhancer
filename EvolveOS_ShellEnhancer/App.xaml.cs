@@ -24,6 +24,8 @@ namespace EvolveOS_ShellEnhancer
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
+            СheckingGlobalParameters.Initialize();
+
             _startMenuWindow = new CustomStartMenuWindow();
             _taskbarWindow = new CustomTaskbarWindow();
 
