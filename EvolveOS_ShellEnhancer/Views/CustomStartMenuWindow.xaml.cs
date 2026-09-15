@@ -18,8 +18,6 @@ namespace EvolveOS_ShellEnhancer.Views
         private readonly IntPtr _hWnd;
         private bool _isVisible = false;
 
-        private DateTime _lastHideTime = DateTime.MinValue;
-
         public CustomStartMenuWindow()
         {
             this.InitializeComponent();
@@ -51,11 +49,6 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public void ToggleVisibility()
         {
-            if (!_isVisible && (DateTime.Now - _lastHideTime).TotalMilliseconds < 500)
-            {
-                return;
-            }
-
             if (_isVisible)
             {
                 HideMenu();
@@ -89,8 +82,6 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             _appWindow.Hide();
             _isVisible = false;
-
-            _lastHideTime = DateTime.Now;
         }
 
         public void SetStyle(string style)

@@ -10,7 +10,6 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
 using WinRT.Interop;
-using Microsoft.UI.Xaml.Input;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
@@ -40,6 +39,9 @@ namespace EvolveOS_ShellEnhancer.Views
             this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
             Win32Helper.RemoveWindowBorders(_hWnd);
+
+            Win32Helper.PreventFocusStealing(_hWnd);
+
             TaskbarOverlayManager.ApplyWidgetStyles(_hWnd);
 
             _clockTimer = new DispatcherTimer();

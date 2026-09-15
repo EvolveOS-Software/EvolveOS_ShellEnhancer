@@ -1,6 +1,6 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
-
+using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -53,6 +53,11 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         {
             if (nCode >= 0 && (wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN))
             {
+                if (Win32Helper.IsSimulating)
+                {
+                    return CallNextHookEx(_hookID, nCode, wParam, lParam);
+                }
+
                 int vkCode = Marshal.ReadInt32(lParam);
 
                 if (vkCode == VK_LWIN || vkCode == VK_RWIN)

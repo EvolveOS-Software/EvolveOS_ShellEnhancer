@@ -1,6 +1,5 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
-
 using System;
 using System.Runtime.InteropServices;
 
@@ -32,6 +31,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         [DllImport("user32.dll")]
         private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+        [DllImport("user32.dll")]
+        private static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
 
         // Base Styles
         private const int GWL_STYLE = -16;
@@ -68,6 +70,14 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         private const byte VK_LWIN = 0x5B;
         private const uint KEYEVENTF_KEYUP = 0x0002;
+
+        private const uint MOUSEEVENTF_MOVE = 0x0001;
+
+        private const int WS_EX_NOACTIVATE = 0x08000000;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+
+        // ---- ADDED FLAG ----
+        public static bool IsSimulating = false;
 
         public static void RemoveWindowBorders(IntPtr hWnd)
         {
@@ -115,22 +125,43 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             }
         }
 
+        public static void PreventFocusStealing(IntPtr hWnd)
+        {
+            int exStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+            exStyle |= WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
+            SetWindowLong(hWnd, GWL_EXSTYLE, exStyle);
+        }
+
+        // ---- WRAPPED METHODS ----
+
         public static void OpenNativeStartMenu()
         {
+            IsSimulating = true;
+
             keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
             keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+            IsSimulating = false;
         }
 
         public static void OpenQuickSettings()
         {
+            IsSimulating = true;
+
             keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
             keybd_event((byte)'A', 0, 0, UIntPtr.Zero);
             keybd_event((byte)'A', 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
             keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+            mouse_event(MOUSEEVENTF_MOVE, 0, 0, 0, UIntPtr.Zero);
+
+            IsSimulating = false;
         }
 
         public static void OpenTrayOverflow()
         {
+            IsSimulating = true;
+
             keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
             keybd_event((byte)'B', 0, 0, UIntPtr.Zero);
             keybd_event((byte)'B', 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
@@ -140,6 +171,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
             keybd_event(0x0D, 0, 0, UIntPtr.Zero);
             keybd_event(0x0D, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+            mouse_event(MOUSEEVENTF_MOVE, 0, 0, 0, UIntPtr.Zero);
+
+            IsSimulating = false;
         }
     }
 }
