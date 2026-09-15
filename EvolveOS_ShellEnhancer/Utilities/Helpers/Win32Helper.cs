@@ -1,7 +1,14 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
+
+using Microsoft.Win32;
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+using UIAutomationClient;
+using Windows.System;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {
@@ -35,6 +42,75 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll")]
         private static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
 
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        // ---- NEW DllImports for Focus Management ----
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetCursorPos(int X, int Y);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll")]
+        private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetFocus(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern int ShowCursor(bool bShow);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumChildWindows(IntPtr hwndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr WindowFromPoint(POINT Point);
+
+        [DllImport("user32.dll")]
+        private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
         // Base Styles
         private const int GWL_STYLE = -16;
         private const int WS_THICKFRAME = 0x00040000;
@@ -47,6 +123,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         private const int WS_EX_CLIENTEDGE = 0x00000200;
         private const int WS_EX_WINDOWEDGE = 0x00000100;
         private const int WS_EX_DLGMODALFRAME = 0x00000001;
+        private const int WS_EX_LAYERED = 0x00080000;
+        private const int WS_EX_TRANSPARENT = 0x00000020;
 
         // SetWindowPos Flags
         private const uint SWP_NOMOVE = 0x0002;
@@ -72,9 +150,16 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         private const uint KEYEVENTF_KEYUP = 0x0002;
 
         private const uint MOUSEEVENTF_MOVE = 0x0001;
+        private const uint MOUSEEVENTF_WHEEL = 0x0800;
+
+        private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+        private const uint MOUSEEVENTF_LEFTUP = 0x0004;
 
         private const int WS_EX_NOACTIVATE = 0x08000000;
         private const int WS_EX_TOOLWINDOW = 0x00000080;
+
+        private const uint WM_CHANGEUISTATE = 0x0127;
+        private const uint LWA_ALPHA = 0x2;
 
         // ---- ADDED FLAG ----
         public static bool IsSimulating = false;
@@ -116,11 +201,24 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public static void ShowNativeTaskbar()
         {
             IntPtr trayWnd = FindWindow("Shell_TrayWnd", null);
-            if (trayWnd != IntPtr.Zero) ShowWindow(trayWnd, SW_SHOW);
+            if (trayWnd != IntPtr.Zero)
+            {
+                int style = GetWindowLong(trayWnd, GWL_EXSTYLE);
+                style &= ~WS_EX_TRANSPARENT;
+                style &= ~WS_EX_LAYERED;
+                SetWindowLong(trayWnd, GWL_EXSTYLE, style);
+                SetLayeredWindowAttributes(trayWnd, 0, 255, LWA_ALPHA);
+                ShowWindow(trayWnd, SW_SHOW);
+            }
 
             IntPtr secondaryTray = IntPtr.Zero;
             while ((secondaryTray = FindWindowEx(IntPtr.Zero, secondaryTray, "Shell_SecondaryTrayWnd", null)) != IntPtr.Zero)
             {
+                int style = GetWindowLong(secondaryTray, GWL_EXSTYLE);
+                style &= ~WS_EX_TRANSPARENT;
+                style &= ~WS_EX_LAYERED;
+                SetWindowLong(secondaryTray, GWL_EXSTYLE, style);
+                SetLayeredWindowAttributes(secondaryTray, 0, 255, LWA_ALPHA);
                 ShowWindow(secondaryTray, SW_SHOW);
             }
         }
@@ -144,37 +242,137 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             IsSimulating = false;
         }
 
-        public static void OpenQuickSettings()
+        public static async Task ToggleQuickSettingsAsync()
         {
-            IsSimulating = true;
+            IntPtr ccHwnd = FindWindow("ControlCenterWindow", null);
 
-            keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
-            keybd_event((byte)'A', 0, 0, UIntPtr.Zero);
-            keybd_event((byte)'A', 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-            keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            if (ccHwnd != IntPtr.Zero && IsWindowVisible(ccHwnd))
+            {
+                PostMessage(ccHwnd, 0x0010 /* WM_CLOSE */, IntPtr.Zero, IntPtr.Zero);
+                return;
+            }
 
-            mouse_event(MOUSEEVENTF_MOVE, 0, 0, 0, UIntPtr.Zero);
+            try
+            {
+                await Launcher.LaunchUriAsync(new Uri("ms-actioncenter:controlcenter/true"));
 
-            IsSimulating = false;
+                await Task.Delay(180);
+                IntPtr newCcHwnd = FindWindow("ControlCenterWindow", null);
+                if (newCcHwnd != IntPtr.Zero)
+                {
+                    SendMessage(newCcHwnd, 0x0127, (IntPtr)0x00010001, IntPtr.Zero);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
-        public static void OpenTrayOverflow()
+        public static async Task ToggleCalendarAsync()
         {
-            IsSimulating = true;
+            IntPtr fg = GetForegroundWindow();
+            StringBuilder sb = new StringBuilder(256);
+            GetClassName(fg, sb, sb.Capacity);
+            string className = sb.ToString();
 
+            if (className == "Windows.UI.Core.CoreWindow" || className.Contains("ActionCenter"))
+            {
+                IsSimulating = true;
+                keybd_event(0x1B, 0, 0, UIntPtr.Zero);
+                keybd_event(0x1B, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                IsSimulating = false;
+                return;
+            }
+
+            try
+            {
+                await Launcher.LaunchUriAsync(new Uri("ms-actioncenter:"));
+            }
+            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+        }
+
+        public static async Task OpenTrayOverflowAsync()
+        {
+            IntPtr fg = GetForegroundWindow();
+            StringBuilder sb = new StringBuilder(256);
+            GetClassName(fg, sb, sb.Capacity);
+            string className = sb.ToString();
+
+            if (className.Contains("Overflow") || className.Contains("NotifyIcon"))
+            {
+                IsSimulating = true;
+                keybd_event(0x1B, 0, 0, UIntPtr.Zero);
+                keybd_event(0x1B, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                IsSimulating = false;
+                return;
+            }
+
+            IsSimulating = true;
             keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
             keybd_event((byte)'B', 0, 0, UIntPtr.Zero);
             keybd_event((byte)'B', 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
             keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-
-            System.Threading.Thread.Sleep(50);
-
-            keybd_event(0x0D, 0, 0, UIntPtr.Zero);
-            keybd_event(0x0D, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-
-            mouse_event(MOUSEEVENTF_MOVE, 0, 0, 0, UIntPtr.Zero);
-
             IsSimulating = false;
+
+            IntPtr taskbarHwnd = FindWindow("Shell_TrayWnd", null);
+            if (taskbarHwnd != IntPtr.Zero)
+            {
+                SendMessage(taskbarHwnd, 0x0127, (IntPtr)0x00010001, IntPtr.Zero);
+            }
+
+            await Task.Delay(50);
+
+            IsSimulating = true;
+            keybd_event(0x0D, 0, 0, UIntPtr.Zero);
+            await Task.Delay(20);
+            keybd_event(0x0D, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            IsSimulating = false;
+
+            await Task.Delay(10);
+
+            IntPtr newFg = GetForegroundWindow();
+
+            if (GetWindowRect(newFg, out RECT rect))
+            {
+                if (GetCursorPos(out POINT originalPos))
+                {
+                    ShowCursor(false);
+                    try
+                    {
+                        SetCursorPos(rect.Left + 15, rect.Top + 15);
+
+                        mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                        mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+
+                        SetCursorPos(originalPos.X, originalPos.Y);
+                    }
+                    finally
+                    {
+                        ShowCursor(true);
+                    }
+                }
+            }
+        }
+
+        public static void SetNativeStartMenuAlignment(bool alignLeft)
+        {
+            try
+            {
+                string keyPath = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(keyPath, true))
+                {
+                    if (key != null)
+                    {
+                        int alignmentValue = alignLeft ? 0 : 1;
+                        key.SetValue("TaskbarAl", alignmentValue, RegistryValueKind.DWord);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Registry Error: " + ex.Message);
+            }
         }
     }
 }

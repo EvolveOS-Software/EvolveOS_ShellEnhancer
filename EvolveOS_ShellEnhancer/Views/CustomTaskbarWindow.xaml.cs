@@ -4,11 +4,15 @@
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using WinRT.Interop;
 
 namespace EvolveOS_ShellEnhancer.Views
@@ -49,6 +53,8 @@ namespace EvolveOS_ShellEnhancer.Views
             _clockTimer.Tick += ClockTimer_Tick;
             _clockTimer.Start();
             UpdateClock();
+
+            LoadPinnedAppsAsync();
         }
 
         private void BtnStart_Click(object sender, RoutedEventArgs e)
@@ -77,16 +83,135 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 LeftPanel.Children.Insert(0, BtnStart);
                 LeftPanel.Children.Add(PinnedAppsPanel);
+
+                Win32Helper.SetNativeStartMenuAlignment(true);
             }
             else if (alignment == "Center")
             {
                 CenterPanel.Children.Insert(0, BtnStart);
                 CenterPanel.Children.Add(PinnedAppsPanel);
+
+                Win32Helper.SetNativeStartMenuAlignment(false);
             }
             else
             {
                 LeftPanel.Children.Insert(0, BtnStart);
                 CenterPanel.Children.Add(PinnedAppsPanel);
+
+                Win32Helper.SetNativeStartMenuAlignment(true);
+            }
+        }
+
+        public static List<string> GetPinnedTaskbarApps()
+        {
+            List<string> pinnedApps = new List<string>();
+
+            string taskbarPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
+            );
+
+            if (Directory.Exists(taskbarPath))
+            {
+                string[] shortcuts = Directory.GetFiles(taskbarPath, "*.lnk");
+                foreach (string shortcut in shortcuts)
+                {
+                    pinnedApps.Add(shortcut);
+                }
+            }
+
+            return pinnedApps;
+        }
+
+        public static string ParseShortcut(string lnkPath)
+        {
+            try
+            {
+                IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
+                IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
+
+                return shortcut.TargetPath;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Shortcut Parse Error: " + ex.Message);
+                return string.Empty;
+            }
+        }
+
+        private async void LoadPinnedAppsAsync()
+        {
+            PinnedAppsPanel.Children.Clear();
+
+            List<string> shortcuts = GetPinnedTaskbarApps();
+
+            foreach (string lnk in shortcuts)
+            {
+                string targetExe = ParseShortcut(lnk);
+
+                if (!string.IsNullOrWhiteSpace(targetExe))
+                {
+                    targetExe = Environment.ExpandEnvironmentVariables(targetExe);
+
+                    if (File.Exists(targetExe))
+                    {
+                        Image appIcon = new Image
+                        {
+                            Width = 24,
+                            Height = 24,
+                            Stretch = Stretch.Uniform,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
+
+                        Button appButton = new Button
+                        {
+                            Width = 40,
+                            Height = 40,
+                            MinWidth = 0,
+                            MinHeight = 0,
+                            Padding = new Thickness(0),
+                            Margin = new Thickness(2, 0, 2, 0),
+                            Background = new SolidColorBrush(Colors.Transparent),
+                            BorderThickness = new Thickness(0),
+                            CornerRadius = new CornerRadius(8),
+                            Content = appIcon
+                        };
+
+                        ToolTipService.SetToolTip(appButton, Path.GetFileNameWithoutExtension(targetExe));
+
+                        appButton.Click += (s, e) =>
+                        {
+                            try
+                            {
+                                Process.Start(new ProcessStartInfo(targetExe) { UseShellExecute = true });
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"Failed to launch {targetExe}: {ex.Message}");
+                            }
+                        };
+
+                        PinnedAppsPanel.Children.Add(appButton);
+
+                        try
+                        {
+                            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(targetExe);
+                            var thumbnail = await file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.SingleItem, 32);
+
+                            if (thumbnail != null)
+                            {
+                                var bitmapImage = new BitmapImage();
+                                await bitmapImage.SetSourceAsync(thumbnail);
+                                appIcon.Source = bitmapImage;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Icon load error for {targetExe}: {ex.Message}");
+                        }
+                    }
+                }
             }
         }
 
@@ -145,27 +270,26 @@ namespace EvolveOS_ShellEnhancer.Views
             DateText.Text = DateTime.Now.ToShortDateString();
         }
 
-        private void BtnExplorer_Click(object sender, RoutedEventArgs e)
+        private async void BtnClock_Click(object sender, RoutedEventArgs e)
         {
-            try { Process.Start("explorer.exe"); }
-            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+            await Win32Helper.ToggleCalendarAsync();
         }
 
-        private async void BtnBrowser_Click(object sender, RoutedEventArgs e)
+        private async void BtnQuickSettings_Click(object sender, RoutedEventArgs e)
         {
-            try { await Windows.System.Launcher.LaunchUriAsync(new Uri("https://www.google.com")); }
-            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+            await Win32Helper.ToggleQuickSettingsAsync();
         }
 
-        private void BtnQuickSettings_Click(object sender, RoutedEventArgs e)
+        private async void BtnTrayOverflow_Click(object sender, RoutedEventArgs e)
         {
-            Win32Helper.OpenQuickSettings();
+            await Win32Helper.OpenTrayOverflowAsync();
         }
 
-        private void BtnTrayOverflow_Click(object sender, RoutedEventArgs e)
+        /*private void BtnTrayOverflow_Click(object sender, RoutedEventArgs e)
         {
-            Win32Helper.OpenTrayOverflow();
-        }
+            // Now awaits the async hardware teleport click!
+            NativeTrayOpener.OpenNativeOverflow();
+        }*/
 
         #endregion
     }

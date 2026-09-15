@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using EvolveOS_ShellEnhancer.Utilities;
+using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using EvolveOS_ShellEnhancer.Views;
 using Microsoft.UI.Xaml;
@@ -43,7 +44,7 @@ namespace EvolveOS_ShellEnhancer
             }
             else
             {
-                EvolveOS_ShellEnhancer.Utilities.Helpers.Win32Helper.OpenNativeStartMenu();
+                Win32Helper.OpenNativeStartMenu();
             }
         }
 
@@ -79,6 +80,7 @@ namespace EvolveOS_ShellEnhancer
 
                     case "Taskbar_Alignment":
                         _taskbarWindow?.SetAlignment(value);
+                        _startMenuWindow?.SetAlignment(value);
                         break;
                 }
             });

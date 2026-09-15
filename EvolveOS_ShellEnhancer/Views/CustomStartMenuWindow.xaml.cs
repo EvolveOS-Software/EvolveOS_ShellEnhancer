@@ -18,6 +18,8 @@ namespace EvolveOS_ShellEnhancer.Views
         private readonly IntPtr _hWnd;
         private bool _isVisible = false;
 
+        private string _currentAlignment = "Center";
+
         public CustomStartMenuWindow()
         {
             this.InitializeComponent();
@@ -59,6 +61,16 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        public void SetAlignment(string alignment)
+        {
+            _currentAlignment = alignment;
+
+            if (_isVisible)
+            {
+                ShowMenu();
+            }
+        }
+
         private void ShowMenu()
         {
             var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
@@ -67,8 +79,19 @@ namespace EvolveOS_ShellEnhancer.Views
             int menuHeight = (int)MenuContainer.Height;
             int taskbarOffset = 60;
 
-            int x = displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2;
+            int leftMargin = 16;
+
+            int x;
             int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - menuHeight - taskbarOffset;
+
+            if (_currentAlignment == "Center")
+            {
+                x = displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2;
+            }
+            else
+            {
+                x = displayArea.OuterBounds.X + leftMargin;
+            }
 
             _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, menuWidth, menuHeight));
 
