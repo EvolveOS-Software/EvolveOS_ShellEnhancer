@@ -980,6 +980,17 @@ namespace EvolveOS_ShellEnhancer.Views
 
             MenuFlyout contextFlyout = new MenuFlyout();
 
+            contextFlyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+
+            Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
+
+            flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
+            flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+            flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
+            flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+
+            contextFlyout.MenuFlyoutPresenterStyle = flyoutStyle;
+
             var launchItem = new MenuFlyoutItem
             {
                 Text = displayTitle,
