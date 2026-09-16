@@ -16,14 +16,15 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
 
         public static string CurrentStyle = "Standard";
         public static string CurrentAlignment = "Center";
-        public static string CurrentPosition = "Bottom";
+
+        public static string CurrentPositionRaw = "Bottom";
 
         public static async Task InitializeAndShowTaskbarsAsync()
         {
             try
             {
                 CurrentAlignment = SettingsEngine.Shell_TaskbarAlignment;
-                CurrentPosition = SettingsEngine.Shell_TaskbarPosition;
+                CurrentPositionRaw = SettingsEngine.Shell_TaskbarPosition;
 
                 if (_taskbars.Count == 0)
                 {
@@ -68,10 +69,40 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             }
         }
 
+        public static string GetPositionForDisplay(string displayId)
+        {
+            if (string.IsNullOrWhiteSpace(CurrentPositionRaw)) return "Bottom";
+
+            if (!CurrentPositionRaw.Contains(":"))
+            {
+                if (CurrentPositionRaw.Contains("Top", StringComparison.OrdinalIgnoreCase)) return "Top";
+                if (CurrentPositionRaw.Contains("Left", StringComparison.OrdinalIgnoreCase)) return "Left";
+                if (CurrentPositionRaw.Contains("Right", StringComparison.OrdinalIgnoreCase)) return "Right";
+                return "Bottom";
+            }
+
+            foreach (var part in CurrentPositionRaw.Split(';', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var kv = part.Split(':');
+                if (kv.Length == 2 && kv[0] == displayId)
+                {
+                    string pos = kv[1];
+                    if (pos.Contains("Top", StringComparison.OrdinalIgnoreCase)) return "Top";
+                    if (pos.Contains("Left", StringComparison.OrdinalIgnoreCase)) return "Left";
+                    if (pos.Contains("Right", StringComparison.OrdinalIgnoreCase)) return "Right";
+                    return "Bottom";
+                }
+            }
+
+            return "Bottom";
+        }
+
         private static void ApplyCurrentSettings(CustomTaskbarWindow tb)
         {
             tb.SetStyle(CurrentStyle);
-            tb.SetPosition(CurrentPosition);
+
+            string displayId = tb.MonitorArea.DisplayId.Value.ToString();
+            tb.SetPosition(GetPositionForDisplay(displayId));
         }
 
         public static void ShowAll()
@@ -101,16 +132,14 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             foreach (var t in _taskbars) t.SetAlignment(alignment);
         }
 
-        public static void SetPosition(string position)
+        public static void SetPosition(string positionString)
         {
-            if (string.IsNullOrWhiteSpace(position)) position = "Bottom";
-            else if (position.Contains("Top", StringComparison.OrdinalIgnoreCase)) position = "Top";
-            else if (position.Contains("Left", StringComparison.OrdinalIgnoreCase)) position = "Left";
-            else if (position.Contains("Right", StringComparison.OrdinalIgnoreCase)) position = "Right";
-            else position = "Bottom";
-
-            CurrentPosition = position;
-            foreach (var t in _taskbars) t.SetPosition(position);
+            CurrentPositionRaw = positionString ?? "Bottom";
+            foreach (var t in _taskbars)
+            {
+                string displayId = t.MonitorArea.DisplayId.Value.ToString();
+                t.SetPosition(GetPositionForDisplay(displayId));
+            }
         }
 
         public static void ReloadAll()

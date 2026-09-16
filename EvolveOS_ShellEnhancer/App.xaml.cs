@@ -97,7 +97,6 @@ namespace EvolveOS_ShellEnhancer
 
                     case "Taskbar_Position":
                         TaskbarManager.SetPosition(value);
-                        _startMenuWindow?.SetPosition(value);
                         break;
 
                     case "Taskbar_Animation":

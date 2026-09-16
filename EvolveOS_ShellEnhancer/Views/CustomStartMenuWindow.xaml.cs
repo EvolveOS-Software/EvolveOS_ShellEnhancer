@@ -104,7 +104,9 @@ namespace EvolveOS_ShellEnhancer.Views
             int x = 0;
             int y = 0;
 
-            switch (_currentPosition)
+            string targetPos = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
+
+            switch (targetPos)
             {
                 case "Top":
                     y = displayArea.OuterBounds.Y + taskbarOffset;
