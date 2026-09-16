@@ -5,6 +5,7 @@ using EvolveOS_ShellEnhancer.Utilities.Animations;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
+using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -948,22 +949,53 @@ namespace EvolveOS_ShellEnhancer.Views
                 Tag = isShortcut ? pathOrLnk : $"UNPINNED:{processName}"
             };
 
-            appCard.PointerPressed += (s, e) => FactoryAnimation.AnimateAppCardClickDown(appCard);
-            appCard.PointerReleased += (s, e) => FactoryAnimation.AnimateAppCardClickUp(appCard);
-            appCard.PointerCanceled += (s, e) => FactoryAnimation.AnimateAppCardClickUp(appCard);
+            string displayTitle = isShortcut ? shortcutName : (string.IsNullOrEmpty(windowTitle) ? processName : windowTitle);
+            ToolTipService.SetToolTip(appCard, displayTitle);
 
-            ToolTipService.SetToolTip(appCard, isShortcut ? shortcutName : (string.IsNullOrEmpty(windowTitle) ? processName : windowTitle));
+            Action launchNewInstance = () =>
+            {
+                try
+                {
+                    if (processName.Equals("explorer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
+                        return;
+                    }
+
+                    string launchPath = isShortcut ? pathOrLnk : targetExe;
+
+                    if (string.IsNullOrEmpty(launchPath) || !File.Exists(launchPath))
+                    {
+                        if (processName.Equals("cmd", StringComparison.OrdinalIgnoreCase)) launchPath = "cmd.exe";
+                        else return;
+                    }
+
+                    Process.Start(new ProcessStartInfo(launchPath) { UseShellExecute = true });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to launch new instance of {displayTitle}: {ex.Message}");
+                }
+            };
 
             MenuFlyout contextFlyout = new MenuFlyout();
+
+            var launchItem = new MenuFlyoutItem
+            {
+                Text = displayTitle,
+                FontWeight = FontWeights.SemiBold
+            };
+            launchItem.Click += (s, e) => launchNewInstance();
+
+            contextFlyout.Items.Add(launchItem);
+            contextFlyout.Items.Add(new MenuFlyoutSeparator());
 
             var closeItem = new MenuFlyoutItem { Text = "Close window", Icon = new FontIcon { Glyph = "\uE8BB" } };
             closeItem.Click += (s, e) =>
             {
                 var handles = GetAppWindowHandles(processName);
-
                 foreach (var h in handles) { PostMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero); }
             };
-
             contextFlyout.Items.Add(closeItem);
 
             if (isShortcut)
@@ -986,13 +1018,35 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             appCard.ContextFlyout = contextFlyout;
-
             _appIndicators.Add((processName, indicator, backIcon));
+
+            appCard.PointerPressed += (s, e) =>
+            {
+                FactoryAnimation.AnimateAppCardClickDown(appCard);
+                var props = e.GetCurrentPoint(appCard).Properties;
+
+                if (props.IsMiddleButtonPressed)
+                {
+                    launchNewInstance();
+                    e.Handled = true;
+                }
+            };
+            appCard.PointerReleased += (s, e) => FactoryAnimation.AnimateAppCardClickUp(appCard);
+            appCard.PointerCanceled += (s, e) => FactoryAnimation.AnimateAppCardClickUp(appCard);
 
             appCard.Tapped += (s, e) =>
             {
                 if (_isTrackingDrag) return;
                 _previewWindow.HidePreview();
+
+                var shiftState = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift);
+                bool isShiftPressed = (shiftState & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down;
+
+                if (isShiftPressed)
+                {
+                    launchNewInstance();
+                    return;
+                }
 
                 bool activatedExisting = false;
                 if (!string.IsNullOrEmpty(processName))
@@ -1012,14 +1066,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (!activatedExisting && isShortcut)
                 {
-                    try
-                    {
-                        Process.Start(new ProcessStartInfo(pathOrLnk) { UseShellExecute = true });
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Failed to launch {pathOrLnk}: {ex.Message}");
-                    }
+                    launchNewInstance();
                 }
             };
 
@@ -1176,6 +1223,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         await bitmapImage.SetSourceAsync(thumbnail);
                         appIcon.Source = bitmapImage;
                         backIcon.Source = bitmapImage;
+                        launchItem.Icon = new ImageIcon { Source = bitmapImage };
                         iconLoaded = true;
                     }
                 }
@@ -1205,6 +1253,7 @@ namespace EvolveOS_ShellEnhancer.Views
                             await bitmapImage.SetSourceAsync(ras);
                             appIcon.Source = bitmapImage;
                             backIcon.Source = bitmapImage;
+                            launchItem.Icon = new ImageIcon { Source = bitmapImage };
                             iconLoaded = true;
                         }
                     }
@@ -1234,6 +1283,7 @@ namespace EvolveOS_ShellEnhancer.Views
                             await bitmapImage.SetSourceAsync(ras);
                             appIcon.Source = bitmapImage;
                             backIcon.Source = bitmapImage;
+                            launchItem.Icon = new ImageIcon { Source = bitmapImage };
                         }
                     }
                     catch { }
