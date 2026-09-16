@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using EvolveOS_ShellEnhancer.Utilities.Animations;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
@@ -156,7 +157,14 @@ namespace EvolveOS_ShellEnhancer.Views
             _clockTimer.Start();
             UpdateClock();
 
-            LoadPinnedAppsAsync();
+            if (BtnStart != null)
+            {
+                BtnStart.PointerPressed += FactoryAnimation.StartButton_PointerPressed;
+                BtnStart.PointerReleased += FactoryAnimation.StartButton_PointerReleased;
+                BtnStart.PointerCanceled += FactoryAnimation.StartButton_PointerReleased;
+            }
+
+            _ = LoadPinnedAppsAsync();
         }
         #endregion
 
@@ -363,7 +371,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     if (currentUnpinnedCount != _lastUnpinnedCount)
                     {
                         _lastUnpinnedCount = currentUnpinnedCount;
-                        LoadPinnedAppsAsync();
+                        _ = LoadPinnedAppsAsync();
                     }
                 }
             }
@@ -384,7 +392,7 @@ namespace EvolveOS_ShellEnhancer.Views
             _showingAllRunningView = false;
         }
 
-        private void TaskbarBorder_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        private async void TaskbarBorder_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             if (ShowUnpinnedApps && UnpinnedDisplayMode.Equals("Scroll", StringComparison.OrdinalIgnoreCase))
             {
@@ -392,7 +400,17 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (delta != 0)
                 {
                     _showingAllRunningView = !_showingAllRunningView;
-                    LoadPinnedAppsAsync();
+
+                    bool isScrollingUp = delta > 0;
+
+                    await FactoryAnimation.PlayScrollTransitionAsync(
+                        this.Content as UIElement,
+                        CenterPanel,
+                        LeftPanel,
+                        PinnedAppsPanel,
+                        async () => { await LoadPinnedAppsAsync(); },
+                        isScrollingUp
+                    );
                 }
             }
         }
@@ -408,6 +426,23 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public void SetAlignment(string alignment)
         {
+            bool isMoving = false;
+            Point btnPointBefore = default;
+            Point panelPointBefore = default;
+            UIElement rootElement = this.Content as UIElement;
+
+            if (BtnStart.Parent is Panel startParentOld)
+            {
+                isMoving = (alignment == "Center" && startParentOld != CenterPanel) ||
+                           (alignment != "Center" && startParentOld != LeftPanel);
+
+                if (isMoving && rootElement != null)
+                {
+                    btnPointBefore = BtnStart.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+                    panelPointBefore = PinnedAppsPanel.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+                }
+            }
+
             if (BtnStart.Parent is Panel startParent) startParent.Children.Remove(BtnStart);
             if (PinnedAppsPanel.Parent is Panel pinnedParent) pinnedParent.Children.Remove(PinnedAppsPanel);
 
@@ -428,6 +463,17 @@ namespace EvolveOS_ShellEnhancer.Views
                 LeftPanel.Children.Insert(0, BtnStart);
                 CenterPanel.Children.Add(PinnedAppsPanel);
                 Win32Helper.SetNativeStartMenuAlignment(true);
+            }
+
+            if (isMoving && rootElement != null)
+            {
+                rootElement.UpdateLayout();
+
+                var btnPointAfter = BtnStart.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+                var panelPointAfter = PinnedAppsPanel.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+
+                FactoryAnimation.AnimateHorizontalSlide(BtnStart, (float)(btnPointBefore.X - btnPointAfter.X));
+                FactoryAnimation.AnimateHorizontalSlide(PinnedAppsPanel, (float)(panelPointBefore.X - panelPointAfter.X));
             }
         }
         #endregion
@@ -487,10 +533,10 @@ namespace EvolveOS_ShellEnhancer.Views
         #region App Loading & Icon Extraction
         public void ReloadTaskbar()
         {
-            LoadPinnedAppsAsync();
+            _ = LoadPinnedAppsAsync();
         }
 
-        private async void LoadPinnedAppsAsync()
+        private async Task LoadPinnedAppsAsync()
         {
             if (_isLoadingApps)
             {
@@ -679,6 +725,10 @@ namespace EvolveOS_ShellEnhancer.Views
                 Tag = isShortcut ? pathOrLnk : $"UNPINNED:{processName}"
             };
 
+            appCard.PointerPressed += (s, e) => FactoryAnimation.AnimateAppCardClickDown(appCard);
+            appCard.PointerReleased += (s, e) => FactoryAnimation.AnimateAppCardClickUp(appCard);
+            appCard.PointerCanceled += (s, e) => FactoryAnimation.AnimateAppCardClickUp(appCard);
+
             ToolTipService.SetToolTip(appCard, isShortcut ? shortcutName : (string.IsNullOrEmpty(windowTitle) ? processName : windowTitle));
 
             MenuFlyout contextFlyout = new MenuFlyout();
@@ -700,7 +750,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     try
                     {
                         if (File.Exists(pathOrLnk)) File.Delete(pathOrLnk);
-                        LoadPinnedAppsAsync();
+                        _ = LoadPinnedAppsAsync();
                     }
                     catch (Exception ex)
                     {
