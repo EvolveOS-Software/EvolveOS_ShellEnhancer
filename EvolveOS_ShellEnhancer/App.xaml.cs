@@ -133,6 +133,11 @@ namespace EvolveOS_ShellEnhancer
                     case "Taskbar_HoverBackground":
                         CustomTaskbarWindow.ShowHoverBackground = bool.Parse(value);
                         break;
+
+                    case "Taskbar_MonitorAware":
+                        CustomTaskbarWindow.MonitorAwareApps = bool.Parse(value);
+                        TaskbarManager.ReloadAll();
+                        break;
                 }
             });
         }

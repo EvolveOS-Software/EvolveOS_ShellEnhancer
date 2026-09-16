@@ -187,7 +187,10 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             int x, y;
-            var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+
+            var point = new Windows.Graphics.PointInt32(cardScreenX, cardScreenY);
+            var displayArea = DisplayArea.GetFromPoint(point, DisplayAreaFallback.Nearest);
+
             int screenLeft = displayArea.OuterBounds.X;
             int screenTop = displayArea.OuterBounds.Y;
             int screenRight = screenLeft + displayArea.OuterBounds.Width;

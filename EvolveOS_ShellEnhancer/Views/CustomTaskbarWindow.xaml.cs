@@ -83,6 +83,10 @@ namespace EvolveOS_ShellEnhancer.Views
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+        private const uint MONITOR_DEFAULTTONEAREST = 2;
+
         [StructLayout(LayoutKind.Sequential)]
         public struct APPBARDATA
         {
@@ -149,6 +153,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public readonly DisplayArea MonitorArea;
         public readonly bool IsPrimaryMonitor;
+
+        public static bool MonitorAwareApps = false;
 
         private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -263,6 +269,13 @@ namespace EvolveOS_ShellEnhancer.Views
             return true;
         }
 
+        private bool IsWindowOnThisMonitor(IntPtr hWnd)
+        {
+            IntPtr windowMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+            IntPtr taskbarMonitor = MonitorFromWindow(_hWnd, MONITOR_DEFAULTTONEAREST);
+            return windowMonitor == taskbarMonitor;
+        }
+
         private static string NormalizeProcessName(string rawName, string shortcutTitle = "", string targetExePath = "")
         {
             if (!string.IsNullOrWhiteSpace(targetExePath) && File.Exists(targetExePath))
@@ -318,6 +331,8 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 if (!IsRealTopLevelWindow(hWnd)) return true;
 
+                if (MonitorAwareApps && !IsWindowOnThisMonitor(hWnd)) return true;
+
                 if (isExplorer)
                 {
                     System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
@@ -348,6 +363,8 @@ namespace EvolveOS_ShellEnhancer.Views
             EnumWindows((hWnd, lParam) =>
             {
                 if (!IsRealTopLevelWindow(hWnd)) return true;
+
+                if (MonitorAwareApps && !IsWindowOnThisMonitor(hWnd)) return true;
 
                 System.Text.StringBuilder cb = new System.Text.StringBuilder(256);
                 GetClassName(hWnd, cb, cb.Capacity);
