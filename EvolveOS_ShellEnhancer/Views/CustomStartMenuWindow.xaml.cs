@@ -14,6 +14,8 @@ namespace EvolveOS_ShellEnhancer.Views
 {
     public sealed partial class CustomStartMenuWindow : Window
     {
+        public DisplayArea? TargetDisplayArea { get; set; }
+
         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
         private bool _isVisible = false;
@@ -81,9 +83,18 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        /// <summary>
+        /// Helper method to target a specific monitor's bounds before displaying.
+        /// </summary>
+        public void PositionOnDisplay(DisplayArea area)
+        {
+            TargetDisplayArea = area;
+        }
+
         private void ShowMenu()
         {
-            var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+            // Use the target display area if provided, otherwise fallback to primary
+            var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
 
             int menuWidth = (int)MenuContainer.Width;
             int menuHeight = (int)MenuContainer.Height;

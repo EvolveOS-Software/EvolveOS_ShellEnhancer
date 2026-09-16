@@ -5,6 +5,7 @@ using EvolveOS_ShellEnhancer.Utilities.Animations;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
+using Microsoft.UI.Input;
 using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -25,7 +26,9 @@ using Windows.Foundation;
 using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.FileProperties;
+using Windows.System;
 using Windows.UI;
+using Windows.UI.Core;
 using WinRT.Interop;
 
 namespace EvolveOS_ShellEnhancer.Views
@@ -76,6 +79,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
         [DllImport("shell32.dll", ExactSpelling = true)]
         private static extern uint SHAppBarMessage(uint dwMessage, ref APPBARDATA pData);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct APPBARDATA
@@ -141,6 +147,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public static bool ShowHoverBackground = true;
 
+        public readonly DisplayArea MonitorArea;
+        public readonly bool IsPrimaryMonitor;
+
         private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
         {
             "SystemSettings",
@@ -165,15 +174,21 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region Initialization
-        public CustomTaskbarWindow()
+        public CustomTaskbarWindow() : this(null) { }
+
+        public CustomTaskbarWindow(DisplayArea? displayArea)
         {
             this.InitializeComponent();
 
             _hWnd = WindowNative.GetWindowHandle(this);
-            int exclude = 1;
-            Win32Helper.DwmSetWindowAttribute(_hWnd, Win32Helper.DWMWA_EXCLUDED_FROM_PEEK, ref exclude, sizeof(int));
             Microsoft.UI.WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
+
+            MonitorArea = displayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+            IsPrimaryMonitor = MonitorArea.IsPrimary;
+
+            int exclude = 1;
+            Win32Helper.DwmSetWindowAttribute(_hWnd, Win32Helper.DWMWA_EXCLUDED_FROM_PEEK, ref exclude, sizeof(int));
 
             if (_appWindow.Presenter is OverlappedPresenter presenter)
             {
@@ -206,6 +221,14 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             _ = LoadPinnedAppsAsync();
+
+            if (this.Content is FrameworkElement rootElement)
+            {
+                rootElement.Loaded += (s, e) =>
+                {
+                    SetAlignment(TaskbarManager.CurrentAlignment);
+                };
+            }
         }
         #endregion
 
@@ -443,7 +466,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (Application.Current is App currentApp)
                 {
-                    currentApp.ToggleStartMenu();
+                    currentApp.ToggleStartMenu(MonitorArea);
                 }
             }
             catch (Exception ex)
@@ -637,17 +660,23 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(alignment)) alignment = "Center";
+                alignment = alignment.Trim();
+
                 bool isMoving = false;
+                bool canAnimate = false;
                 Point btnPointBefore = default;
                 Point panelPointBefore = default;
-                UIElement rootElement = this.Content as UIElement;
+                UIElement? rootElement = this.Content as UIElement;
 
                 if (BtnStart.Parent is Panel startParentOld)
                 {
-                    isMoving = (alignment == "Center" && startParentOld != CenterPanel) ||
-                               (alignment != "Center" && startParentOld != LeftPanel);
+                    isMoving = (alignment.Equals("Center", StringComparison.OrdinalIgnoreCase) && startParentOld != CenterPanel) ||
+                               (!alignment.Equals("Center", StringComparison.OrdinalIgnoreCase) && startParentOld != LeftPanel);
 
-                    if (isMoving && rootElement != null)
+                    canAnimate = isMoving && rootElement != null && BtnStart.IsLoaded;
+
+                    if (canAnimate && rootElement != null)
                     {
                         btnPointBefore = BtnStart.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
                         panelPointBefore = PinnedAppsPanel.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
@@ -657,26 +686,26 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (BtnStart.Parent is Panel startParent) startParent.Children.Remove(BtnStart);
                 if (PinnedAppsPanel.Parent is Panel pinnedParent) pinnedParent.Children.Remove(PinnedAppsPanel);
 
-                if (alignment == "Left")
+                if (alignment.Equals("Left", StringComparison.OrdinalIgnoreCase))
                 {
-                    LeftPanel.Children.Insert(0, BtnStart);
-                    LeftPanel.Children.Add(PinnedAppsPanel);
+                    LeftPanel?.Children.Insert(0, BtnStart);
+                    LeftPanel?.Children.Add(PinnedAppsPanel);
                     Win32Helper.SetNativeStartMenuAlignment(true);
                 }
-                else if (alignment == "Center")
+                else if (alignment.Equals("Center", StringComparison.OrdinalIgnoreCase))
                 {
-                    CenterPanel.Children.Insert(0, BtnStart);
-                    CenterPanel.Children.Add(PinnedAppsPanel);
+                    CenterPanel?.Children.Insert(0, BtnStart);
+                    CenterPanel?.Children.Add(PinnedAppsPanel);
                     Win32Helper.SetNativeStartMenuAlignment(false);
                 }
                 else
                 {
-                    LeftPanel.Children.Insert(0, BtnStart);
-                    CenterPanel.Children.Add(PinnedAppsPanel);
+                    LeftPanel?.Children.Insert(0, BtnStart);
+                    CenterPanel?.Children.Add(PinnedAppsPanel);
                     Win32Helper.SetNativeStartMenuAlignment(true);
                 }
 
-                if (isMoving && rootElement != null)
+                if (canAnimate && rootElement != null)
                 {
                     rootElement.UpdateLayout();
 
@@ -1054,8 +1083,8 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (_isTrackingDrag) return;
                 _previewWindow.HidePreview();
 
-                var shiftState = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift);
-                bool isShiftPressed = (shiftState & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down;
+                var shiftState = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift);
+                bool isShiftPressed = (shiftState & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
 
                 if (isShiftPressed)
                 {
@@ -1325,9 +1354,9 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 Win32Helper.HideNativeTaskbar();
 
-                var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
-                int screenWidth = displayArea.OuterBounds.Width;
-                int screenHeight = displayArea.OuterBounds.Height;
+                int screenWidth = MonitorArea!.OuterBounds.Width;
+                int screenHeight = MonitorArea.OuterBounds.Height;
+                var displayArea = MonitorArea;
 
                 int taskbarSize = 48;
                 int margin = (_currentStyle == "Floating") ? 5 : 0;
@@ -1409,14 +1438,16 @@ namespace EvolveOS_ShellEnhancer.Views
                     TaskbarBorder.CornerRadius = new CornerRadius(0);
                 }
 
+                _appWindow.Show();
+
+                SetWindowPos(_hWnd, new IntPtr(-1), x, y, w, h, 0x0040 | 0x0010);
+
                 _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
 
                 if (!_isAppBarRegistered)
                 {
-                    APPBARDATA abdNew = new APPBARDATA();
-                    abdNew.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
-                    abdNew.hWnd = _hWnd;
-                    SHAppBarMessage(ABM_NEW, ref abdNew);
+                    abd.uCallbackMessage = 0x0400 + 100;
+                    SHAppBarMessage(ABM_NEW, ref abd);
                     _isAppBarRegistered = true;
                 }
 
@@ -1424,7 +1455,6 @@ namespace EvolveOS_ShellEnhancer.Views
                 SHAppBarMessage(ABM_QUERYPOS, ref abd);
                 SHAppBarMessage(ABM_SETPOS, ref abd);
 
-                _appWindow.Show();
                 TaskbarOverlayManager.EnsureTopmost(_hWnd);
             }
             catch (Exception ex)

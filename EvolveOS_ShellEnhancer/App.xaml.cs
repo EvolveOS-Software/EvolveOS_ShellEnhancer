@@ -13,7 +13,6 @@ namespace EvolveOS_ShellEnhancer
     public partial class App : Application
     {
         private CustomStartMenuWindow? _startMenuWindow;
-        private CustomTaskbarWindow? _taskbarWindow;
 
         private bool _isStartMenuEnabled = false;
         private bool _isTaskbarEnabled = false;
@@ -30,7 +29,6 @@ namespace EvolveOS_ShellEnhancer
             СheckingGlobalParameters.Initialize();
 
             _startMenuWindow = new CustomStartMenuWindow();
-            _taskbarWindow = new CustomTaskbarWindow();
 
             KeyboardHookManager.WindowsKeyPressed += OnWindowsKeyPressed;
 
@@ -38,12 +36,17 @@ namespace EvolveOS_ShellEnhancer
             IpcServerManager.StartListening();
         }
 
-        public void ToggleStartMenu()
+        public void ToggleStartMenu(Microsoft.UI.Windowing.DisplayArea? displayArea = null)
         {
             if (_isStartMenuEnabled && _startMenuWindow != null)
             {
                 _startMenuWindow.DispatcherQueue.TryEnqueue(() =>
                 {
+                    if (displayArea != null)
+                    {
+                        _startMenuWindow.TargetDisplayArea = displayArea;
+                    }
+
                     _startMenuWindow.ToggleVisibility();
                 });
             }
@@ -74,22 +77,26 @@ namespace EvolveOS_ShellEnhancer
                     case "Taskbar_Enable":
                         _isTaskbarEnabled = bool.Parse(value);
                         if (_isTaskbarEnabled)
-                            _taskbarWindow?.ShowDock();
+                        {
+                            _ = TaskbarManager.InitializeAndShowTaskbarsAsync();
+                        }
                         else
-                            _taskbarWindow?.HideDock();
+                        {
+                            TaskbarManager.HideAll();
+                        }
                         break;
 
                     case "Taskbar_Style":
-                        _taskbarWindow?.SetStyle(value);
+                        TaskbarManager.SetStyle(value);
                         break;
 
                     case "Taskbar_Alignment":
-                        _taskbarWindow?.SetAlignment(value);
+                        TaskbarManager.SetAlignment(value);
                         _startMenuWindow?.SetAlignment(value);
                         break;
 
                     case "Taskbar_Position":
-                        _taskbarWindow?.SetPosition(value);
+                        TaskbarManager.SetPosition(value);
                         _startMenuWindow?.SetPosition(value);
                         break;
 
@@ -109,14 +116,14 @@ namespace EvolveOS_ShellEnhancer
                         CustomTaskbarWindow.ShowUnpinnedApps = bool.Parse(value);
                         if (!CustomTaskbarWindow.ShowUnpinnedApps)
                         {
-                            _taskbarWindow?.ResetUnpinnedScrollView();
+                            TaskbarManager.ResetUnpinnedScrollViewAll();
                         }
-                        _taskbarWindow?.ReloadTaskbar();
+                        TaskbarManager.ReloadAll();
                         break;
 
                     case "Taskbar_UnpinnedMode":
                         CustomTaskbarWindow.UnpinnedDisplayMode = value;
-                        _taskbarWindow?.ReloadTaskbar();
+                        TaskbarManager.ReloadAll();
                         break;
 
                     case "Taskbar_HoverAnimation":

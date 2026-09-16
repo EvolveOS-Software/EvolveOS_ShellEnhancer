@@ -29,12 +29,33 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         private static readonly Dictionary<string, object> _defaultSettings = new Dictionary<string, object>
         {
             ["TaskbarPinnedAppsOrder"] = string.Empty,
-            ["Shell_TaskbarPosition"] = "Bottom"
+            ["Shell_TaskbarPosition"] = "Bottom",
+            ["Shell_TaskbarAlignment"] = "Center"
         };
 
         private static readonly Dictionary<string, object> _cachedSettings = new Dictionary<string, object>(_defaultSettings);
 
         internal static string TaskbarPinnedAppsOrder { get => (string)_cachedSettings["TaskbarPinnedAppsOrder"]; set => ChangingParameters("TaskbarPinnedAppsOrder", value); }
+        internal static string Shell_TaskbarAlignment
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Shell_TaskbarAlignment") is string val && !string.IsNullOrEmpty(val))
+                    {
+                        return val;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read TaskbarAlignment Error: {ex.Message}");
+                }
+                return "Center";
+            }
+        }
+
         internal static string Shell_TaskbarPosition
         {
             get
@@ -52,23 +73,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                     Debug.WriteLine($"[Settings] Read TaskbarPosition Error: {ex.Message}");
                 }
                 return "Bottom";
-            }
-            set
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.CreateSubKey(@"Software\EvolveOS_Optimizer", true);
-                    if (key != null)
-                    {
-                        key.SetValue("Shell_TaskbarPosition", value, RegistryValueKind.String);
-                        key.Flush();
-                        Debug.WriteLine($"[Settings] SAVED TO: HKCU\\Software\\EvolveOS_Optimizer\\Shell_TaskbarPosition = {value}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] WRITE ERROR: {ex.Message}");
-                }
             }
         }
 
