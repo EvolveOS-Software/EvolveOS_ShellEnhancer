@@ -70,6 +70,26 @@ namespace EvolveOS_ShellEnhancer.Views
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 
+        [DllImport("shell32.dll", ExactSpelling = true)]
+        private static extern uint SHAppBarMessage(uint dwMessage, ref APPBARDATA pData);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct APPBARDATA
+        {
+            public uint cbSize;
+            public IntPtr hWnd;
+            public uint uCallbackMessage;
+            public uint uEdge;
+            public RECT rc;
+            public int lParam;
+        }
+
+        private const uint ABM_NEW = 0x0000;
+        private const uint ABM_REMOVE = 0x0001;
+        private const uint ABM_QUERYPOS = 0x0002;
+        private const uint ABM_SETPOS = 0x0003;
+        private const uint ABE_BOTTOM = 3;
+
         private const uint GW_OWNER = 4;
         private const uint WM_CLOSE = 0x0010;
         private const int GWL_EXSTYLE = -20;
@@ -102,6 +122,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private int _lastUnpinnedCount = -1;
 
+        private bool _isAppBarRegistered = false;
+
         private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
         {
             "SystemSettings",
@@ -131,6 +153,8 @@ namespace EvolveOS_ShellEnhancer.Views
             this.InitializeComponent();
 
             _hWnd = WindowNative.GetWindowHandle(this);
+            int exclude = 1;
+            Win32Helper.DwmSetWindowAttribute(_hWnd, Win32Helper.DWMWA_EXCLUDED_FROM_PEEK, ref exclude, sizeof(int));
             Microsoft.UI.WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
 
@@ -1036,7 +1060,10 @@ namespace EvolveOS_ShellEnhancer.Views
 
             var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
             int screenWidth = displayArea.OuterBounds.Width;
+            int screenHeight = displayArea.OuterBounds.Height;
             int taskbarHeight = 48;
+
+            int reservedBottomSpace = taskbarHeight;
 
             if (_currentStyle == "Floating")
             {
@@ -1049,6 +1076,8 @@ namespace EvolveOS_ShellEnhancer.Views
                 int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight - margin;
 
                 _appWindow.MoveAndResize(new RectInt32(x, y, floatingWidth, taskbarHeight));
+
+                reservedBottomSpace = taskbarHeight + (margin * 2);
             }
             else
             {
@@ -1059,7 +1088,29 @@ namespace EvolveOS_ShellEnhancer.Views
                 int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight;
 
                 _appWindow.MoveAndResize(new RectInt32(x, y, screenWidth, taskbarHeight));
+                reservedBottomSpace = taskbarHeight;
             }
+
+            if (!_isAppBarRegistered)
+            {
+                APPBARDATA abdNew = new APPBARDATA();
+                abdNew.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                abdNew.hWnd = _hWnd;
+                SHAppBarMessage(ABM_NEW, ref abdNew);
+                _isAppBarRegistered = true;
+            }
+
+            APPBARDATA abd = new APPBARDATA();
+            abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+            abd.hWnd = _hWnd;
+            abd.uEdge = ABE_BOTTOM;
+            abd.rc.Left = displayArea.OuterBounds.X;
+            abd.rc.Right = displayArea.OuterBounds.X + screenWidth;
+            abd.rc.Top = displayArea.OuterBounds.Y + screenHeight - reservedBottomSpace;
+            abd.rc.Bottom = displayArea.OuterBounds.Y + screenHeight;
+
+            SHAppBarMessage(ABM_QUERYPOS, ref abd);
+            SHAppBarMessage(ABM_SETPOS, ref abd);
 
             _appWindow.Show();
             TaskbarOverlayManager.EnsureTopmost(_hWnd);
@@ -1069,6 +1120,15 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             _appWindow.Hide();
             Win32Helper.ShowNativeTaskbar();
+
+            if (_isAppBarRegistered)
+            {
+                APPBARDATA abd = new APPBARDATA();
+                abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                abd.hWnd = _hWnd;
+                SHAppBarMessage(ABM_REMOVE, ref abd);
+                _isAppBarRegistered = false;
+            }
         }
         #endregion
 

@@ -30,6 +30,14 @@ namespace EvolveOS_ShellEnhancer.Views
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
 
+        [DllImport("dwmapi.dll", PreserveSig = true)]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
+        [DllImport("dwmapi.dll", EntryPoint = "#113")]
+        private static extern int DwmpActivateLivePreview(uint enable, IntPtr hWnd, IntPtr top, uint peekType);
+
+        private const int DWMWA_EXCLUDED_FROM_PEEK = 12;
+
         private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_NOSIZE = 0x0001;
@@ -52,6 +60,9 @@ namespace EvolveOS_ShellEnhancer.Views
         private const int ActionPanelHeight = 40;
         private const int SlotMargin = 10;
         private const int HighlightPaddingX = 5;
+
+        private DispatcherTimer _peekTimer;
+        private IntPtr _peekingHwnd = IntPtr.Zero;
         #endregion
 
         #region Constructor
@@ -74,6 +85,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
             this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
+            int exclude = 1;
+            DwmSetWindowAttribute(_hWnd, DWMWA_EXCLUDED_FROM_PEEK, ref exclude, sizeof(int));
+
             _rootStackPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -89,6 +103,18 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _hideTimer.Stop();
                 HidePreview();
+            };
+
+            _peekTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+            _peekTimer.Tick += (s, e) =>
+            {
+                _peekTimer.Stop();
+                if (_peekingHwnd != IntPtr.Zero)
+                {
+                    Win32Helper.DwmpActivateLivePreview(1, _peekingHwnd, _hWnd, 1);
+
+                    SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                }
             };
 
             _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
@@ -199,20 +225,43 @@ namespace EvolveOS_ShellEnhancer.Views
                     _hideTimer.Stop();
                     slotGrid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
 
-                    if (Win32Helper.IsIconic(targetHwnd)) Win32Helper.ShowWindow(targetHwnd, Win32Helper.SW_RESTORE);
-                    Win32Helper.SetForegroundWindow(targetHwnd);
+                    if (_peekingHwnd != IntPtr.Zero && _peekingHwnd != targetHwnd)
+                    {
+                        DwmpActivateLivePreview(0, _peekingHwnd, IntPtr.Zero, 1);
+                    }
+
+                    _peekingHwnd = targetHwnd;
+                    _peekTimer.Start();
+
                     SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
                 };
 
                 slotGrid.PointerExited += (s, e) =>
                 {
                     slotGrid.Background = new SolidColorBrush(Colors.Transparent);
+
+                    _peekTimer.Stop();
+
+                    if (_peekingHwnd != IntPtr.Zero)
+                    {
+                        DwmpActivateLivePreview(0, _peekingHwnd, IntPtr.Zero, 1);
+                        _peekingHwnd = IntPtr.Zero;
+                    }
+
                     StartHideTimer();
                 };
 
                 slotGrid.PointerReleased += (s, e) =>
                 {
                     try { slotGrid.ReleasePointerCaptures(); } catch { }
+
+                    _peekTimer.Stop();
+                    if (_peekingHwnd != IntPtr.Zero)
+                    {
+                        DwmpActivateLivePreview(0, _peekingHwnd, IntPtr.Zero, 1);
+                        _peekingHwnd = IntPtr.Zero;
+                    }
+
                     if (Win32Helper.IsIconic(targetHwnd)) Win32Helper.ShowWindow(targetHwnd, Win32Helper.SW_RESTORE);
                     Win32Helper.SetForegroundWindow(targetHwnd);
                     this.DispatcherQueue.TryEnqueue(() => ExecuteHide());
@@ -283,6 +332,13 @@ namespace EvolveOS_ShellEnhancer.Views
         private void ExecuteHide()
         {
             _hideTimer.Stop();
+            _peekTimer.Stop();
+
+            if (_peekingHwnd != IntPtr.Zero)
+            {
+                DwmpActivateLivePreview(0, _peekingHwnd, IntPtr.Zero, 1);
+                _peekingHwnd = IntPtr.Zero;
+            }
 
             foreach (var thumb in _thumbHandles)
             {

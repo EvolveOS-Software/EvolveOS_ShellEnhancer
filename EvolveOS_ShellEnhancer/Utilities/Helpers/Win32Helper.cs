@@ -21,8 +21,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll")]
         private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
-        [DllImport("dwmapi.dll")]
-        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+        [DllImport("dwmapi.dll", PreserveSig = true)]
+        public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -34,7 +34,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string className, string? windowTitle);
 
-        // ---- EXPOSED FOR PROCESS MANAGEMENT ----
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
@@ -44,7 +43,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsIconic(IntPtr hWnd);
-        // ----------------------------------------
 
         [DllImport("user32.dll")]
         private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
@@ -100,6 +98,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         [DllImport("user32.dll")]
         private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+
+        [DllImport("dwmapi.dll", EntryPoint = "#113")]
+        public static extern int DwmpActivateLivePreview(uint enable, IntPtr hWnd, IntPtr top, uint peekType);
 
         #endregion
 
@@ -205,6 +206,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         private const uint WM_CHANGEUISTATE = 0x0127;
         private const uint LWA_ALPHA = 0x2;
+
+        public const int DWMWA_EXCLUDED_FROM_PEEK = 12;
 
         #endregion
 
