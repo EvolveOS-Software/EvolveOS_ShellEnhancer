@@ -118,6 +118,10 @@ namespace EvolveOS_ShellEnhancer
                         CustomTaskbarWindow.UnpinnedDisplayMode = value;
                         _taskbarWindow?.ReloadTaskbar();
                         break;
+
+                    case "Taskbar_HoverAnimation":
+                        CustomTaskbarWindow.HoverAnimationStyle = value;
+                        break;
                 }
             });
         }

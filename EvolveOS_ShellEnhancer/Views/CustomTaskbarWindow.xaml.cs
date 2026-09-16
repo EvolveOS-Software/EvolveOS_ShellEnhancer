@@ -137,6 +137,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public static string PositionAnimationStyle = "Spring";
 
+        public static string HoverAnimationStyle = "Standard";
+
         private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
         {
             "SystemSettings",
@@ -1085,6 +1087,8 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 appCard.Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255));
 
+                FactoryAnimation.AnimateAppCardHoverEnter(appCard, HoverAnimationStyle);
+
                 if (_isTrackingDrag || string.IsNullOrEmpty(processName)) return;
 
                 var handles = GetAppWindowHandles(processName);
@@ -1110,6 +1114,8 @@ namespace EvolveOS_ShellEnhancer.Views
             appCard.PointerExited += (s, e) =>
             {
                 appCard.Background = new SolidColorBrush(Colors.Transparent);
+
+                FactoryAnimation.AnimateAppCardHoverExit(appCard, HoverAnimationStyle);
 
                 backIcon.Visibility = Visibility.Collapsed;
                 appIcon.Margin = new Thickness(0, 0, 0, 0);

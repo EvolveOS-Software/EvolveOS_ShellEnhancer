@@ -54,6 +54,110 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             visual.StartAnimation("Scale", springAnim);
         }
 
+        public static void AnimateAppCardHoverEnter(UIElement element, string style)
+        {
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var compositor = visual.Compositor;
+
+            // --- FIX: Explicitly enable the Translation facade so the engine doesn't crash ---
+            ElementCompositionPreview.SetIsTranslationEnabled(element, true);
+
+            // Set CenterPoint for proper scaling and rotation
+            visual.CenterPoint = new Vector3((float)(element.RenderSize.Width / 2), (float)(element.RenderSize.Height / 2), 0f);
+
+            switch (style)
+            {
+                case "Rise":
+                    var riseAnim = compositor.CreateSpringVector3Animation();
+                    riseAnim.Target = "Translation";
+                    riseAnim.FinalValue = new Vector3(0, -6f, 0); // Move up 6px
+                    riseAnim.DampingRatio = 0.6f;
+                    riseAnim.Period = TimeSpan.FromMilliseconds(50);
+                    visual.StartAnimation("Translation", riseAnim);
+                    break;
+
+                case "Grow":
+                    var growAnim = compositor.CreateSpringVector3Animation();
+                    growAnim.Target = "Scale";
+                    growAnim.FinalValue = new Vector3(1.15f, 1.15f, 1f); // 15% larger
+                    growAnim.DampingRatio = 0.6f;
+                    growAnim.Period = TimeSpan.FromMilliseconds(50);
+                    visual.StartAnimation("Scale", growAnim);
+                    break;
+
+                case "Tilt":
+                    var tiltAnim = compositor.CreateSpringScalarAnimation();
+                    tiltAnim.Target = "RotationAngleInDegrees";
+                    tiltAnim.FinalValue = 6f; // 6 degree tilt
+                    tiltAnim.DampingRatio = 0.5f;
+                    tiltAnim.Period = TimeSpan.FromMilliseconds(50);
+                    visual.StartAnimation("RotationAngleInDegrees", tiltAnim);
+                    break;
+
+                case "Breathing":
+                    var breathingAnim = compositor.CreateVector3KeyFrameAnimation();
+                    breathingAnim.Target = "Scale";
+                    breathingAnim.InsertKeyFrame(0f, new Vector3(1.0f, 1.0f, 1.0f));
+                    breathingAnim.InsertKeyFrame(0.5f, new Vector3(1.10f, 1.10f, 1.0f)); // Gently expand by 10%
+                    breathingAnim.InsertKeyFrame(1.0f, new Vector3(1.0f, 1.0f, 1.0f));
+                    breathingAnim.Duration = TimeSpan.FromMilliseconds(2000); // 2 seconds per full breath cycle
+                    breathingAnim.IterationBehavior = Microsoft.UI.Composition.AnimationIterationBehavior.Forever; // Loop continuously
+                    visual.StartAnimation("Scale", breathingAnim);
+                    break;
+
+                case "Wobble":
+                    var wobbleAnim = compositor.CreateScalarKeyFrameAnimation();
+                    wobbleAnim.Target = "RotationAngleInDegrees";
+                    wobbleAnim.InsertKeyFrame(0.25f, -6f);
+                    wobbleAnim.InsertKeyFrame(0.50f, 6f);
+                    wobbleAnim.InsertKeyFrame(0.75f, -3f);
+                    wobbleAnim.InsertKeyFrame(1.0f, 0f);
+                    wobbleAnim.Duration = TimeSpan.FromMilliseconds(400);
+                    visual.StartAnimation("RotationAngleInDegrees", wobbleAnim);
+                    break;
+
+                case "Standard":
+                default:
+                    // Standard relies solely on the background color change in CustomTaskbarWindow
+                    break;
+            }
+        }
+
+        public static void AnimateAppCardHoverExit(UIElement element, string style)
+        {
+            if (style == "Standard" || string.IsNullOrEmpty(style)) return;
+
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var compositor = visual.Compositor;
+
+            // --- FIX: Explicitly enable the Translation facade here too ---
+            ElementCompositionPreview.SetIsTranslationEnabled(element, true);
+
+            // Reset Scale
+            var scaleAnim = compositor.CreateSpringVector3Animation();
+            scaleAnim.Target = "Scale";
+            scaleAnim.FinalValue = new Vector3(1f, 1f, 1f);
+            scaleAnim.DampingRatio = 0.7f;
+            scaleAnim.Period = TimeSpan.FromMilliseconds(50);
+            visual.StartAnimation("Scale", scaleAnim);
+
+            // Reset Translation
+            var transAnim = compositor.CreateSpringVector3Animation();
+            transAnim.Target = "Translation";
+            transAnim.FinalValue = Vector3.Zero;
+            transAnim.DampingRatio = 0.7f;
+            transAnim.Period = TimeSpan.FromMilliseconds(50);
+            visual.StartAnimation("Translation", transAnim);
+
+            // Reset Rotation
+            var rotAnim = compositor.CreateSpringScalarAnimation();
+            rotAnim.Target = "RotationAngleInDegrees";
+            rotAnim.FinalValue = 0f;
+            rotAnim.DampingRatio = 0.7f;
+            rotAnim.Period = TimeSpan.FromMilliseconds(50);
+            visual.StartAnimation("RotationAngleInDegrees", rotAnim);
+        }
+
         public static void AnimateHorizontalSlide(UIElement element, double offsetX)
         {
             if (element.RenderTransform is not TranslateTransform transform)
