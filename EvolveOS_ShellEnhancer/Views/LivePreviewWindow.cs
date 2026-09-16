@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
+using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
 using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
@@ -75,7 +76,6 @@ namespace EvolveOS_ShellEnhancer.Views
         private DispatcherTimer _peekTimer;
         private IntPtr _peekingHwnd = IntPtr.Zero;
 
-        // NEW: Strict safety lock to prevent phantom "Turn Off" commands
         private bool _isPeekActive = false;
         #endregion
 
@@ -124,7 +124,6 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _peekTimer.Stop();
 
-                // ONLY trigger if the window didn't close during the 400ms wait
                 if (_peekingHwnd != IntPtr.Zero && IsWindow(_peekingHwnd))
                 {
                     SafeToggleAeroPeek(true, _peekingHwnd);
@@ -137,21 +136,21 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region Preview Methods
-        public void ShowPreviews(List<IntPtr> sourceHwnds, int buttonScreenX, int taskbarScreenY, int buttonWidth)
+        public void ShowPreviews(List<IntPtr> sourceHwnds, int cardScreenX, int cardScreenY, int cardWidth, int cardHeight)
         {
             Win32Helper.HideNativeTaskbar();
 
             if (this.DispatcherQueue.HasThreadAccess)
             {
-                ExecuteShow(sourceHwnds, buttonScreenX, taskbarScreenY, buttonWidth);
+                ExecuteShow(sourceHwnds, cardScreenX, cardScreenY, cardWidth, cardHeight);
             }
             else
             {
-                this.DispatcherQueue.TryEnqueue(() => ExecuteShow(sourceHwnds, buttonScreenX, taskbarScreenY, buttonWidth));
+                this.DispatcherQueue.TryEnqueue(() => ExecuteShow(sourceHwnds, cardScreenX, cardScreenY, cardWidth, cardHeight));
             }
         }
 
-        private void ExecuteShow(List<IntPtr> sourceHwnds, int buttonScreenX, int taskbarScreenY, int buttonWidth)
+        private void ExecuteShow(List<IntPtr> sourceHwnds, int cardScreenX, int cardScreenY, int cardWidth, int cardHeight)
         {
             _hideTimer.Stop();
 
@@ -167,15 +166,58 @@ namespace EvolveOS_ShellEnhancer.Views
 
             _currentSourceHwnds.AddRange(sourceHwnds);
 
+            string position = SettingsEngine.Shell_TaskbarPosition;
+            bool isVertical = (position == "Left" || position == "Right");
+
+            _rootStackPanel.Orientation = isVertical ? Orientation.Vertical : Orientation.Horizontal;
+
             int itemWidth = ThumbWidth + (HighlightPaddingX * 2);
             int itemHeight = ThumbHeight + ActionPanelHeight;
-            int totalWidth = SlotMargin + (sourceHwnds.Count * itemWidth) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
-            int totalHeight = SlotMargin + itemHeight + SlotMargin;
 
-            int x = buttonScreenX - (totalWidth / 2) + (buttonWidth / 2);
-            int y = taskbarScreenY - totalHeight - SlotMargin;
+            int totalWidth, totalHeight;
+            if (isVertical)
+            {
+                totalWidth = SlotMargin + itemWidth + SlotMargin;
+                totalHeight = SlotMargin + (sourceHwnds.Count * itemHeight) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
+            }
+            else
+            {
+                totalWidth = SlotMargin + (sourceHwnds.Count * itemWidth) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
+                totalHeight = SlotMargin + itemHeight + SlotMargin;
+            }
 
-            if (x < 10) x = 10;
+            int x, y;
+            var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+            int screenLeft = displayArea.OuterBounds.X;
+            int screenTop = displayArea.OuterBounds.Y;
+            int screenRight = screenLeft + displayArea.OuterBounds.Width;
+            int screenBottom = screenTop + displayArea.OuterBounds.Height;
+
+            switch (position)
+            {
+                case "Top":
+                    x = cardScreenX - (totalWidth / 2) + (cardWidth / 2);
+                    y = cardScreenY + cardHeight + SlotMargin;
+                    break;
+                case "Left":
+                    x = cardScreenX + cardWidth + SlotMargin;
+                    y = cardScreenY - (totalHeight / 2) + (cardHeight / 2);
+                    break;
+                case "Right":
+                    x = cardScreenX - totalWidth - SlotMargin;
+                    y = cardScreenY - (totalHeight / 2) + (cardHeight / 2);
+                    break;
+                case "Bottom":
+                default:
+                    x = cardScreenX - (totalWidth / 2) + (cardWidth / 2);
+                    y = cardScreenY - totalHeight - SlotMargin;
+                    break;
+            }
+
+            if (x < screenLeft + 10) x = screenLeft + 10;
+            if (x + totalWidth > screenRight - 10) x = screenRight - totalWidth - 10;
+            if (y < screenTop + 10) y = screenTop + 10;
+            if (y + totalHeight > screenBottom - 10) y = screenBottom - totalHeight - 10;
 
             _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, totalWidth, totalHeight));
             SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
@@ -248,8 +290,6 @@ namespace EvolveOS_ShellEnhancer.Views
 
                     _peekingHwnd = targetHwnd;
                     _peekTimer.Start();
-
-                    // CRITICAL FIX: Removed SetWindowPos from here to prevent racing DWM.
                 };
 
                 slotGrid.PointerExited += (s, e) =>
@@ -290,8 +330,17 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     _thumbHandles.Add(thumbHandle);
 
-                    int leftOffset = SlotMargin + (i * (itemWidth + SlotMargin)) + HighlightPaddingX;
-                    int topOffset = SlotMargin + 24;
+                    int leftOffset, topOffset;
+                    if (isVertical)
+                    {
+                        leftOffset = SlotMargin + HighlightPaddingX;
+                        topOffset = SlotMargin + (i * (itemHeight + SlotMargin)) + 24;
+                    }
+                    else
+                    {
+                        leftOffset = SlotMargin + (i * (itemWidth + SlotMargin)) + HighlightPaddingX;
+                        topOffset = SlotMargin + 24;
+                    }
 
                     Win32Helper.DWM_THUMBNAIL_PROPERTIES props = new Win32Helper.DWM_THUMBNAIL_PROPERTIES
                     {
@@ -320,17 +369,14 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     if (targetHwnd == IntPtr.Zero || !IsWindow(targetHwnd)) return;
 
-                    // FIX: Elevate Z-order BEFORE touching DWM to prevent composition faults
                     SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
                     DwmpActivateLivePreview(1, targetHwnd, _hWnd, 1);
                     _isPeekActive = true;
                 }
                 else
                 {
-                    // FIX: Only turn off if we actually turned it on. Prevents "Phantom Disable" crashes.
                     if (_isPeekActive)
                     {
-                        // FIX: If the app was closed (dead handle), pass IntPtr.Zero so dwmapi doesn't fault
                         IntPtr safeHandle = IsWindow(targetHwnd) ? targetHwnd : IntPtr.Zero;
                         DwmpActivateLivePreview(0, safeHandle, IntPtr.Zero, 1);
                         _isPeekActive = false;
@@ -388,7 +434,6 @@ namespace EvolveOS_ShellEnhancer.Views
             }
             else if (_isPeekActive)
             {
-                // Failsafe in case _peekingHwnd was cleared but DWM is still running
                 SafeToggleAeroPeek(false, IntPtr.Zero);
             }
 

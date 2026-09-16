@@ -1042,10 +1042,10 @@ namespace EvolveOS_ShellEnhancer.Views
                     var transform = appCard.TransformToVisual(null);
                     var localPoint = transform.TransformPoint(new Point(0, 0));
 
-                    int btnScreenX = _appWindow.Position.X + (int)localPoint.X;
-                    int taskbarScreenY = _appWindow.Position.Y;
+                    int cardScreenX = _appWindow.Position.X + (int)localPoint.X;
+                    int cardScreenY = _appWindow.Position.Y + (int)localPoint.Y;
 
-                    _previewWindow.ShowPreviews(handles, btnScreenX, taskbarScreenY, (int)appCard.Width);
+                    _previewWindow.ShowPreviews(handles, cardScreenX, cardScreenY, (int)appCard.Width, (int)appCard.Height);
                 }
             };
 
