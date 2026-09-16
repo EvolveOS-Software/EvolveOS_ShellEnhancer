@@ -31,11 +31,21 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string className, string? windowTitle);
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
         [DllImport("user32.dll")]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -60,9 +70,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
-
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool GetCursorPos(out POINT lpPoint);
@@ -76,9 +83,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         [DllImport("user32.dll")]
-        private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
-
-        [DllImport("user32.dll")]
         private static extern IntPtr SetFocus(IntPtr hWnd);
 
         [DllImport("user32.dll")]
@@ -86,8 +90,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-        public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -241,41 +243,60 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref preference, sizeof(int));
         }
 
+        private static void ForceGhostWindow(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero) return;
+
+            ShowWindow(hWnd, SW_HIDE);
+
+            int exStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+            SetWindowLong(hWnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+            SetLayeredWindowAttributes(hWnd, 0, 0, LWA_ALPHA);
+        }
+
+        private static void ForceRestoreWindow(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero) return;
+
+            int exStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
+            SetWindowLong(hWnd, GWL_EXSTYLE, exStyle & ~WS_EX_TRANSPARENT);
+            SetLayeredWindowAttributes(hWnd, 0, 255, LWA_ALPHA);
+
+            ShowWindow(hWnd, SW_SHOW);
+        }
+
         public static void HideNativeTaskbar()
         {
-            IntPtr trayWnd = FindWindow("Shell_TrayWnd", null);
-            if (trayWnd != IntPtr.Zero) ShowWindow(trayWnd, SW_HIDE);
+            ForceGhostWindow(FindWindow("Shell_TrayWnd", null));
 
-            IntPtr secondaryTray = IntPtr.Zero;
-            while ((secondaryTray = FindWindowEx(IntPtr.Zero, secondaryTray, "Shell_SecondaryTrayWnd", null)) != IntPtr.Zero)
+            EnumWindows((hWnd, lParam) =>
             {
-                ShowWindow(secondaryTray, SW_HIDE);
-            }
+                StringBuilder sb = new StringBuilder(256);
+                GetClassName(hWnd, sb, sb.Capacity);
+
+                if (sb.ToString() == "Shell_SecondaryTrayWnd")
+                {
+                    ForceGhostWindow(hWnd);
+                }
+                return true;
+            }, IntPtr.Zero);
         }
 
         public static void ShowNativeTaskbar()
         {
-            IntPtr trayWnd = FindWindow("Shell_TrayWnd", null);
-            if (trayWnd != IntPtr.Zero)
-            {
-                int style = GetWindowLong(trayWnd, GWL_EXSTYLE);
-                style &= ~WS_EX_TRANSPARENT;
-                style &= ~WS_EX_LAYERED;
-                SetWindowLong(trayWnd, GWL_EXSTYLE, style);
-                SetLayeredWindowAttributes(trayWnd, 0, 255, LWA_ALPHA);
-                ShowWindow(trayWnd, SW_SHOW);
-            }
+            ForceRestoreWindow(FindWindow("Shell_TrayWnd", null));
 
-            IntPtr secondaryTray = IntPtr.Zero;
-            while ((secondaryTray = FindWindowEx(IntPtr.Zero, secondaryTray, "Shell_SecondaryTrayWnd", null)) != IntPtr.Zero)
+            EnumWindows((hWnd, lParam) =>
             {
-                int style = GetWindowLong(secondaryTray, GWL_EXSTYLE);
-                style &= ~WS_EX_TRANSPARENT;
-                style &= ~WS_EX_LAYERED;
-                SetWindowLong(secondaryTray, GWL_EXSTYLE, style);
-                SetLayeredWindowAttributes(secondaryTray, 0, 255, LWA_ALPHA);
-                ShowWindow(secondaryTray, SW_SHOW);
-            }
+                StringBuilder sb = new StringBuilder(256);
+                GetClassName(hWnd, sb, sb.Capacity);
+
+                if (sb.ToString() == "Shell_SecondaryTrayWnd")
+                {
+                    ForceRestoreWindow(hWnd);
+                }
+                return true;
+            }, IntPtr.Zero);
         }
 
         public static void PreventFocusStealing(IntPtr hWnd)

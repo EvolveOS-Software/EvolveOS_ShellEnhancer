@@ -125,6 +125,9 @@ namespace EvolveOS_ShellEnhancer.Views
         #region Preview Methods
         public void ShowPreviews(List<IntPtr> sourceHwnds, int buttonScreenX, int taskbarScreenY, int buttonWidth)
         {
+            // Ensure native taskbars (including secondary screens) are safely ghosted out when previews open
+            Win32Helper.HideNativeTaskbar();
+
             if (this.DispatcherQueue.HasThreadAccess)
             {
                 ExecuteShow(sourceHwnds, buttonScreenX, taskbarScreenY, buttonWidth);
