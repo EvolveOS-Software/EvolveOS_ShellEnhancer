@@ -54,6 +54,9 @@ namespace EvolveOS_ShellEnhancer.Views
         [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
 
@@ -254,15 +257,25 @@ namespace EvolveOS_ShellEnhancer.Views
         private List<IntPtr> GetAppWindowHandles(string processName)
         {
             List<IntPtr> handles = new List<IntPtr>();
+
+            if (string.IsNullOrWhiteSpace(processName)) return handles;
+
             string norm = NormalizeProcessName(processName);
+            if (string.IsNullOrWhiteSpace(norm)) return handles;
+
             bool isExplorer = norm.Equals("explorer", StringComparison.OrdinalIgnoreCase);
 
             HashSet<uint> targetPids = new HashSet<uint>();
-            if (!isExplorer)
+
+            try
             {
-                var procs = Process.GetProcessesByName(norm);
-                foreach (var p in procs) targetPids.Add((uint)p.Id);
+                if (!isExplorer)
+                {
+                    var procs = Process.GetProcessesByName(norm);
+                    foreach (var p in procs) targetPids.Add((uint)p.Id);
+                }
             }
+            catch { return handles; }
 
             EnumWindows((hWnd, lParam) =>
             {
@@ -407,14 +420,21 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void BtnStart_Click(object sender, RoutedEventArgs e)
         {
-            if ((DateTime.Now - App.LastStartMenuCloseTime).TotalMilliseconds < 250)
+            try
             {
-                return;
-            }
+                if ((DateTime.Now - App.LastStartMenuCloseTime).TotalMilliseconds < 250)
+                {
+                    return;
+                }
 
-            if (Application.Current is App currentApp)
+                if (Application.Current is App currentApp)
+                {
+                    currentApp.ToggleStartMenu();
+                }
+            }
+            catch (Exception ex)
             {
-                currentApp.ToggleStartMenu();
+                Debug.WriteLine($"Start Menu Click Error: {ex.Message}");
             }
         }
 
@@ -425,24 +445,31 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private async void TaskbarBorder_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
-            if (ShowUnpinnedApps && UnpinnedDisplayMode.Equals("Scroll", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                var delta = e.GetCurrentPoint(TaskbarBorder).Properties.MouseWheelDelta;
-                if (delta != 0)
+                if (ShowUnpinnedApps && UnpinnedDisplayMode.Equals("Scroll", StringComparison.OrdinalIgnoreCase))
                 {
-                    _showingAllRunningView = !_showingAllRunningView;
+                    var delta = e.GetCurrentPoint(TaskbarBorder).Properties.MouseWheelDelta;
+                    if (delta != 0)
+                    {
+                        _showingAllRunningView = !_showingAllRunningView;
 
-                    bool isScrollingUp = delta > 0;
+                        bool isScrollingUp = delta > 0;
 
-                    await FactoryAnimation.PlayScrollTransitionAsync(
-                        this.Content as UIElement,
-                        CenterPanel,
-                        LeftPanel,
-                        PinnedAppsPanel,
-                        async () => { await LoadPinnedAppsAsync(); },
-                        isScrollingUp
-                    );
+                        await FactoryAnimation.PlayScrollTransitionAsync(
+                            this.Content as UIElement,
+                            CenterPanel,
+                            LeftPanel,
+                            PinnedAppsPanel,
+                            async () => { await LoadPinnedAppsAsync(); },
+                            isScrollingUp
+                        );
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Wheel Transition Error: {ex.Message}");
             }
         }
 
@@ -457,54 +484,61 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public void SetAlignment(string alignment)
         {
-            bool isMoving = false;
-            Point btnPointBefore = default;
-            Point panelPointBefore = default;
-            UIElement rootElement = this.Content as UIElement;
-
-            if (BtnStart.Parent is Panel startParentOld)
+            try
             {
-                isMoving = (alignment == "Center" && startParentOld != CenterPanel) ||
-                           (alignment != "Center" && startParentOld != LeftPanel);
+                bool isMoving = false;
+                Point btnPointBefore = default;
+                Point panelPointBefore = default;
+                UIElement rootElement = this.Content as UIElement;
+
+                if (BtnStart.Parent is Panel startParentOld)
+                {
+                    isMoving = (alignment == "Center" && startParentOld != CenterPanel) ||
+                               (alignment != "Center" && startParentOld != LeftPanel);
+
+                    if (isMoving && rootElement != null)
+                    {
+                        btnPointBefore = BtnStart.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+                        panelPointBefore = PinnedAppsPanel.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+                    }
+                }
+
+                if (BtnStart.Parent is Panel startParent) startParent.Children.Remove(BtnStart);
+                if (PinnedAppsPanel.Parent is Panel pinnedParent) pinnedParent.Children.Remove(PinnedAppsPanel);
+
+                if (alignment == "Left")
+                {
+                    LeftPanel.Children.Insert(0, BtnStart);
+                    LeftPanel.Children.Add(PinnedAppsPanel);
+                    Win32Helper.SetNativeStartMenuAlignment(true);
+                }
+                else if (alignment == "Center")
+                {
+                    CenterPanel.Children.Insert(0, BtnStart);
+                    CenterPanel.Children.Add(PinnedAppsPanel);
+                    Win32Helper.SetNativeStartMenuAlignment(false);
+                }
+                else
+                {
+                    LeftPanel.Children.Insert(0, BtnStart);
+                    CenterPanel.Children.Add(PinnedAppsPanel);
+                    Win32Helper.SetNativeStartMenuAlignment(true);
+                }
 
                 if (isMoving && rootElement != null)
                 {
-                    btnPointBefore = BtnStart.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
-                    panelPointBefore = PinnedAppsPanel.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+                    rootElement.UpdateLayout();
+
+                    var btnPointAfter = BtnStart.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+                    var panelPointAfter = PinnedAppsPanel.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
+
+                    FactoryAnimation.AnimateHorizontalSlide(BtnStart, (float)(btnPointBefore.X - btnPointAfter.X));
+                    FactoryAnimation.AnimateHorizontalSlide(PinnedAppsPanel, (float)(panelPointBefore.X - panelPointAfter.X));
                 }
             }
-
-            if (BtnStart.Parent is Panel startParent) startParent.Children.Remove(BtnStart);
-            if (PinnedAppsPanel.Parent is Panel pinnedParent) pinnedParent.Children.Remove(PinnedAppsPanel);
-
-            if (alignment == "Left")
+            catch (Exception ex)
             {
-                LeftPanel.Children.Insert(0, BtnStart);
-                LeftPanel.Children.Add(PinnedAppsPanel);
-                Win32Helper.SetNativeStartMenuAlignment(true);
-            }
-            else if (alignment == "Center")
-            {
-                CenterPanel.Children.Insert(0, BtnStart);
-                CenterPanel.Children.Add(PinnedAppsPanel);
-                Win32Helper.SetNativeStartMenuAlignment(false);
-            }
-            else
-            {
-                LeftPanel.Children.Insert(0, BtnStart);
-                CenterPanel.Children.Add(PinnedAppsPanel);
-                Win32Helper.SetNativeStartMenuAlignment(true);
-            }
-
-            if (isMoving && rootElement != null)
-            {
-                rootElement.UpdateLayout();
-
-                var btnPointAfter = BtnStart.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
-                var panelPointAfter = PinnedAppsPanel.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
-
-                FactoryAnimation.AnimateHorizontalSlide(BtnStart, (float)(btnPointBefore.X - btnPointAfter.X));
-                FactoryAnimation.AnimateHorizontalSlide(PinnedAppsPanel, (float)(panelPointBefore.X - panelPointAfter.X));
+                Debug.WriteLine($"SetAlignment Error: {ex.Message}");
             }
         }
         #endregion
@@ -513,19 +547,25 @@ namespace EvolveOS_ShellEnhancer.Views
         public static List<string> GetPinnedTaskbarApps()
         {
             List<string> pinnedApps = new List<string>();
-
-            string taskbarPath = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
-            );
-
-            if (Directory.Exists(taskbarPath))
+            try
             {
-                string[] shortcuts = Directory.GetFiles(taskbarPath, "*.lnk");
-                foreach (string shortcut in shortcuts)
+                string taskbarPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
+                );
+
+                if (Directory.Exists(taskbarPath))
                 {
-                    pinnedApps.Add(shortcut);
+                    string[] shortcuts = Directory.GetFiles(taskbarPath, "*.lnk");
+                    foreach (string shortcut in shortcuts)
+                    {
+                        pinnedApps.Add(shortcut);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to load shortcuts: {ex.Message}");
             }
 
             return pinnedApps;
@@ -583,6 +623,10 @@ namespace EvolveOS_ShellEnhancer.Views
                     _reloadRequested = false;
                     await LoadPinnedAppsInternalAsync();
                 } while (_reloadRequested);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"LoadPinnedAppsAsync Faulted: {ex.Message}");
             }
             finally
             {
@@ -768,7 +812,8 @@ namespace EvolveOS_ShellEnhancer.Views
             closeItem.Click += (s, e) =>
             {
                 var handles = GetAppWindowHandles(processName);
-                foreach (var h in handles) { SendMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero); }
+
+                foreach (var h in handles) { PostMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero); }
             };
 
             contextFlyout.Items.Add(closeItem);
@@ -993,7 +1038,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     try
                     {
                         string explorerPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\explorer.exe");
-                        var icon = System.Drawing.Icon.ExtractAssociatedIcon(explorerPath);
+                        using var icon = System.Drawing.Icon.ExtractAssociatedIcon(explorerPath);
                         if (icon != null)
                         {
                             using var bmp = icon.ToBitmap();
@@ -1022,7 +1067,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     try
                     {
-                        var icon = System.Drawing.Icon.ExtractAssociatedIcon(targetExe);
+                        using var icon = System.Drawing.Icon.ExtractAssociatedIcon(targetExe);
                         if (icon != null)
                         {
                             using var bmp = icon.ToBitmap();
@@ -1056,64 +1101,74 @@ namespace EvolveOS_ShellEnhancer.Views
         #region Dock Visibility
         public void ShowDock()
         {
-            Win32Helper.HideNativeTaskbar();
-
-            var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
-            int screenWidth = displayArea.OuterBounds.Width;
-            int screenHeight = displayArea.OuterBounds.Height;
-            int taskbarHeight = 48;
-
-            int reservedBottomSpace = taskbarHeight;
-
-            if (_currentStyle == "Floating")
+            try
             {
-                Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
-                TaskbarBorder.CornerRadius = new CornerRadius(4);
+                Win32Helper.HideNativeTaskbar();
 
-                int margin = 5;
-                int floatingWidth = screenWidth - (margin * 2);
-                int x = displayArea.OuterBounds.X + margin;
-                int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight - margin;
+                var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+                int screenWidth = displayArea.OuterBounds.Width;
+                int screenHeight = displayArea.OuterBounds.Height;
+                int taskbarHeight = 48;
 
-                _appWindow.MoveAndResize(new RectInt32(x, y, floatingWidth, taskbarHeight));
+                int reservedBottomSpace = taskbarHeight;
 
-                reservedBottomSpace = taskbarHeight + (margin * 2);
+                if (_currentStyle == "Floating")
+                {
+                    Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
+                    TaskbarBorder.CornerRadius = new CornerRadius(4);
+
+                    int margin = 5;
+
+                    int floatingWidth = screenWidth - (margin * 2);
+                    if (floatingWidth < 10) floatingWidth = 10;
+
+                    int x = displayArea.OuterBounds.X + margin;
+                    int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight - margin;
+
+                    _appWindow.MoveAndResize(new RectInt32(x, y, floatingWidth, taskbarHeight));
+
+                    reservedBottomSpace = taskbarHeight + (margin * 2);
+                }
+                else
+                {
+                    Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_DONOTROUND);
+                    TaskbarBorder.CornerRadius = new CornerRadius(0);
+
+                    int x = displayArea.OuterBounds.X;
+                    int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight;
+
+                    _appWindow.MoveAndResize(new RectInt32(x, y, screenWidth, taskbarHeight));
+                    reservedBottomSpace = taskbarHeight;
+                }
+
+                if (!_isAppBarRegistered)
+                {
+                    APPBARDATA abdNew = new APPBARDATA();
+                    abdNew.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                    abdNew.hWnd = _hWnd;
+                    SHAppBarMessage(ABM_NEW, ref abdNew);
+                    _isAppBarRegistered = true;
+                }
+
+                APPBARDATA abd = new APPBARDATA();
+                abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                abd.hWnd = _hWnd;
+                abd.uEdge = ABE_BOTTOM;
+                abd.rc.Left = displayArea.OuterBounds.X;
+                abd.rc.Right = displayArea.OuterBounds.X + screenWidth;
+                abd.rc.Top = displayArea.OuterBounds.Y + screenHeight - reservedBottomSpace;
+                abd.rc.Bottom = displayArea.OuterBounds.Y + screenHeight;
+
+                SHAppBarMessage(ABM_QUERYPOS, ref abd);
+                SHAppBarMessage(ABM_SETPOS, ref abd);
+
+                _appWindow.Show();
+                TaskbarOverlayManager.EnsureTopmost(_hWnd);
             }
-            else
+            catch (Exception ex)
             {
-                Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_DONOTROUND);
-                TaskbarBorder.CornerRadius = new CornerRadius(0);
-
-                int x = displayArea.OuterBounds.X;
-                int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight;
-
-                _appWindow.MoveAndResize(new RectInt32(x, y, screenWidth, taskbarHeight));
-                reservedBottomSpace = taskbarHeight;
+                Debug.WriteLine($"ShowDock error: {ex.Message}");
             }
-
-            if (!_isAppBarRegistered)
-            {
-                APPBARDATA abdNew = new APPBARDATA();
-                abdNew.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
-                abdNew.hWnd = _hWnd;
-                SHAppBarMessage(ABM_NEW, ref abdNew);
-                _isAppBarRegistered = true;
-            }
-
-            APPBARDATA abd = new APPBARDATA();
-            abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
-            abd.hWnd = _hWnd;
-            abd.uEdge = ABE_BOTTOM;
-            abd.rc.Left = displayArea.OuterBounds.X;
-            abd.rc.Right = displayArea.OuterBounds.X + screenWidth;
-            abd.rc.Top = displayArea.OuterBounds.Y + screenHeight - reservedBottomSpace;
-            abd.rc.Bottom = displayArea.OuterBounds.Y + screenHeight;
-
-            SHAppBarMessage(ABM_QUERYPOS, ref abd);
-            SHAppBarMessage(ABM_SETPOS, ref abd);
-
-            _appWindow.Show();
-            TaskbarOverlayManager.EnsureTopmost(_hWnd);
         }
 
         public void HideDock()
@@ -1135,8 +1190,15 @@ namespace EvolveOS_ShellEnhancer.Views
         #region Functionality Handlers
         private void ClockTimer_Tick(object? sender, object e)
         {
-            UpdateClock();
-            UpdateAppIndicators();
+            try
+            {
+                UpdateClock();
+                UpdateAppIndicators();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ClockTimer Critical Error Ignored: {ex.Message}");
+            }
         }
 
         private void UpdateClock()
@@ -1147,17 +1209,17 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private async void BtnClock_Click(object sender, RoutedEventArgs e)
         {
-            await Win32Helper.ToggleCalendarAsync();
+            try { await Win32Helper.ToggleCalendarAsync(); } catch { }
         }
 
         private async void BtnQuickSettings_Click(object sender, RoutedEventArgs e)
         {
-            await Win32Helper.ToggleQuickSettingsAsync();
+            try { await Win32Helper.ToggleQuickSettingsAsync(); } catch { }
         }
 
         private async void BtnTrayOverflow_Click(object sender, RoutedEventArgs e)
         {
-            await Win32Helper.OpenTrayOverflowAsync();
+            try { await Win32Helper.OpenTrayOverflowAsync(); } catch { }
         }
         #endregion
     }

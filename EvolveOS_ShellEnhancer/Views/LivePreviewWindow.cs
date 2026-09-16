@@ -3,6 +3,7 @@
 
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using Microsoft.UI;
+using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -22,6 +23,9 @@ namespace EvolveOS_ShellEnhancer.Views
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll", SetLastError = true)]
@@ -29,6 +33,10 @@ namespace EvolveOS_ShellEnhancer.Views
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsWindow(IntPtr hWnd);
 
         [DllImport("dwmapi.dll", PreserveSig = true)]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
@@ -61,8 +69,14 @@ namespace EvolveOS_ShellEnhancer.Views
         private const int SlotMargin = 10;
         private const int HighlightPaddingX = 5;
 
+        private readonly SolidColorBrush _hoverBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
+        private readonly SolidColorBrush _transparentBrush = new SolidColorBrush(Colors.Transparent);
+
         private DispatcherTimer _peekTimer;
         private IntPtr _peekingHwnd = IntPtr.Zero;
+
+        // NEW: Strict safety lock to prevent phantom "Turn Off" commands
+        private bool _isPeekActive = false;
         #endregion
 
         #region Constructor
@@ -91,7 +105,7 @@ namespace EvolveOS_ShellEnhancer.Views
             _rootStackPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Background = new SolidColorBrush(Colors.Transparent),
+                Background = _transparentBrush,
                 Padding = new Thickness(SlotMargin),
                 Spacing = SlotMargin
             };
@@ -109,11 +123,11 @@ namespace EvolveOS_ShellEnhancer.Views
             _peekTimer.Tick += (s, e) =>
             {
                 _peekTimer.Stop();
-                if (_peekingHwnd != IntPtr.Zero)
-                {
-                    Win32Helper.DwmpActivateLivePreview(1, _peekingHwnd, _hWnd, 1);
 
-                    SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                // ONLY trigger if the window didn't close during the 400ms wait
+                if (_peekingHwnd != IntPtr.Zero && IsWindow(_peekingHwnd))
+                {
+                    SafeToggleAeroPeek(true, _peekingHwnd);
                 }
             };
 
@@ -125,7 +139,6 @@ namespace EvolveOS_ShellEnhancer.Views
         #region Preview Methods
         public void ShowPreviews(List<IntPtr> sourceHwnds, int buttonScreenX, int taskbarScreenY, int buttonWidth)
         {
-            // Ensure native taskbars (including secondary screens) are safely ghosted out when previews open
             Win32Helper.HideNativeTaskbar();
 
             if (this.DispatcherQueue.HasThreadAccess)
@@ -178,7 +191,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     Width = itemWidth,
                     Height = itemHeight,
                     CornerRadius = new CornerRadius(8),
-                    Background = new SolidColorBrush(Colors.Transparent)
+                    Background = _transparentBrush
                 };
 
                 System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
@@ -190,7 +203,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     Text = windowTitle,
                     FontSize = 12,
-                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    FontWeight = FontWeights.SemiBold,
                     Foreground = new SolidColorBrush(Colors.White),
                     HorizontalAlignment = HorizontalAlignment.Left,
                     VerticalAlignment = VerticalAlignment.Top,
@@ -226,28 +239,28 @@ namespace EvolveOS_ShellEnhancer.Views
                 slotGrid.PointerEntered += (s, e) =>
                 {
                     _hideTimer.Stop();
-                    slotGrid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
+                    slotGrid.Background = _hoverBrush;
 
                     if (_peekingHwnd != IntPtr.Zero && _peekingHwnd != targetHwnd)
                     {
-                        DwmpActivateLivePreview(0, _peekingHwnd, IntPtr.Zero, 1);
+                        SafeToggleAeroPeek(false, _peekingHwnd);
                     }
 
                     _peekingHwnd = targetHwnd;
                     _peekTimer.Start();
 
-                    SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                    // CRITICAL FIX: Removed SetWindowPos from here to prevent racing DWM.
                 };
 
                 slotGrid.PointerExited += (s, e) =>
                 {
-                    slotGrid.Background = new SolidColorBrush(Colors.Transparent);
+                    slotGrid.Background = _transparentBrush;
 
                     _peekTimer.Stop();
 
                     if (_peekingHwnd != IntPtr.Zero)
                     {
-                        DwmpActivateLivePreview(0, _peekingHwnd, IntPtr.Zero, 1);
+                        SafeToggleAeroPeek(false, _peekingHwnd);
                         _peekingHwnd = IntPtr.Zero;
                     }
 
@@ -261,7 +274,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     _peekTimer.Stop();
                     if (_peekingHwnd != IntPtr.Zero)
                     {
-                        DwmpActivateLivePreview(0, _peekingHwnd, IntPtr.Zero, 1);
+                        SafeToggleAeroPeek(false, _peekingHwnd);
                         _peekingHwnd = IntPtr.Zero;
                     }
 
@@ -299,9 +312,40 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        private void SafeToggleAeroPeek(bool enable, IntPtr targetHwnd)
+        {
+            try
+            {
+                if (enable)
+                {
+                    if (targetHwnd == IntPtr.Zero || !IsWindow(targetHwnd)) return;
+
+                    // FIX: Elevate Z-order BEFORE touching DWM to prevent composition faults
+                    SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                    DwmpActivateLivePreview(1, targetHwnd, _hWnd, 1);
+                    _isPeekActive = true;
+                }
+                else
+                {
+                    // FIX: Only turn off if we actually turned it on. Prevents "Phantom Disable" crashes.
+                    if (_isPeekActive)
+                    {
+                        // FIX: If the app was closed (dead handle), pass IntPtr.Zero so dwmapi doesn't fault
+                        IntPtr safeHandle = IsWindow(targetHwnd) ? targetHwnd : IntPtr.Zero;
+                        DwmpActivateLivePreview(0, safeHandle, IntPtr.Zero, 1);
+                        _isPeekActive = false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"SafeToggleAeroPeek intercepted a DWM fault: {ex.Message}");
+            }
+        }
+
         private void CloseWindow(IntPtr handle)
         {
-            SendMessage(handle, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+            PostMessage(handle, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
             ExecuteHide();
         }
 
@@ -339,8 +383,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (_peekingHwnd != IntPtr.Zero)
             {
-                DwmpActivateLivePreview(0, _peekingHwnd, IntPtr.Zero, 1);
+                SafeToggleAeroPeek(false, _peekingHwnd);
                 _peekingHwnd = IntPtr.Zero;
+            }
+            else if (_isPeekActive)
+            {
+                // Failsafe in case _peekingHwnd was cleared but DWM is still running
+                SafeToggleAeroPeek(false, IntPtr.Zero);
             }
 
             foreach (var thumb in _thumbHandles)
