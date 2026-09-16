@@ -105,6 +105,8 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             _appWindow.Hide();
             _isVisible = false;
+
+            App.LastStartMenuCloseTime = DateTime.Now;
         }
 
         public void SetStyle(string style)

@@ -159,9 +159,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (BtnStart != null)
             {
-                BtnStart.PointerPressed += FactoryAnimation.StartButton_PointerPressed;
-                BtnStart.PointerReleased += FactoryAnimation.StartButton_PointerReleased;
-                BtnStart.PointerCanceled += FactoryAnimation.StartButton_PointerReleased;
+                BtnStart.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(FactoryAnimation.StartButton_PointerPressed), true);
+                BtnStart.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(FactoryAnimation.StartButton_PointerReleased), true);
+                BtnStart.AddHandler(UIElement.PointerCanceledEvent, new PointerEventHandler(FactoryAnimation.StartButton_PointerReleased), true);
             }
 
             _ = LoadPinnedAppsAsync();
@@ -379,8 +379,15 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region UI Layout & Styling Handlers
+        private DateTime _lastStartButtonClick = DateTime.MinValue;
+
         private void BtnStart_Click(object sender, RoutedEventArgs e)
         {
+            if ((DateTime.Now - App.LastStartMenuCloseTime).TotalMilliseconds < 250)
+            {
+                return;
+            }
+
             if (Application.Current is App currentApp)
             {
                 currentApp.ToggleStartMenu();

@@ -6,6 +6,7 @@ using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using EvolveOS_ShellEnhancer.Views;
 using Microsoft.UI.Xaml;
+using System;
 
 namespace EvolveOS_ShellEnhancer
 {
@@ -16,6 +17,8 @@ namespace EvolveOS_ShellEnhancer
 
         private bool _isStartMenuEnabled = false;
         private bool _isTaskbarEnabled = false;
+
+        public static DateTime LastStartMenuCloseTime = DateTime.MinValue;
 
         public App()
         {
