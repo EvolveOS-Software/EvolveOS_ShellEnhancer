@@ -122,6 +122,10 @@ namespace EvolveOS_ShellEnhancer
                     case "Taskbar_HoverAnimation":
                         CustomTaskbarWindow.HoverAnimationStyle = value;
                         break;
+
+                    case "Taskbar_HoverBackground":
+                        CustomTaskbarWindow.ShowHoverBackground = bool.Parse(value);
+                        break;
                 }
             });
         }

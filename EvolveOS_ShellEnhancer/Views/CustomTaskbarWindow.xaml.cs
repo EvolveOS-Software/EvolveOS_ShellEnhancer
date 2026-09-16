@@ -139,6 +139,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public static string HoverAnimationStyle = "Standard";
 
+        public static bool ShowHoverBackground = true;
+
         private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
         {
             "SystemSettings",
@@ -1085,7 +1087,10 @@ namespace EvolveOS_ShellEnhancer.Views
 
             appCard.PointerEntered += (s, e) =>
             {
-                appCard.Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255));
+                if (ShowHoverBackground)
+                {
+                    appCard.Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255));
+                }
 
                 FactoryAnimation.AnimateAppCardHoverEnter(appCard, HoverAnimationStyle);
 
