@@ -91,6 +91,10 @@ namespace EvolveOS_ShellEnhancer.Views
         private const uint ABM_REMOVE = 0x0001;
         private const uint ABM_QUERYPOS = 0x0002;
         private const uint ABM_SETPOS = 0x0003;
+
+        private const uint ABE_LEFT = 0;
+        private const uint ABE_TOP = 1;
+        private const uint ABE_RIGHT = 2;
         private const uint ABE_BOTTOM = 3;
 
         private const uint GW_OWNER = 4;
@@ -104,6 +108,9 @@ namespace EvolveOS_ShellEnhancer.Views
         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
         private string _currentStyle = "Standard";
+
+        private string _currentPosition = "Bottom";
+
         private DispatcherTimer _clockTimer;
 
         private readonly LivePreviewWindow _previewWindow;
@@ -126,6 +133,8 @@ namespace EvolveOS_ShellEnhancer.Views
         private int _lastUnpinnedCount = -1;
 
         private bool _isAppBarRegistered = false;
+
+        public static string PositionAnimationStyle = "Spring";
 
         private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -482,6 +491,143 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        public void SetPosition(string position)
+        {
+            _currentPosition = position;
+            try
+            {
+                bool isVertical = (position == "Left" || position == "Right");
+                Orientation orientation = isVertical ? Orientation.Vertical : Orientation.Horizontal;
+
+                if (LeftPanel != null) LeftPanel.Orientation = orientation;
+                if (CenterPanel != null) CenterPanel.Orientation = orientation;
+                if (PinnedAppsPanel != null) PinnedAppsPanel.Orientation = orientation;
+                if (RightPanel != null) RightPanel.Orientation = orientation;
+
+                if (QuickSettingsIconsPanel != null)
+                {
+                    QuickSettingsIconsPanel.Orientation = orientation;
+                }
+
+                if (ClockText != null && DateText != null)
+                {
+                    ClockText.FontSize = isVertical ? 9.5 : 11;
+                    DateText.FontSize = isVertical ? 8 : 9;
+                    ClockText.HorizontalAlignment = HorizontalAlignment.Center;
+                    DateText.HorizontalAlignment = HorizontalAlignment.Center;
+                    ClockText.TextAlignment = TextAlignment.Center;
+                    DateText.TextAlignment = TextAlignment.Center;
+                }
+
+                if (BtnClock?.Content is StackPanel clockSp)
+                {
+                    clockSp.Orientation = Orientation.Vertical;
+                    clockSp.HorizontalAlignment = HorizontalAlignment.Center;
+                }
+
+                foreach (var child in PinnedAppsPanel!.Children)
+                {
+                    if (child is Border card && card.Child is Grid iconGrid)
+                    {
+                        if (iconGrid.Children.Count > 1 && iconGrid.Children[1] is Rectangle indicator)
+                        {
+                            if (isVertical)
+                            {
+                                indicator.Width = 3;
+                                indicator.Height = 17;
+                                indicator.HorizontalAlignment = (position == "Left") ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+                                indicator.VerticalAlignment = VerticalAlignment.Center;
+                            }
+                            else
+                            {
+                                indicator.Width = 17;
+                                indicator.Height = 3;
+                                indicator.HorizontalAlignment = HorizontalAlignment.Center;
+                                indicator.VerticalAlignment = (position == "Top") ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+                            }
+                        }
+                    }
+                }
+
+                if (isVertical)
+                {
+                    if (LeftPanel != null)
+                    {
+                        LeftPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                        LeftPanel.VerticalAlignment = VerticalAlignment.Top;
+                        LeftPanel.Margin = new Thickness(0, 12, 0, 0);
+                    }
+                    if (CenterPanel != null)
+                    {
+                        CenterPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                        CenterPanel.VerticalAlignment = VerticalAlignment.Center;
+                        CenterPanel.Margin = new Thickness(0);
+                    }
+                    if (RightPanel != null)
+                    {
+                        RightPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                        RightPanel.VerticalAlignment = VerticalAlignment.Bottom;
+                        RightPanel.Margin = new Thickness(0, 0, 0, 12);
+                    }
+                }
+                else
+                {
+                    if (LeftPanel != null)
+                    {
+                        LeftPanel.HorizontalAlignment = HorizontalAlignment.Left;
+                        LeftPanel.VerticalAlignment = VerticalAlignment.Center;
+                        LeftPanel.Margin = new Thickness(12, 0, 0, 0);
+                    }
+                    if (CenterPanel != null)
+                    {
+                        CenterPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                        CenterPanel.VerticalAlignment = VerticalAlignment.Center;
+                        CenterPanel.Margin = new Thickness(0);
+                    }
+                    if (RightPanel != null)
+                    {
+                        RightPanel.HorizontalAlignment = HorizontalAlignment.Right;
+                        RightPanel.VerticalAlignment = VerticalAlignment.Center;
+                        RightPanel.Margin = new Thickness(0, 0, 12, 0);
+                    }
+                }
+
+                Win32Helper.SetNativeTaskbarPosition(position);
+
+                if (_appWindow.IsVisible)
+                {
+                    ShowDock();
+                }
+
+                if (TaskbarBorder != null)
+                {
+                    switch (PositionAnimationStyle)
+                    {
+                        case "BackEase":
+                            FactoryAnimation.AnimatePositionBackEase(TaskbarBorder, 0, 30);
+                            break;
+                        case "Exponential":
+                            FactoryAnimation.AnimatePositionExponential(TaskbarBorder, 0, 30);
+                            break;
+                        case "Elastic":
+                            FactoryAnimation.AnimatePositionElastic(TaskbarBorder, 0, 30);
+                            break;
+                        case "ScaleMorph":
+                            FactoryAnimation.AnimatePositionScaleMorph(TaskbarBorder);
+                            break;
+                        case "Spring":
+                        default:
+                            FactoryAnimation.AnimatePositionSpring(TaskbarBorder, 0, 30);
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"SetPosition Error: {ex.Message}");
+            }
+        }
+
         public void SetAlignment(string alignment)
         {
             try
@@ -772,15 +918,17 @@ namespace EvolveOS_ShellEnhancer.Views
             iconContainer.Children.Add(backIcon);
             iconContainer.Children.Add(appIcon);
 
+            bool isVertical = _currentPosition == "Left" || _currentPosition == "Right";
+
             Rectangle indicator = new Rectangle
             {
-                Width = 17,
-                Height = 3,
+                Width = isVertical ? 3 : 17,
+                Height = isVertical ? 17 : 3,
                 RadiusX = 1.5,
                 RadiusY = 1.5,
                 Fill = new SolidColorBrush(Colors.LightGray),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Bottom,
+                HorizontalAlignment = isVertical ? (_currentPosition == "Left" ? HorizontalAlignment.Left : HorizontalAlignment.Right) : HorizontalAlignment.Center,
+                VerticalAlignment = isVertical ? VerticalAlignment.Center : (_currentPosition == "Top" ? VerticalAlignment.Top : VerticalAlignment.Bottom),
                 Margin = new Thickness(0, 0, 0, 0),
                 Visibility = Visibility.Collapsed
             };
@@ -1108,38 +1256,88 @@ namespace EvolveOS_ShellEnhancer.Views
                 var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
                 int screenWidth = displayArea.OuterBounds.Width;
                 int screenHeight = displayArea.OuterBounds.Height;
-                int taskbarHeight = 48;
 
-                int reservedBottomSpace = taskbarHeight;
+                int taskbarSize = 48;
+                int margin = (_currentStyle == "Floating") ? 5 : 0;
+
+                int w, h, x, y;
+                uint edge;
+
+                APPBARDATA abd = new APPBARDATA();
+                abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                abd.hWnd = _hWnd;
+
+                switch (_currentPosition)
+                {
+                    case "Top":
+                        edge = ABE_TOP;
+                        w = screenWidth - (margin * 2);
+                        h = taskbarSize;
+                        x = displayArea.OuterBounds.X + margin;
+                        y = displayArea.OuterBounds.Y + margin;
+
+                        abd.rc.Left = displayArea.OuterBounds.X;
+                        abd.rc.Right = displayArea.OuterBounds.X + screenWidth;
+                        abd.rc.Top = displayArea.OuterBounds.Y;
+                        abd.rc.Bottom = y + h + margin;
+                        break;
+
+                    case "Left":
+                        edge = ABE_LEFT;
+                        w = taskbarSize;
+                        h = screenHeight - (margin * 2);
+                        x = displayArea.OuterBounds.X + margin;
+                        y = displayArea.OuterBounds.Y + margin;
+
+                        abd.rc.Left = displayArea.OuterBounds.X;
+                        abd.rc.Right = x + w + margin;
+                        abd.rc.Top = displayArea.OuterBounds.Y;
+                        abd.rc.Bottom = displayArea.OuterBounds.Y + screenHeight;
+                        break;
+
+                    case "Right":
+                        edge = ABE_RIGHT;
+                        w = taskbarSize;
+                        h = screenHeight - (margin * 2);
+                        x = displayArea.OuterBounds.X + screenWidth - taskbarSize - margin;
+                        y = displayArea.OuterBounds.Y + margin;
+
+                        abd.rc.Left = x - margin;
+                        abd.rc.Right = displayArea.OuterBounds.X + screenWidth;
+                        abd.rc.Top = displayArea.OuterBounds.Y;
+                        abd.rc.Bottom = displayArea.OuterBounds.Y + screenHeight;
+                        break;
+
+                    case "Bottom":
+                    default:
+                        edge = ABE_BOTTOM;
+                        w = screenWidth - (margin * 2);
+                        h = taskbarSize;
+                        x = displayArea.OuterBounds.X + margin;
+                        y = displayArea.OuterBounds.Y + screenHeight - taskbarSize - margin;
+
+                        abd.rc.Left = displayArea.OuterBounds.X;
+                        abd.rc.Right = displayArea.OuterBounds.X + screenWidth;
+                        abd.rc.Top = y - margin;
+                        abd.rc.Bottom = displayArea.OuterBounds.Y + screenHeight;
+                        break;
+                }
+
+                if (w < 10) w = 10;
+                if (h < 10) h = 10;
 
                 if (_currentStyle == "Floating")
                 {
                     Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
                     TaskbarBorder.CornerRadius = new CornerRadius(4);
-
-                    int margin = 5;
-
-                    int floatingWidth = screenWidth - (margin * 2);
-                    if (floatingWidth < 10) floatingWidth = 10;
-
-                    int x = displayArea.OuterBounds.X + margin;
-                    int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight - margin;
-
-                    _appWindow.MoveAndResize(new RectInt32(x, y, floatingWidth, taskbarHeight));
-
-                    reservedBottomSpace = taskbarHeight + (margin * 2);
                 }
                 else
                 {
                     Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_DONOTROUND);
                     TaskbarBorder.CornerRadius = new CornerRadius(0);
-
-                    int x = displayArea.OuterBounds.X;
-                    int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - taskbarHeight;
-
-                    _appWindow.MoveAndResize(new RectInt32(x, y, screenWidth, taskbarHeight));
-                    reservedBottomSpace = taskbarHeight;
                 }
+
+                _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
 
                 if (!_isAppBarRegistered)
                 {
@@ -1150,15 +1348,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     _isAppBarRegistered = true;
                 }
 
-                APPBARDATA abd = new APPBARDATA();
-                abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
-                abd.hWnd = _hWnd;
-                abd.uEdge = ABE_BOTTOM;
-                abd.rc.Left = displayArea.OuterBounds.X;
-                abd.rc.Right = displayArea.OuterBounds.X + screenWidth;
-                abd.rc.Top = displayArea.OuterBounds.Y + screenHeight - reservedBottomSpace;
-                abd.rc.Bottom = displayArea.OuterBounds.Y + screenHeight;
-
+                abd.uEdge = edge;
                 SHAppBarMessage(ABM_QUERYPOS, ref abd);
                 SHAppBarMessage(ABM_SETPOS, ref abd);
 

@@ -7,12 +7,11 @@
 
     <Grid Background="#01000000">
         <Border x:Name="TaskbarBorder"
-                Background="#20000000" 
-                BorderBrush="Transparent"
-                BorderThickness="0" CornerRadius="0" 
-                Height="48" Padding="16,0"
-                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0"
-                PointerWheelChanged="TaskbarBorder_PointerWheelChanged">
+            Background="#20000000" 
+            BorderBrush="Transparent"
+            BorderThickness="0" CornerRadius="0" 
+            HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0"
+            PointerWheelChanged="TaskbarBorder_PointerWheelChanged">
 
             <Grid>
                 <!-- Left Panel -->
@@ -36,26 +35,26 @@
                 </StackPanel>
 
                 <!-- Right Panel (Tray & Clock) -->
-                <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel x:Name="RightPanel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center">
 
                     <!-- Chevron (Hidden Icons) -->
-                    <Button Width="32" Height="40" Padding="0" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnTrayOverflow_Click" ToolTipService.ToolTip="Show hidden icons">
-                        <FontIcon Glyph="&#xE70D;" FontSize="14"/>
+                    <Button x:Name="BtnChevron" Width="40" Height="40" Padding="0" HorizontalAlignment="Center" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnTrayOverflow_Click" ToolTipService.ToolTip="Show hidden icons">
+                        <FontIcon Glyph="&#xE70D;" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
 
                     <!-- Combined Quick Settings (Network & Volume) -->
-                    <Button Height="40" Padding="12,0" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnQuickSettings_Click" ToolTipService.ToolTip="Quick Settings">
-                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <FontIcon Glyph="&#xE704;" FontSize="16"/>
-                            <FontIcon Glyph="&#xE767;" FontSize="16"/>
+                    <Button x:Name="BtnQuickSettings" Width="40" Height="40" Padding="0" HorizontalAlignment="Center" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnQuickSettings_Click" ToolTipService.ToolTip="Quick Settings">
+                        <StackPanel x:Name="QuickSettingsIconsPanel" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <FontIcon Glyph="&#xE704;" FontSize="14"/>
+                            <FontIcon Glyph="&#xE767;" FontSize="14"/>
                         </StackPanel>
                     </Button>
 
                     <!-- Clock & Date Button -->
-                    <Button Padding="8,0" Height="40" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnClock_Click" ToolTipService.ToolTip="Notifications and Calendar">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="ClockText" Text="00:00 AM" FontSize="12" HorizontalAlignment="Right"/>
-                            <TextBlock x:Name="DateText" Text="00/00/0000" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <Button x:Name="BtnClock" Width="44" Height="40" Padding="0" HorizontalAlignment="Center" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnClock_Click" ToolTipService.ToolTip="Notifications and Calendar">
+                        <StackPanel x:Name="ClockContentPanel" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock x:Name="ClockText" Text="00:00 AM" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"/>
+                            <TextBlock x:Name="DateText" Text="00/00" FontSize="9" HorizontalAlignment="Center" TextAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>

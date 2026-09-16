@@ -104,6 +104,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("dwmapi.dll", EntryPoint = "#113")]
         public static extern int DwmpActivateLivePreview(uint enable, IntPtr hWnd, IntPtr top, uint peekType);
 
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool SendNotifyMessage(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam);
+
         #endregion
 
         #region DWM Thumbnail API
@@ -181,6 +184,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         private const uint SWP_NOZORDER = 0x0004;
         private const uint SWP_NOACTIVATE = 0x0010;
         private const uint SWP_FRAMECHANGED = 0x0020;
+        public const uint WM_SETTINGCHANGE = 0x001A;
 
         // DWM Attributes
         private const int DWMWA_BORDER_COLOR = 34;
@@ -304,6 +308,34 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             int exStyle = GetWindowLong(hWnd, GWL_EXSTYLE);
             exStyle |= WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
             SetWindowLong(hWnd, GWL_EXSTYLE, exStyle);
+        }
+
+        public static void SetNativeTaskbarPosition(string position)
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true);
+                if (key != null)
+                {
+                    int dwordValue = 3;
+                    switch (position)
+                    {
+                        case "Left": dwordValue = 0; break;
+                        case "Top": dwordValue = 1; break;
+                        case "Right": dwordValue = 2; break;
+                        case "Bottom": dwordValue = 3; break;
+                    }
+
+                    key.SetValue("TaskbarLocation", dwordValue, Microsoft.Win32.RegistryValueKind.DWord);
+
+                    IntPtr HWND_BROADCAST = new IntPtr(0xffff);
+                    SendNotifyMessage(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to move native taskbar: {ex.Message}");
+            }
         }
 
         #endregion

@@ -88,6 +88,15 @@ namespace EvolveOS_ShellEnhancer
                         _startMenuWindow?.SetAlignment(value);
                         break;
 
+                    case "Taskbar_Position":
+                        _taskbarWindow?.SetPosition(value);
+                        _startMenuWindow?.SetPosition(value);
+                        break;
+
+                    case "Taskbar_Animation":
+                        CustomTaskbarWindow.PositionAnimationStyle = value;
+                        break;
+
                     case "Taskbar_PreviewButtons":
                         LivePreviewWindow.EnableActionButtons = bool.Parse(value);
                         break;

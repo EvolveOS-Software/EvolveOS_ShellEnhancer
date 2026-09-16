@@ -78,6 +78,132 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             sb.Begin();
         }
 
+        #endregion
+
+        #region Taskbar Position Transition Animations
+
+        public static void AnimatePositionSpring(UIElement element, double fromX, double fromY)
+        {
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var compositor = visual.Compositor;
+
+            visual.Offset = new Vector3((float)fromX, (float)fromY, 0f);
+
+            var springX = compositor.CreateSpringVector3Animation();
+            springX.Target = "Offset";
+            springX.FinalValue = Vector3.Zero;
+            springX.DampingRatio = 0.7f;
+            springX.Period = TimeSpan.FromMilliseconds(80);
+
+            visual.StartAnimation("Offset", springX);
+        }
+
+        public static void AnimatePositionBackEase(UIElement element, double fromX, double fromY)
+        {
+            if (element.RenderTransform is not TranslateTransform transform)
+            {
+                transform = new TranslateTransform();
+                element.RenderTransform = transform;
+            }
+
+            transform.X = fromX;
+            transform.Y = fromY;
+
+            var animX = new DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(400), EasingFunction = new BackEase { Amplitude = 0.3, EasingMode = EasingMode.EaseOut } };
+            var animY = new DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(400), EasingFunction = new BackEase { Amplitude = 0.3, EasingMode = EasingMode.EaseOut } };
+
+            var sb = new Storyboard();
+            Storyboard.SetTarget(animX, transform);
+            Storyboard.SetTargetProperty(animX, "X");
+            Storyboard.SetTarget(animY, transform);
+            Storyboard.SetTargetProperty(animY, "Y");
+            sb.Children.Add(animX);
+            sb.Children.Add(animY);
+            sb.Begin();
+        }
+
+        public static void AnimatePositionExponential(UIElement element, double fromX, double fromY)
+        {
+            if (element.RenderTransform is not TranslateTransform transform)
+            {
+                transform = new TranslateTransform();
+                element.RenderTransform = transform;
+            }
+
+            transform.X = fromX;
+            transform.Y = fromY;
+            element.Opacity = 0.2;
+
+            var animX = new DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(300), EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut } };
+            var animY = new DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(300), EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut } };
+            var fade = new DoubleAnimation { To = 1.0, Duration = TimeSpan.FromMilliseconds(250) };
+
+            var sb = new Storyboard();
+            Storyboard.SetTarget(animX, transform);
+            Storyboard.SetTargetProperty(animX, "X");
+            Storyboard.SetTarget(animY, transform);
+            Storyboard.SetTargetProperty(animY, "Y");
+            Storyboard.SetTarget(fade, element);
+            Storyboard.SetTargetProperty(fade, "Opacity");
+
+            sb.Children.Add(animX);
+            sb.Children.Add(animY);
+            sb.Children.Add(fade);
+            sb.Begin();
+        }
+
+        public static void AnimatePositionElastic(UIElement element, double fromX, double fromY)
+        {
+            if (element.RenderTransform is not TranslateTransform transform)
+            {
+                transform = new TranslateTransform();
+                element.RenderTransform = transform;
+            }
+
+            transform.X = fromX;
+            transform.Y = fromY;
+
+            var animX = new DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(500), EasingFunction = new ElasticEase { Oscillations = 2, Springiness = 3, EasingMode = EasingMode.EaseOut } };
+            var animY = new DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(500), EasingFunction = new ElasticEase { Oscillations = 2, Springiness = 3, EasingMode = EasingMode.EaseOut } };
+
+            var sb = new Storyboard();
+            Storyboard.SetTarget(animX, transform);
+            Storyboard.SetTargetProperty(animX, "X");
+            Storyboard.SetTarget(animY, transform);
+            Storyboard.SetTargetProperty(animY, "Y");
+            sb.Children.Add(animX);
+            sb.Children.Add(animY);
+            sb.Begin();
+        }
+
+        public static void AnimatePositionScaleMorph(UIElement element)
+        {
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var compositor = visual.Compositor;
+
+            visual.CenterPoint = new Vector3((float)(element.RenderSize.Width / 2), (float)(element.RenderSize.Height / 2), 0f);
+
+            var easing = compositor.CreateCubicBezierEasingFunction(new Vector2(0.1f, 0.9f), new Vector2(0.2f, 1.0f));
+
+            var scaleAnim = compositor.CreateScalarKeyFrameAnimation();
+            scaleAnim.InsertKeyFrame(0f, 0.92f);
+            scaleAnim.InsertKeyFrame(1f, 1.0f, easing);
+            scaleAnim.Duration = TimeSpan.FromMilliseconds(350);
+
+            var opacityAnim = compositor.CreateScalarKeyFrameAnimation();
+            opacityAnim.InsertKeyFrame(0f, 0.3f);
+            opacityAnim.InsertKeyFrame(1f, 1.0f);
+            opacityAnim.Duration = TimeSpan.FromMilliseconds(250);
+
+            visual.StartAnimation("Scale.X", scaleAnim);
+            visual.StartAnimation("Scale.Y", scaleAnim);
+            visual.StartAnimation("Opacity", opacityAnim);
+        }
+
+        #endregion
+
+        #region Scroll & StartMenu Animations
+
         public static async Task PlayScrollTransitionAsync(
             UIElement rootElement,
             Panel centerPanel,
@@ -170,12 +296,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             sbIn.Children.Add(fadeIn);
             sbIn.Begin();
         }
-
-        #endregion
-
-        #region StartMenu Animations
-
-
 
         #endregion
     }

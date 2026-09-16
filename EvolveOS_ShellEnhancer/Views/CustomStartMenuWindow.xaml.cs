@@ -19,6 +19,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private bool _isVisible = false;
 
         private string _currentAlignment = "Center";
+        private string _currentPosition = "Bottom";
 
         public CustomStartMenuWindow()
         {
@@ -71,6 +72,15 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        public void SetPosition(string position)
+        {
+            _currentPosition = position;
+            if (_isVisible)
+            {
+                ShowMenu();
+            }
+        }
+
         private void ShowMenu()
         {
             var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
@@ -78,19 +88,41 @@ namespace EvolveOS_ShellEnhancer.Views
             int menuWidth = (int)MenuContainer.Width;
             int menuHeight = (int)MenuContainer.Height;
             int taskbarOffset = 60;
+            int margin = 16;
 
-            int leftMargin = 16;
+            int x = 0;
+            int y = 0;
 
-            int x;
-            int y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - menuHeight - taskbarOffset;
-
-            if (_currentAlignment == "Center")
+            switch (_currentPosition)
             {
-                x = displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2;
-            }
-            else
-            {
-                x = displayArea.OuterBounds.X + leftMargin;
+                case "Top":
+                    y = displayArea.OuterBounds.Y + taskbarOffset;
+                    x = (_currentAlignment == "Center")
+                        ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2
+                        : displayArea.OuterBounds.X + margin;
+                    break;
+
+                case "Left":
+                    x = displayArea.OuterBounds.X + taskbarOffset;
+                    y = (_currentAlignment == "Center")
+                        ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - menuHeight) / 2
+                        : displayArea.OuterBounds.Y + margin;
+                    break;
+
+                case "Right":
+                    x = displayArea.OuterBounds.X + displayArea.OuterBounds.Width - menuWidth - taskbarOffset;
+                    y = (_currentAlignment == "Center")
+                        ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - menuHeight) / 2
+                        : displayArea.OuterBounds.Y + margin;
+                    break;
+
+                case "Bottom":
+                default:
+                    y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - menuHeight - taskbarOffset;
+                    x = (_currentAlignment == "Center")
+                        ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2
+                        : displayArea.OuterBounds.X + margin;
+                    break;
             }
 
             _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, menuWidth, menuHeight));
