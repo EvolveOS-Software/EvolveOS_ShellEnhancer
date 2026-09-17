@@ -235,6 +235,15 @@ namespace EvolveOS_ShellEnhancer.Views
                     SetAlignment(TaskbarManager.CurrentAlignment);
                 };
             }
+
+            if (!IsPrimaryMonitor)
+            {
+                if (BtnChevron != null) BtnChevron.Visibility = Visibility.Collapsed;
+                if (BtnQuickSettings != null) BtnQuickSettings.Visibility = Visibility.Collapsed;
+                if (QuickSettingsIconsPanel != null) QuickSettingsIconsPanel.Visibility = Visibility.Collapsed;
+
+                if (BtnClock != null) BtnClock.IsHitTestVisible = false;
+            }
         }
         #endregion
 
@@ -1581,7 +1590,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private async void BtnClock_Click(object sender, RoutedEventArgs e)
         {
-            try { await Win32Helper.ToggleCalendarAsync(); } catch { }
+            try
+            {
+                if (!IsPrimaryMonitor) return;
+
+                await Win32Helper.ToggleCalendarAsync();
+            }
+            catch { }
         }
 
         private async void BtnQuickSettings_Click(object sender, RoutedEventArgs e)
