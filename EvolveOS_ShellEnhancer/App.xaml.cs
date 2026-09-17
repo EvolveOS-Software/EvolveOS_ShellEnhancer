@@ -5,7 +5,9 @@ using EvolveOS_ShellEnhancer.Utilities;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using EvolveOS_ShellEnhancer.Views;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.Win32;
 using System;
 
 namespace EvolveOS_ShellEnhancer
@@ -22,6 +24,9 @@ namespace EvolveOS_ShellEnhancer
         public App()
         {
             this.InitializeComponent();
+
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            this.UnhandledException += App_UnhandledException;
         }
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
@@ -36,9 +41,39 @@ namespace EvolveOS_ShellEnhancer
             IpcServerManager.StartListening();
         }
 
-        public void ToggleStartMenu(Microsoft.UI.Windowing.DisplayArea? displayArea = null)
+        private void CurrentDomain_ProcessExit(object? sender, EventArgs e)
         {
-            if (_isStartMenuEnabled && _startMenuWindow != null)
+            RestoreWindowsDefaults();
+        }
+
+        private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+        {
+            RestoreWindowsDefaults();
+        }
+
+        private void RestoreWindowsDefaults()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("MMTaskbarEnabled", 1, RegistryValueKind.DWord);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        public void ToggleStartMenu(DisplayArea? displayArea = null, bool forceCustom = false)
+        {
+            if (!forceCustom && !SettingsEngine.Shell_StartMenuEnabled)
+            {
+                return;
+            }
+
+            if ((_isStartMenuEnabled || forceCustom) && _startMenuWindow != null)
             {
                 _startMenuWindow.DispatcherQueue.TryEnqueue(() =>
                 {
@@ -50,7 +85,7 @@ namespace EvolveOS_ShellEnhancer
                     _startMenuWindow.ToggleVisibility();
                 });
             }
-            else
+            else if (!forceCustom)
             {
                 Win32Helper.OpenNativeStartMenu();
             }

@@ -28,14 +28,14 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
     {
         private static readonly Dictionary<string, object> _defaultSettings = new Dictionary<string, object>
         {
-            ["TaskbarPinnedAppsOrder"] = string.Empty,
-            ["Shell_TaskbarPosition"] = "Bottom",
-            ["Shell_TaskbarAlignment"] = "Center"
+            ["TaskbarPinnedAppsOrder"] = string.Empty
         };
 
         private static readonly Dictionary<string, object> _cachedSettings = new Dictionary<string, object>(_defaultSettings);
 
         internal static string TaskbarPinnedAppsOrder { get => (string)_cachedSettings["TaskbarPinnedAppsOrder"]; set => ChangingParameters("TaskbarPinnedAppsOrder", value); }
+
+        #region Shell Settings
         internal static string Shell_TaskbarAlignment
         {
             get
@@ -75,6 +75,37 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 return "Bottom";
             }
         }
+
+        internal static bool Shell_StartMenuEnabled
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    var val = key?.GetValue("Shell_StartMenuEnabled");
+
+                    if (val != null)
+                    {
+                        if (val is string strVal && bool.TryParse(strVal, out bool parsedBool))
+                        {
+                            return parsedBool;
+                        }
+
+                        if (val is int intVal)
+                        {
+                            return intVal == 1;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_StartMenuEnabled Error: {ex.Message}");
+                }
+                return false;
+            }
+        }
+        #endregion
 
         private static void ChangingParameters(string key, object value)
         {

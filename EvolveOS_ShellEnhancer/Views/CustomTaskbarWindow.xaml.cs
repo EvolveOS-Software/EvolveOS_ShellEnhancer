@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Shapes;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -500,25 +501,29 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region UI Layout & Styling Handlers
-        private DateTime _lastStartButtonClick = DateTime.MinValue;
-
         private void BtnStart_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if ((DateTime.Now - App.LastStartMenuCloseTime).TotalMilliseconds < 250)
-                {
-                    return;
-                }
+            if ((DateTime.Now - App.LastStartMenuCloseTime).TotalMilliseconds < 250) return;
 
+            if (!IsPrimaryMonitor)
+            {
                 if (Application.Current is App currentApp)
                 {
-                    currentApp.ToggleStartMenu(MonitorArea);
+                    currentApp.ToggleStartMenu(MonitorArea, forceCustom: true);
                 }
+                return;
             }
-            catch (Exception ex)
+
+            if (!SettingsEngine.Shell_StartMenuEnabled)
             {
-                Debug.WriteLine($"Start Menu Click Error: {ex.Message}");
+                SendMessage(_hWnd, 0x0112, new IntPtr(0xF130), IntPtr.Zero);
+            }
+            else
+            {
+                if (Application.Current is App currentApp)
+                {
+                    currentApp.ToggleStartMenu(MonitorArea, forceCustom: false);
+                }
             }
         }
 
@@ -1410,6 +1415,7 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region Dock Visibility
+
         public void ShowDock()
         {
             try
@@ -1418,14 +1424,14 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 try
                 {
-                    using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                    using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
                     {
                         if (key != null)
                         {
                             object? val = key.GetValue("MMTaskbarEnabled");
                             if (val == null || (int)val != 0)
                             {
-                                key.SetValue("MMTaskbarEnabled", 0, Microsoft.Win32.RegistryValueKind.DWord);
+                                key.SetValue("MMTaskbarEnabled", 0, RegistryValueKind.DWord);
                                 SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings", SMTO_ABORTIFHUNG, 1000, out _);
                             }
                         }
@@ -1446,7 +1452,8 @@ namespace EvolveOS_ShellEnhancer.Views
                     SHAppBarMessage(0x000A, ref abdNative);
                 }
 
-                EnumWindows((hwnd, lParam) =>
+                #region Disabled (Testing)
+                /*EnumWindows((hwnd, lParam) =>
                 {
                     System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
                     GetClassName(hwnd, sb, 256);
@@ -1461,7 +1468,8 @@ namespace EvolveOS_ShellEnhancer.Views
                         SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, 0x0080 | 0x0004);
                     }
                     return true;
-                }, IntPtr.Zero);
+                }, IntPtr.Zero);*/
+                #endregion
 
                 int screenX = MonitorArea!.OuterBounds.X;
                 int screenY = MonitorArea.OuterBounds.Y;
@@ -1605,6 +1613,50 @@ namespace EvolveOS_ShellEnhancer.Views
 
             try
             {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("MMTaskbarEnabled", 1, RegistryValueKind.DWord);
+
+                        IntPtr explorerTray = FindWindow("Shell_TrayWnd", null);
+                        if (explorerTray != IntPtr.Zero)
+                        {
+                            SendMessageTimeout(explorerTray, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings", SMTO_ABORTIFHUNG, 1000, out _);
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            IntPtr nativeTray = FindWindow("Shell_TrayWnd", null);
+            if (nativeTray != IntPtr.Zero)
+            {
+                APPBARDATA abdNative = new APPBARDATA();
+                abdNative.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                abdNative.hWnd = nativeTray;
+                abdNative.lParam = 2;
+                SHAppBarMessage(0x000A, ref abdNative);
+            }
+
+            if (_isAppBarRegistered)
+            {
+                APPBARDATA abd = new APPBARDATA();
+                abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                abd.hWnd = _hWnd;
+                SHAppBarMessage(ABM_REMOVE, ref abd);
+                _isAppBarRegistered = false;
+            }
+        }
+
+        #region Previous Hide Logic.
+        /*public void HideDock()
+        {
+            _appWindow.Hide();
+            Win32Helper.ShowNativeTaskbar();
+
+            try
+            {
                 using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
                 {
                     if (key != null)
@@ -1650,7 +1702,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 SHAppBarMessage(ABM_REMOVE, ref abd);
                 _isAppBarRegistered = false;
             }
-        }
+        }*/
+        #endregion
+
         #endregion
 
         #region Functionality Handlers
