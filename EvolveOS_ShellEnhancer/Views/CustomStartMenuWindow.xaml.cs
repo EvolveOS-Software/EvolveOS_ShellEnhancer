@@ -14,7 +14,11 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.System;
 using WinRT.Interop;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using System.IO;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
@@ -70,6 +74,59 @@ namespace EvolveOS_ShellEnhancer.Views
             this.Activated += OnWindowActivated;
 
             LoadAppsData();
+            LoadUserProfile();
+        }
+
+        private async void LoadUserProfile()
+        {
+            string displayName = Environment.UserName;
+            ImageSource? profileImage = null;
+
+            try
+            {
+                var users = await User.FindAllAsync();
+                var user = users.FirstOrDefault();
+
+                if (user != null)
+                {
+                    var nameObj = await user.GetPropertyAsync(KnownUserProperties.DisplayName);
+                    if (nameObj != null && !string.IsNullOrWhiteSpace(nameObj.ToString()))
+                    {
+                        displayName = nameObj.ToString()!;
+                    }
+
+                    var picStreamRef = await user.GetPictureAsync(UserPictureSize.Size64x64);
+                    if (picStreamRef != null)
+                    {
+                        using var stream = await picStreamRef.OpenReadAsync();
+                        var bitmap = new BitmapImage();
+                        await bitmap.SetSourceAsync(stream);
+                        profileImage = bitmap;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to load user profile: {ex.Message}");
+            }
+
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (ProfileName1 != null) ProfileName1.Text = displayName;
+                if (ProfileName2 != null) ProfileName2.Text = displayName;
+
+                if (ProfilePic1 != null)
+                {
+                    ProfilePic1.DisplayName = displayName;
+                    if (profileImage != null) ProfilePic1.ProfilePicture = profileImage;
+                }
+
+                if (ProfilePic2 != null)
+                {
+                    ProfilePic2.DisplayName = displayName;
+                    if (profileImage != null) ProfilePic2.ProfilePicture = profileImage;
+                }
+            });
         }
 
         private async void LoadAppsData()
@@ -252,29 +309,42 @@ namespace EvolveOS_ShellEnhancer.Views
             Process.Start(new ProcessStartInfo("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0") { CreateNoWindow = true });
         }
 
-        private void QuickFolder_ItemClick(object sender, ItemClickEventArgs e)
+        private async void QuickFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (e.ClickedItem is ListViewItem item && item.Tag is string folder)
+            if (sender is Button btn && btn.Tag is string folder)
             {
-                string? path = folder switch
+                try
                 {
-                    "Documents" => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "Pictures" => Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
-                    "Music" => Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
-                    "Downloads" => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
-                    "Settings" => "ms-settings:",
-                    "Run" => null,
-                    _ => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
-                };
+                    if (folder == "Settings")
+                    {
+                        await Launcher.LaunchUriAsync(new Uri("ms-settings:"));
+                    }
+                    else if (folder == "Run")
+                    {
+                        Process.Start(new ProcessStartInfo("explorer.exe", "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}") { UseShellExecute = true });
+                    }
+                    else
+                    {
+                        string? path = folder switch
+                        {
+                            "Documents" => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                            "Pictures" => Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+                            "Music" => Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+                            "Downloads" => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                            _ => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+                        };
 
-                if (folder == "Run")
-                {
-                    Process.Start(new ProcessStartInfo("explorer.exe", "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}") { UseShellExecute = true });
+                        if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+                        {
+                            await Launcher.LaunchFolderPathAsync(path);
+                        }
+                    }
                 }
-                else if (!string.IsNullOrEmpty(path))
+                catch (Exception ex)
                 {
-                    Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+                    Debug.WriteLine($"Failed to open quick folder/setting: {ex.Message}");
                 }
+
                 HideMenu();
             }
         }

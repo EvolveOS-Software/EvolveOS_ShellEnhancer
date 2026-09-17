@@ -20,8 +20,9 @@
                 PointerPressed="MenuContainer_PointerPressed">
 
             <Grid>
-                <!-- 1: Split Standard (Reference Image 1) -->
+                <!-- 1: Split Standard -->
                 <Grid x:Name="DesignSplitStandard" Visibility="Visible">
+
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="260"/>
@@ -36,7 +37,7 @@
 
                         <!-- Search -->
                         <AutoSuggestBox Grid.Row="0" Height="40" PlaceholderText="Search Apps and files" 
-                                        Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="20">
+                                            Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="20">
                             <AutoSuggestBox.QueryIcon>
                                 <SymbolIcon Symbol="Find"/>
                             </AutoSuggestBox.QueryIcon>
@@ -47,24 +48,25 @@
                             <Grid Margin="0,0,0,16">
                                 <TextBlock Text="Pinned" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
                                 <Button Content="All apps >" Background="Transparent" BorderThickness="0" 
-                                        HorizontalAlignment="Right" FontSize="12" Click="BtnAllApps_Click"/>
+                                            HorizontalAlignment="Right" FontSize="12" Click="BtnAllApps_Click"/>
                             </Grid>
 
                             <GridView x:Name="StandardPinnedAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick">
                                 <GridView.ItemTemplate>
                                     <DataTemplate x:DataType="helpers:AppItem">
-                                        <StackPanel Width="80" Height="80" Spacing="4" Padding="8" CornerRadius="8" Background="Transparent">
+                                        <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent">
                                             <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
-                                                      Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                          Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
 
                                             <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"
-                                                   Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                       Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                 <Image.RenderTransform>
                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                 </Image.RenderTransform>
                                             </Image>
 
-                                            <TextBlock Text="{x:Bind Name}" FontSize="12" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{x:Bind Name}" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"
+                                                           TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </GridView.ItemTemplate>
@@ -72,9 +74,9 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Right Pane: User, Folders, Power -->
+                    <!-- Right Pane Background -->
                     <Border Grid.Column="1" Background="{ThemeResource LayerFillColorAltBrush}" CornerRadius="0,12,12,0" 
-                            BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1,0,0,0">
+                                BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1,0,0,0">
                         <Grid Padding="24">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -82,51 +84,50 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <!-- Profile -->
                             <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="12" Margin="0,12,0,24">
-                                <PersonPicture Height="64" Width="64" DisplayName="User" ProfilePicture="{Binding UserProfileImage}"/>
-                                <TextBlock Text="{Binding UserName}" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center"/>
+                                <PersonPicture x:Name="ProfilePic1" Height="88" Width="88"/>
+                                <TextBlock x:Name="ProfileName1" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center"/>
                             </StackPanel>
 
                             <!-- Quick Folders -->
-                            <ListView Grid.Row="1" SelectionMode="None" IsItemClickEnabled="True" ItemClick="QuickFolder_ItemClick">
-                                <ListViewItem Tag="Documents">
+                            <StackPanel Grid.Row="1" Spacing="2">
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Documents" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE8A5;" FontSize="16"/>
                                         <TextBlock Text="Documents"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Downloads">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Downloads" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE896;" FontSize="16"/>
                                         <TextBlock Text="Downloads"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Music">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Music" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE8D6;" FontSize="16"/>
                                         <TextBlock Text="Music"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Pictures">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Pictures" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE8B9;" FontSize="16"/>
                                         <TextBlock Text="Pictures"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Settings">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Settings" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE713;" FontSize="16"/>
                                         <TextBlock Text="Settings"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Run">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Run" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE78B;" FontSize="16"/>
                                         <TextBlock Text="Run..."/>
                                     </StackPanel>
-                                </ListViewItem>
-                            </ListView>
+                                </Button>
+                            </StackPanel>
 
                             <!-- Power Options -->
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
@@ -139,21 +140,18 @@
                                             <MenuFlyoutItem Text="Sleep" Click="PowerSleep_Click">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE708;"/>
-                                                    <!-- Moon icon -->
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
 
                                             <MenuFlyoutItem Text="Shut down" Click="PowerShutdown_Click">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE7E8;"/>
-                                                    <!-- Power icon -->
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
 
                                             <MenuFlyoutItem Text="Restart" Click="PowerRestart_Click">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE777;"/>
-                                                    <!-- Refresh/Sync icon -->
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
                                         </MenuFlyout>
@@ -164,8 +162,9 @@
                     </Border>
                 </Grid>
 
-                <!-- 2: Split Grouped (Reference Image 2) -->
+                <!-- 2: Split Grouped -->
                 <Grid x:Name="DesignSplitGrouped" Visibility="Collapsed">
+
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="260"/>
@@ -180,7 +179,7 @@
 
                         <!-- Search -->
                         <AutoSuggestBox Grid.Row="0" Height="40" PlaceholderText="Search Apps and files" 
-                                        Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="20">
+                                            Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="20">
                             <AutoSuggestBox.QueryIcon>
                                 <SymbolIcon Symbol="Find"/>
                             </AutoSuggestBox.QueryIcon>
@@ -188,30 +187,28 @@
 
                         <ScrollViewer Grid.Row="1" Margin="0,24,0,0" VerticalScrollBarVisibility="Hidden">
                             <StackPanel Spacing="16">
-
                                 <!-- Category Card 1 -->
                                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" Padding="16">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,12">
                                             <TextBlock Text="Productivity" FontWeight="SemiBold" FontSize="14"/>
                                             <Button Content="All apps >" Background="Transparent" BorderThickness="0" 
-                                                    HorizontalAlignment="Right" FontSize="12" Click="BtnAllApps_Click"/>
+                                                        HorizontalAlignment="Right" FontSize="12" Click="BtnAllApps_Click"/>
                                         </Grid>
                                         <GridView x:Name="ProductivityAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick">
                                             <GridView.ItemTemplate>
                                                 <DataTemplate x:DataType="helpers:AppItem">
-                                                    <StackPanel Width="80" Height="80" Spacing="4" Padding="8" CornerRadius="8" Background="Transparent">
+                                                    <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent">
                                                         <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
-                                                                  Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-
+                                                                      Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
                                                         <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"
-                                                               Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                   Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                             <Image.RenderTransform>
                                                                 <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                             </Image.RenderTransform>
                                                         </Image>
-
-                                                        <TextBlock Text="{x:Bind Name}" FontSize="12" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{x:Bind Name}" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"
+                                                                       TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </GridView.ItemTemplate>
@@ -219,7 +216,7 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Category Card 2 (Tabs mockup) -->
+                                <!-- Category Card 2 -->
                                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" Padding="16">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,12">
@@ -230,18 +227,17 @@
                                         <GridView x:Name="SecondaryAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick">
                                             <GridView.ItemTemplate>
                                                 <DataTemplate x:DataType="helpers:AppItem">
-                                                    <StackPanel Width="80" Height="80" Spacing="4" Padding="8" CornerRadius="8" Background="Transparent">
+                                                    <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent">
                                                         <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
-                                                                  Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-
+                                                                      Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
                                                         <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"
-                                                               Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                   Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                             <Image.RenderTransform>
                                                                 <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                             </Image.RenderTransform>
                                                         </Image>
-
-                                                        <TextBlock Text="{x:Bind Name}" FontSize="12" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{x:Bind Name}" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"
+                                                                       TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                                     </StackPanel>
                                                 </DataTemplate>
                                             </GridView.ItemTemplate>
@@ -252,53 +248,61 @@
                         </ScrollViewer>
                     </Grid>
 
-                    <!-- Right Pane: Same as Design 1 for consistency, bound identically -->
+                    <!-- Right Pane -->
                     <Border Grid.Column="1" Background="{ThemeResource LayerFillColorAltBrush}" CornerRadius="0,12,12,0" 
-                            BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1,0,0,0">
+                                BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1,0,0,0">
                         <Grid Padding="24">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <!-- Profile -->
+
                             <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="12" Margin="0,12,0,24">
-                                <PersonPicture Height="64" Width="64" DisplayName="User" ProfilePicture="{Binding UserProfileImage}"/>
-                                <TextBlock Text="{Binding UserName}" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center"/>
+                                <PersonPicture x:Name="ProfilePic2" Height="88" Width="88"/>
+                                <TextBlock x:Name="ProfileName2" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center"/>
                             </StackPanel>
+
                             <!-- Quick Folders -->
-                            <ListView Grid.Row="1" SelectionMode="None" IsItemClickEnabled="True" ItemClick="QuickFolder_ItemClick">
-                                <ListViewItem Tag="Documents">
+                            <StackPanel Grid.Row="1" Spacing="2">
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Documents" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE8A5;" FontSize="16"/>
                                         <TextBlock Text="Documents"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Downloads">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Downloads" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE896;" FontSize="16"/>
                                         <TextBlock Text="Downloads"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Music">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Music" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE8D6;" FontSize="16"/>
                                         <TextBlock Text="Music"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Pictures">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Pictures" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE8B9;" FontSize="16"/>
                                         <TextBlock Text="Pictures"/>
                                     </StackPanel>
-                                </ListViewItem>
-                                <ListViewItem Tag="Settings">
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Settings" Click="QuickFolder_Click">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <FontIcon Glyph="&#xE713;" FontSize="16"/>
                                         <TextBlock Text="Settings"/>
                                     </StackPanel>
-                                </ListViewItem>
-                            </ListView>
+                                </Button>
+                                <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Run" Click="QuickFolder_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <FontIcon Glyph="&#xE78B;" FontSize="16"/>
+                                        <TextBlock Text="Run..."/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+
                             <!-- Power Options -->
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
                                 <DropDownButton Background="Transparent" BorderThickness="0">
@@ -310,21 +314,18 @@
                                             <MenuFlyoutItem Text="Sleep" Click="PowerSleep_Click">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE708;"/>
-                                                    <!-- Moon icon -->
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
 
                                             <MenuFlyoutItem Text="Shut down" Click="PowerShutdown_Click">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE7E8;"/>
-                                                    <!-- Power icon -->
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
 
                                             <MenuFlyoutItem Text="Restart" Click="PowerRestart_Click">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE777;"/>
-                                                    <!-- Refresh/Sync icon -->
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
                                         </MenuFlyout>
@@ -334,7 +335,6 @@
                         </Grid>
                     </Border>
                 </Grid>
-
             </Grid>
         </Border>
     </Grid>
