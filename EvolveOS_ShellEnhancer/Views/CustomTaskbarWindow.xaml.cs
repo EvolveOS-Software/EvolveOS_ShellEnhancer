@@ -30,6 +30,7 @@ using Windows.System;
 using Windows.UI;
 using Windows.UI.Core;
 using WinRT.Interop;
+using static EvolveOS_ShellEnhancer.Utilities.Managers.TaskbarOverlayManager;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
@@ -85,6 +86,26 @@ namespace EvolveOS_ShellEnhancer.Views
 
         [DllImport("user32.dll")]
         private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+
+        private const uint WM_SETTINGCHANGE = 0x001A;
+        private const uint SMTO_ABORTIFHUNG = 0x0002;
+        private static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MONITORINFO
+        {
+            public uint cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+
         private const uint MONITOR_DEFAULTTONEAREST = 2;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -1395,6 +1416,26 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 Win32Helper.HideNativeTaskbar();
 
+                try
+                {
+                    using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                    {
+                        if (key != null)
+                        {
+                            object? val = key.GetValue("MMTaskbarEnabled");
+                            if (val == null || (int)val != 0)
+                            {
+                                key.SetValue("MMTaskbarEnabled", 0, Microsoft.Win32.RegistryValueKind.DWord);
+                                SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings", SMTO_ABORTIFHUNG, 1000, out _);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Registry override failed: {ex.Message}");
+                }
+
                 IntPtr nativeTray = FindWindow("Shell_TrayWnd", null);
                 if (nativeTray != IntPtr.Zero)
                 {
@@ -1404,6 +1445,23 @@ namespace EvolveOS_ShellEnhancer.Views
                     abdNative.lParam = 3;
                     SHAppBarMessage(0x000A, ref abdNative);
                 }
+
+                EnumWindows((hwnd, lParam) =>
+                {
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+                    GetClassName(hwnd, sb, 256);
+
+                    if (sb.ToString() == "Shell_SecondaryTrayWnd")
+                    {
+                        APPBARDATA abdSec = new APPBARDATA();
+                        abdSec.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                        abdSec.hWnd = hwnd;
+                        SHAppBarMessage(4, ref abdSec); // ABM_REMOVE
+
+                        SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, 0x0080 | 0x0004);
+                    }
+                    return true;
+                }, IntPtr.Zero);
 
                 int screenX = MonitorArea!.OuterBounds.X;
                 int screenY = MonitorArea.OuterBounds.Y;
@@ -1458,11 +1516,9 @@ namespace EvolveOS_ShellEnhancer.Views
                     _isAppBarRegistered = false;
                 }
 
-                int centerX = screenX + (screenWidth / 2) - (w / 2);
-                int centerY = screenY + (screenHeight / 2) - (h / 2);
-                _appWindow.MoveAndResize(new RectInt32(centerX, centerY, w, h));
+                _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
                 _appWindow.Show();
-                SetWindowPos(_hWnd, IntPtr.Zero, centerX, centerY, w, h, 0x0040);
+                SetWindowPos(_hWnd, IntPtr.Zero, x, y, w, h, 0x0040);
 
                 APPBARDATA abd = new APPBARDATA();
                 abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
@@ -1547,6 +1603,19 @@ namespace EvolveOS_ShellEnhancer.Views
             _appWindow.Hide();
             Win32Helper.ShowNativeTaskbar();
 
+            try
+            {
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue("MMTaskbarEnabled", 1, Microsoft.Win32.RegistryValueKind.DWord);
+                        SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings", SMTO_ABORTIFHUNG, 1000, out _);
+                    }
+                }
+            }
+            catch { }
+
             IntPtr nativeTray = FindWindow("Shell_TrayWnd", null);
             if (nativeTray != IntPtr.Zero)
             {
@@ -1556,6 +1625,22 @@ namespace EvolveOS_ShellEnhancer.Views
                 abdNative.lParam = 2;
                 SHAppBarMessage(0x000A, ref abdNative);
             }
+
+            EnumWindows((hwnd, lParam) =>
+            {
+                System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+                GetClassName(hwnd, sb, 256);
+
+                if (sb.ToString() == "Shell_SecondaryTrayWnd")
+                {
+                    APPBARDATA abdSec = new APPBARDATA();
+                    abdSec.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                    abdSec.hWnd = hwnd;
+                    abdSec.lParam = 2;
+                    SHAppBarMessage(0x000A, ref abdSec);
+                }
+                return true;
+            }, IntPtr.Zero);
 
             if (_isAppBarRegistered)
             {
