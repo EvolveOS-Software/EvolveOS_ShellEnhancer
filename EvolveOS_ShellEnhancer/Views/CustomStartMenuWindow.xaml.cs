@@ -6,26 +6,44 @@ using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using WinRT.Interop;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
     public sealed partial class CustomStartMenuWindow : Window
     {
+        #region Fields & Properties
         public DisplayArea? TargetDisplayArea { get; set; }
 
         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
         private bool _isVisible = false;
+        private bool _isDataLoaded = false;
 
         private string _currentAlignment = "Center";
         private string _currentPosition = "Bottom";
+        private string _currentStyle = "SplitStandard";
 
+        public ObservableCollection<AppItem> PinnedAppsCollection { get; } = new();
+        public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
+        #endregion
+
+        #region Initialization & Data Loading
         public CustomStartMenuWindow()
         {
             this.InitializeComponent();
+
+            StandardPinnedAppsGrid.ItemsSource = PinnedAppsCollection;
+            ProductivityAppsGrid.ItemsSource = PinnedAppsCollection;
+            SecondaryAppsGrid.ItemsSource = PinnedAppsCollection;
 
             _hWnd = WindowNative.GetWindowHandle(this);
             WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
@@ -50,50 +68,110 @@ namespace EvolveOS_ShellEnhancer.Views
             _appWindow.Hide();
 
             this.Activated += OnWindowActivated;
+
+            LoadAppsData();
         }
 
+        private async void LoadAppsData()
+        {
+            if (_isDataLoaded) return;
+            _isDataLoaded = true;
+
+            try
+            {
+                var fetchedAllApps = await StartMenuHelper.GetAllAppsAsync();
+                var fetchedPinnedApps = await StartMenuHelper.GetPinnedAppsAsync();
+
+                if (fetchedAllApps.Count > 0)
+                {
+                    AllAppsCollection.Clear();
+                    foreach (var app in fetchedAllApps) AllAppsCollection.Add(app);
+
+                    PinnedAppsCollection.Clear();
+                    foreach (var app in fetchedPinnedApps) PinnedAppsCollection.Add(app);
+
+                    _ = ExtractIconsAsync(fetchedAllApps.Concat(fetchedPinnedApps).Distinct());
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to load apps: {ex.Message}");
+            }
+        }
+
+        private async Task ExtractIconsAsync(IEnumerable<AppItem> apps)
+        {
+            foreach (var app in apps)
+            {
+                if (app.IconSource == null)
+                {
+                    try
+                    {
+                        var icon = await StartMenuHelper.ExtractAppIconAsync(app);
+                        if (icon != null)
+                        {
+                            app.IconSource = icon;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to set icon for {app.Name}: {ex.Message}");
+                    }
+                }
+            }
+        }
+        #endregion
+
+        #region Window & Layout Management
         public void ToggleVisibility()
         {
-            if (_isVisible)
+            if (!_isDataLoaded)
             {
-                HideMenu();
+                LoadAppsData();
             }
-            else
-            {
-                ShowMenu();
-            }
+
+            if (_isVisible) HideMenu();
+            else ShowMenu();
         }
 
         public void SetAlignment(string alignment)
         {
             _currentAlignment = alignment;
-
-            if (_isVisible)
-            {
-                ShowMenu();
-            }
+            if (_isVisible) ShowMenu();
         }
 
         public void SetPosition(string position)
         {
             _currentPosition = position;
-            if (_isVisible)
-            {
-                ShowMenu();
-            }
+            if (_isVisible) ShowMenu();
         }
 
-        /// <summary>
-        /// Helper method to target a specific monitor's bounds before displaying.
-        /// </summary>
         public void PositionOnDisplay(DisplayArea area)
         {
             TargetDisplayArea = area;
         }
 
+        public void SetStyle(string style)
+        {
+            _currentStyle = style;
+
+            bool isStandard = (_currentStyle == "Standard" || _currentStyle == "SplitStandard");
+            bool isGrouped = (_currentStyle == "Compact" || _currentStyle == "SplitGrouped");
+
+            DesignSplitStandard.Visibility = isStandard ? Visibility.Visible : Visibility.Collapsed;
+            DesignSplitGrouped.Visibility = isGrouped ? Visibility.Visible : Visibility.Collapsed;
+
+            if (isStandard || isGrouped)
+            {
+                MenuContainer.Width = 750;
+                MenuContainer.Height = 650;
+            }
+
+            if (_isVisible) ShowMenu();
+        }
+
         private void ShowMenu()
         {
-            // Use the target display area if provided, otherwise fallback to primary
             var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
 
             int menuWidth = (int)MenuContainer.Width;
@@ -101,45 +179,31 @@ namespace EvolveOS_ShellEnhancer.Views
             int taskbarOffset = 60;
             int margin = 16;
 
-            int x = 0;
-            int y = 0;
-
+            int x = 0; int y = 0;
             string targetPos = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
 
             switch (targetPos)
             {
                 case "Top":
                     y = displayArea.OuterBounds.Y + taskbarOffset;
-                    x = (_currentAlignment == "Center")
-                        ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2
-                        : displayArea.OuterBounds.X + margin;
+                    x = (_currentAlignment == "Center") ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2 : displayArea.OuterBounds.X + margin;
                     break;
-
                 case "Left":
                     x = displayArea.OuterBounds.X + taskbarOffset;
-                    y = (_currentAlignment == "Center")
-                        ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - menuHeight) / 2
-                        : displayArea.OuterBounds.Y + margin;
+                    y = (_currentAlignment == "Center") ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - menuHeight) / 2 : displayArea.OuterBounds.Y + margin;
                     break;
-
                 case "Right":
                     x = displayArea.OuterBounds.X + displayArea.OuterBounds.Width - menuWidth - taskbarOffset;
-                    y = (_currentAlignment == "Center")
-                        ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - menuHeight) / 2
-                        : displayArea.OuterBounds.Y + margin;
+                    y = (_currentAlignment == "Center") ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - menuHeight) / 2 : displayArea.OuterBounds.Y + margin;
                     break;
-
                 case "Bottom":
                 default:
                     y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - menuHeight - taskbarOffset;
-                    x = (_currentAlignment == "Center")
-                        ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2
-                        : displayArea.OuterBounds.X + margin;
+                    x = (_currentAlignment == "Center") ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2 : displayArea.OuterBounds.X + margin;
                     break;
             }
 
             _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, menuWidth, menuHeight));
-
             _appWindow.Show();
             _isVisible = true;
 
@@ -150,24 +214,11 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             _appWindow.Hide();
             _isVisible = false;
-
             App.LastStartMenuCloseTime = DateTime.Now;
         }
+        #endregion
 
-        public void SetStyle(string style)
-        {
-            if (style == "Compact")
-            {
-                MenuContainer.Width = 400;
-                MenuContainer.Height = 550;
-            }
-            else if (style == "Standard")
-            {
-                MenuContainer.Width = 600;
-                MenuContainer.Height = 700;
-            }
-        }
-
+        #region UI Event Handlers
         private void OnWindowActivated(object sender, WindowActivatedEventArgs args)
         {
             if (args.WindowActivationState == WindowActivationState.Deactivated)
@@ -180,5 +231,101 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             HideMenu();
         }
+
+        private void MenuContainer_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        private void PowerShutdown_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo("shutdown", "/s /t 0") { CreateNoWindow = true });
+        }
+
+        private void PowerRestart_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo("shutdown", "/r /t 0") { CreateNoWindow = true });
+        }
+
+        private void PowerSleep_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0") { CreateNoWindow = true });
+        }
+
+        private void QuickFolder_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is ListViewItem item && item.Tag is string folder)
+            {
+                string? path = folder switch
+                {
+                    "Documents" => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "Pictures" => Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+                    "Music" => Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+                    "Downloads" => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+                    "Settings" => "ms-settings:",
+                    "Run" => null,
+                    _ => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+                };
+
+                if (folder == "Run")
+                {
+                    Process.Start(new ProcessStartInfo("explorer.exe", "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}") { UseShellExecute = true });
+                }
+                else if (!string.IsNullOrEmpty(path))
+                {
+                    Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+                }
+                HideMenu();
+            }
+        }
+
+        private void BtnAllApps_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn)
+            {
+                if (btn.Content.ToString()!.Contains("All apps"))
+                {
+                    btn.Content = "< Back to Pinned";
+                    StandardPinnedAppsGrid.ItemsSource = AllAppsCollection;
+                    ProductivityAppsGrid.ItemsSource = AllAppsCollection;
+                }
+                else
+                {
+                    btn.Content = "All apps >";
+                    StandardPinnedAppsGrid.ItemsSource = PinnedAppsCollection;
+                    ProductivityAppsGrid.ItemsSource = PinnedAppsCollection;
+                }
+            }
+        }
+
+        private void AppGrid_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is AppItem app && !string.IsNullOrEmpty(app.ExecutablePath))
+            {
+                try
+                {
+                    if (app.IsUwp)
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "explorer.exe",
+                            Arguments = $@"shell:appsFolder\{app.ExecutablePath}",
+                            UseShellExecute = true
+                        });
+                    }
+                    else
+                    {
+                        Process.Start(new ProcessStartInfo(app.ExecutablePath) { UseShellExecute = true });
+                    }
+
+                    HideMenu();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to launch app: {ex.Message}");
+                }
+            }
+        }
+        #endregion
     }
 }

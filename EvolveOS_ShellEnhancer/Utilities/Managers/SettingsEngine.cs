@@ -105,6 +105,26 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 return false;
             }
         }
+
+        internal static string Shell_StartMenuStyle
+        {
+            get
+            {
+                try
+                {
+                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Shell_StartMenuStyle") is string val && !string.IsNullOrEmpty(val))
+                    {
+                        return val;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[Settings] Read Shell_StartMenuStyle Error: {ex.Message}");
+                }
+                return "SplitStandard";
+            }
+        }
         #endregion
 
         private static void ChangingParameters(string key, object value)

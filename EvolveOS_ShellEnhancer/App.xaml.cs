@@ -27,6 +27,20 @@ namespace EvolveOS_ShellEnhancer
 
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             this.UnhandledException += App_UnhandledException;
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                if (e.ExceptionObject is Exception ex)
+                {
+                    System.IO.File.WriteAllText("CrashLog.txt", $"Fatal: {ex.Message}\n{ex.StackTrace}");
+                }
+            };
+
+            this.UnhandledException += (s, e) =>
+            {
+                System.IO.File.WriteAllText("ShellEnhancer_CrashLog_UI.txt", $"Fatal UI: {e.Exception.Message}\n{e.Exception.StackTrace}");
+                e.Handled = true; // Attempt to keep the app alive
+            };
         }
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
@@ -34,6 +48,10 @@ namespace EvolveOS_ShellEnhancer
             СheckingGlobalParameters.Initialize();
 
             _startMenuWindow = new CustomStartMenuWindow();
+
+            _startMenuWindow.SetStyle(SettingsEngine.Shell_StartMenuStyle);
+            _startMenuWindow.SetAlignment(SettingsEngine.Shell_TaskbarAlignment);
+            _startMenuWindow.SetPosition(SettingsEngine.Shell_TaskbarPosition);
 
             KeyboardHookManager.WindowsKeyPressed += OnWindowsKeyPressed;
 
