@@ -8,17 +8,18 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
 using WinRT.Interop;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
-using System.IO;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
@@ -38,6 +39,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public ObservableCollection<AppItem> PinnedAppsCollection { get; } = new();
         public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
+
+        public ObservableCollection<AppItem> SearchResultsCollection { get; } = new();
+        private string _currentSearchFilter = "Apps";
+        private bool _isShowingAllApps = false;
+        private AppItem? _currentSearchItem;
+
+        private CancellationTokenSource? _searchCts;
         #endregion
 
         #region Initialization & Data Loading
@@ -353,7 +361,9 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (sender is Button btn)
             {
-                if (btn.Content.ToString()!.Contains("All apps"))
+                _isShowingAllApps = !_isShowingAllApps;
+
+                if (_isShowingAllApps)
                 {
                     btn.Content = "< Back to Pinned";
                     StandardPinnedAppsGrid.ItemsSource = AllAppsCollection;
@@ -368,34 +378,288 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        private void AppGrid_ItemClick(object sender, ItemClickEventArgs e)
+        #endregion
+
+        #region Search & Action Handlers
+
+        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-            if (e.ClickedItem is AppItem app && !string.IsNullOrEmpty(app.ExecutablePath))
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
-                try
+                PerformSearch(sender.Text);
+            }
+        }
+
+        private void SearchFilter_Click(object sender, RoutedEventArgs e)
+        {
+            if (SearchBox1 == null || SearchBox2 == null || DesignSplitStandard == null) return;
+
+            if (sender is MenuFlyoutItem item)
+            {
+                _currentSearchFilter = item.Text;
+
+                string query = DesignSplitStandard.Visibility == Visibility.Visible ? SearchBox1.Text : SearchBox2.Text;
+                PerformSearch(query);
+            }
+        }
+
+        private void PerformSearch(string query)
+        {
+            if (StandardPinnedAppsGrid == null || ProductivityAppsGrid == null || SecondaryAppsGrid == null) return;
+
+            _searchCts?.Cancel();
+            _searchCts = new CancellationTokenSource();
+            var token = _searchCts.Token;
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                var activeCollection = _isShowingAllApps ? AllAppsCollection : PinnedAppsCollection;
+                StandardPinnedAppsGrid.ItemsSource = activeCollection;
+                ProductivityAppsGrid.ItemsSource = activeCollection;
+                SecondaryAppsGrid.ItemsSource = activeCollection;
+
+                DefaultRightPane1.Visibility = Visibility.Visible;
+                DefaultRightPane2.Visibility = Visibility.Visible;
+                SearchRightPane1.Visibility = Visibility.Collapsed;
+                SearchRightPane2.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            SearchResultsCollection.Clear();
+
+            if (_currentSearchFilter == "Apps")
+            {
+                var results = AllAppsCollection
+                    .Where(a => a.Name != null && a.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                foreach (var item in results) SearchResultsCollection.Add(item);
+            }
+            else if (_currentSearchFilter == "Files")
+            {
+                SearchResultsCollection.Add(new AppItem
                 {
-                    if (app.IsUwp)
+                    Name = $"Search entire PC for '{query}'",
+                    FallbackGlyph = "\xE8A5",
+                    ExecutablePath = "FILE_SEARCH:" + query
+                });
+
+                Task.Run(() =>
+                {
+                    var searchPaths = new List<string>();
+                    string userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+                    searchPaths.Add(Path.Combine(userPath, "Desktop"));
+                    searchPaths.Add(Path.Combine(userPath, "Documents"));
+                    searchPaths.Add(Path.Combine(userPath, "Downloads"));
+
+                    foreach (var d in DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType == DriveType.Fixed))
                     {
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = "explorer.exe",
-                            Arguments = $@"shell:appsFolder\{app.ExecutablePath}",
-                            UseShellExecute = true
-                        });
-                    }
-                    else
-                    {
-                        Process.Start(new ProcessStartInfo(app.ExecutablePath) { UseShellExecute = true });
+                        searchPaths.Add(d.RootDirectory.FullName);
                     }
 
-                    HideMenu();
-                }
-                catch (Exception ex)
+                    int resultsFound = 0;
+                    const int maxResults = 15;
+
+                    foreach (var path in searchPaths.Distinct())
+                    {
+                        if (token.IsCancellationRequested || resultsFound >= maxResults) break;
+
+                        foreach (var file in SafeEnumerateFiles(path, query, token))
+                        {
+                            if (token.IsCancellationRequested || resultsFound >= maxResults) break;
+
+                            resultsFound++;
+
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                var fileItem = new AppItem
+                                {
+                                    Name = Path.GetFileName(file),
+                                    ExecutablePath = file,
+                                    FallbackGlyph = "\xE8A5",
+                                    IsUwp = false
+                                };
+
+                                int insertIndex = SearchResultsCollection.Count > 0 ? SearchResultsCollection.Count - 1 : 0;
+                                SearchResultsCollection.Insert(insertIndex, fileItem);
+
+                                _ = ExtractIconsAsync(new[] { fileItem });
+
+                                if (SearchResultsCollection.Count == 2)
+                                {
+                                    StandardPinnedAppsGrid.SelectedIndex = 0;
+                                    ProductivityAppsGrid.SelectedIndex = 0;
+                                    SecondaryAppsGrid.SelectedIndex = 0;
+                                    UpdateSearchDetailsPane(fileItem);
+                                }
+                            });
+                        }
+                    }
+                }, token);
+            }
+            else if (_currentSearchFilter == "Web")
+            {
+                SearchResultsCollection.Add(new AppItem
                 {
-                    Debug.WriteLine($"Failed to launch app: {ex.Message}");
+                    Name = $"Search Web for '{query}'",
+                    FallbackGlyph = "\xE8FA",
+                    ExecutablePath = "WEB_SEARCH:" + query
+                });
+            }
+
+            StandardPinnedAppsGrid.ItemsSource = SearchResultsCollection;
+            ProductivityAppsGrid.ItemsSource = SearchResultsCollection;
+            SecondaryAppsGrid.ItemsSource = SearchResultsCollection;
+
+            DefaultRightPane1.Visibility = Visibility.Collapsed;
+            DefaultRightPane2.Visibility = Visibility.Collapsed;
+            SearchRightPane1.Visibility = Visibility.Visible;
+            SearchRightPane2.Visibility = Visibility.Visible;
+
+            if (SearchResultsCollection.Count > 0)
+            {
+                StandardPinnedAppsGrid.SelectedIndex = 0;
+                ProductivityAppsGrid.SelectedIndex = 0;
+                SecondaryAppsGrid.SelectedIndex = 0;
+                UpdateSearchDetailsPane(SearchResultsCollection.First());
+            }
+            else
+            {
+                _currentSearchItem = null;
+                SearchDetailsName1.Text = "No results found";
+                SearchDetailsName2.Text = "No results found";
+                SearchDetailsIcon1.Source = null;
+                SearchDetailsIcon2.Source = null;
+                AdminBtn1.Visibility = Visibility.Collapsed;
+                LocationBtn1.Visibility = Visibility.Collapsed;
+                AdminBtn2.Visibility = Visibility.Collapsed;
+                LocationBtn2.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void AppGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.FirstOrDefault() is AppItem item && SearchRightPane1.Visibility == Visibility.Visible)
+            {
+                UpdateSearchDetailsPane(item);
+            }
+        }
+
+        private void UpdateSearchDetailsPane(AppItem item)
+        {
+            _currentSearchItem = item;
+            SearchDetailsName1.Text = item.Name;
+            SearchDetailsName2.Text = item.Name;
+            SearchDetailsIcon1.Source = item.IconSource;
+            SearchDetailsIcon2.Source = item.IconSource;
+
+            bool isSpecial = item.ExecutablePath?.StartsWith("WEB_SEARCH:") == true || item.ExecutablePath?.StartsWith("FILE_SEARCH:") == true;
+            bool isUwpApp = item.IsUwp;
+
+            AdminBtn1.Visibility = (!isUwpApp && !isSpecial) ? Visibility.Visible : Visibility.Collapsed;
+            LocationBtn1.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
+
+            AdminBtn2.Visibility = (!isUwpApp && !isSpecial) ? Visibility.Visible : Visibility.Collapsed;
+            LocationBtn2.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void AppGrid_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is AppItem app) LaunchApp(app, false);
+        }
+
+        private void SearchAction_Open_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentSearchItem != null) LaunchApp(_currentSearchItem, false);
+        }
+
+        private void SearchAction_RunAsAdmin_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentSearchItem != null) LaunchApp(_currentSearchItem, true);
+        }
+
+        private void SearchAction_OpenLocation_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentSearchItem == null || string.IsNullOrEmpty(_currentSearchItem.ExecutablePath)) return;
+            try
+            {
+                string? dir = Path.GetDirectoryName(_currentSearchItem.ExecutablePath);
+                if (!string.IsNullOrEmpty(dir))
+                    Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
+            }
+            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+            HideMenu();
+        }
+
+        private async void LaunchApp(AppItem app, bool runAsAdmin)
+        {
+            if (string.IsNullOrEmpty(app.ExecutablePath)) return;
+            try
+            {
+                if (app.ExecutablePath.StartsWith("WEB_SEARCH:"))
+                {
+                    string query = app.ExecutablePath.Substring(11);
+                    await Launcher.LaunchUriAsync(new Uri($"https://www.google.com/search?q={Uri.EscapeDataString(query)}"));
+                    HideMenu();
+                    return;
+                }
+                else if (app.ExecutablePath.StartsWith("FILE_SEARCH:"))
+                {
+                    string query = app.ExecutablePath.Substring(12);
+                    await Launcher.LaunchUriAsync(new Uri($"search-ms:query={Uri.EscapeDataString(query)}"));
+                    HideMenu();
+                    return;
+                }
+
+                var psi = new ProcessStartInfo { UseShellExecute = true };
+                if (app.IsUwp)
+                {
+                    psi.FileName = "explorer.exe";
+                    psi.Arguments = $@"shell:appsFolder\{app.ExecutablePath}";
+                }
+                else
+                {
+                    psi.FileName = app.ExecutablePath;
+                    if (runAsAdmin) psi.Verb = "runas";
+                }
+                Process.Start(psi);
+                HideMenu();
+            }
+            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+        }
+
+        #endregion
+
+        private IEnumerable<string> SafeEnumerateFiles(string rootPath, string query, CancellationToken token)
+        {
+            var dirs = new Queue<string>();
+            if (Directory.Exists(rootPath)) dirs.Enqueue(rootPath);
+
+            while (dirs.Count > 0)
+            {
+                if (token.IsCancellationRequested) yield break;
+                string currentDir = dirs.Dequeue();
+
+                string[] files;
+                try { files = Directory.GetFiles(currentDir, $"*{query}*", SearchOption.TopDirectoryOnly); }
+                catch { files = Array.Empty<string>(); }
+
+                foreach (var file in files)
+                {
+                    if (token.IsCancellationRequested) yield break;
+                    yield return file;
+                }
+
+                string[] subDirs;
+                try { subDirs = Directory.GetDirectories(currentDir); }
+                catch { subDirs = Array.Empty<string>(); }
+
+                foreach (var dir in subDirs)
+                {
+                    dirs.Enqueue(dir);
                 }
             }
         }
-        #endregion
     }
 }
