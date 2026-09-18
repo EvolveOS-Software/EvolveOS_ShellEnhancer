@@ -314,6 +314,11 @@ namespace EvolveOS_ShellEnhancer
                             LivePreviewWindow.AnimationSpeed = pSpeed;
                         break;
 
+                    case "Taskbar_PreviewDelay":
+                        if (double.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double pDelay))
+                            CustomTaskbarWindow.PreviewDelay = pDelay;
+                        break;
+
                     case "Taskbar_ClockSeconds":
                         CustomTaskbarWindow.ShowSeconds = bool.Parse(value);
                         break;

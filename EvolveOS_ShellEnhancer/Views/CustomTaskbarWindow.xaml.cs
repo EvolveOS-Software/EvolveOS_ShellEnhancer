@@ -182,6 +182,10 @@ namespace EvolveOS_ShellEnhancer.Views
         public static int TaskbarSize { get; set; } = 48;
         public static int TaskbarIconSize { get; set; } = 24;
 
+        public static double PreviewDelay { get; set; } = 0.5;
+        private DispatcherTimer _previewDelayTimer = new DispatcherTimer();
+        private Action? _pendingPreviewAction;
+
         private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
         {
             "SystemSettings", "ApplicationFrameHost", "SearchHost", "StartMenuExperienceHost",
@@ -224,6 +228,12 @@ namespace EvolveOS_ShellEnhancer.Views
             TaskbarOverlayManager.ApplyWidgetStyles(_hWnd);
 
             _previewWindow = new LivePreviewWindow();
+
+            _previewDelayTimer.Tick += (s, e) =>
+            {
+                _previewDelayTimer.Stop();
+                _pendingPreviewAction?.Invoke();
+            };
 
             _clockTimer = new DispatcherTimer();
             _clockTimer.Interval = TimeSpan.FromSeconds(1);
@@ -955,6 +965,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
             appCard.PointerPressed += (s, e) =>
             {
+                _previewDelayTimer.Stop();
+                _pendingPreviewAction = null;
+
                 FactoryAnimation.AnimateAppCardClickDown(appCard);
                 var props = e.GetCurrentPoint(appCard).Properties;
 
@@ -969,6 +982,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
             appCard.Tapped += (s, e) =>
             {
+                _previewDelayTimer.Stop();
+                _pendingPreviewAction = null;
+
                 if (_isTrackingDrag) return;
                 _previewWindow.HidePreview();
 
@@ -1030,12 +1046,29 @@ namespace EvolveOS_ShellEnhancer.Views
                     int cardScreenX = _appWindow.Position.X + (int)localPoint.X;
                     int cardScreenY = _appWindow.Position.Y + (int)localPoint.Y;
 
-                    _previewWindow.ShowPreviews(handles, cardScreenX, cardScreenY, (int)appCard.Width, (int)appCard.Height);
+                    _pendingPreviewAction = () =>
+                    {
+                        _previewWindow.ShowPreviews(handles, cardScreenX, cardScreenY, (int)appCard.Width, (int)appCard.Height);
+                    };
+
+                    if (PreviewDelay > 0)
+                    {
+                        _previewDelayTimer.Stop();
+                        _previewDelayTimer.Interval = TimeSpan.FromSeconds(PreviewDelay);
+                        _previewDelayTimer.Start();
+                    }
+                    else
+                    {
+                        _pendingPreviewAction.Invoke();
+                    }
                 }
             };
 
             appCard.PointerExited += (s, e) =>
             {
+                _previewDelayTimer.Stop();
+                _pendingPreviewAction = null;
+
                 appCard.Background = new SolidColorBrush(Colors.Transparent);
 
                 FactoryAnimation.AnimateAppCardHoverExit(appCard, HoverAnimationStyle);
