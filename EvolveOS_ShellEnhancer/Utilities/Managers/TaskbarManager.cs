@@ -142,6 +142,14 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             }
         }
 
+        public static void ResizeAll()
+        {
+            foreach (var window in _taskbars)
+            {
+                window.DispatcherQueue.TryEnqueue(() => window.ApplySizeChanges());
+            }
+        }
+
         public static void ReloadAll()
         {
             foreach (var t in _taskbars) t.ReloadTaskbar();

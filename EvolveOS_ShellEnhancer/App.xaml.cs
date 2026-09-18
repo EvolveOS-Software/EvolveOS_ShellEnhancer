@@ -281,7 +281,7 @@ namespace EvolveOS_ShellEnhancer
                         if (int.TryParse(value, out int tSize))
                         {
                             CustomTaskbarWindow.TaskbarSize = tSize;
-                            TaskbarManager.ReloadAll();
+                            TaskbarManager.ResizeAll();
                         }
                         break;
 

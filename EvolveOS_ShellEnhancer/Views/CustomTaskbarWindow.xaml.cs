@@ -1466,6 +1466,15 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        public void ApplySizeChanges()
+        {
+            UpdateSizes();
+            if (_appWindow.IsVisible)
+            {
+                ShowDock();
+            }
+        }
+
         public void SetPosition(string position)
         {
             _currentPosition = position;
