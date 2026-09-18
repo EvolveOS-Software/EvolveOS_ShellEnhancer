@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Microsoft.Win32;
+using Microsoft.Windows.System.Power;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +25,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Graphics;
+using Windows.Networking.Connectivity;
 using Windows.System;
 using Windows.UI;
 using Windows.UI.Core;
@@ -225,6 +227,8 @@ namespace EvolveOS_ShellEnhancer.Views
             _clockTimer.Tick += ClockTimer_Tick;
             _clockTimer.Start();
             UpdateClock();
+
+            StartNetworkListener();
 
             if (BtnStart != null)
             {
@@ -1638,6 +1642,116 @@ namespace EvolveOS_ShellEnhancer.Views
             catch (Exception ex)
             {
                 Debug.WriteLine($"SetAlignment Error: {ex.Message}");
+            }
+        }
+        #endregion
+
+        #region System Status Detectors
+        private void StartNetworkListener()
+        {
+            UpdateNetworkIcon();
+
+            NetworkInformation.NetworkStatusChanged += NetworkInformation_NetworkStatusChanged;
+        }
+
+        private void NetworkInformation_NetworkStatusChanged(object sender)
+        {
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateNetworkIcon();
+            });
+        }
+
+        private void UpdateNetworkIcon()
+        {
+            try
+            {
+                var profile = NetworkInformation.GetInternetConnectionProfile();
+
+                if (profile == null)
+                {
+                    // Disconnected - Globe Icon
+                    NetworkIcon.Glyph = "\xEB55";
+                }
+                else if (profile.IsWlanConnectionProfile)
+                {
+                    // Wi-Fi Connected
+                    NetworkIcon.Glyph = "\xE704";
+                }
+                else if (profile.IsWwanConnectionProfile)
+                {
+                    // Cellular / Mobile Data
+                    NetworkIcon.Glyph = "\xE81C";
+                }
+                else
+                {
+                    // Ethernet / Wired Connection - Network Tower Icon
+                    NetworkIcon.Glyph = "\xE839";
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to fetch network status: {ex.Message}");
+                NetworkIcon.Glyph = "\xE704";
+            }
+        }
+
+        private void StartPowerListener()
+        {
+            UpdateBatteryIcon();
+
+            PowerManager.BatteryStatusChanged += (s, e) => this.DispatcherQueue.TryEnqueue(UpdateBatteryIcon);
+            PowerManager.RemainingChargePercentChanged += (s, e) => this.DispatcherQueue.TryEnqueue(UpdateBatteryIcon);
+            PowerManager.EnergySaverStatusChanged += (s, e) => this.DispatcherQueue.TryEnqueue(UpdateBatteryIcon);
+        }
+
+        private void UpdateBatteryIcon()
+        {
+            try
+            {
+                var status = PowerManager.BatteryStatus;
+
+                if (status == BatteryStatus.NotPresent)
+                {
+                    BatteryIcon.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                BatteryIcon.Visibility = Visibility.Visible;
+                int percent = PowerManager.RemainingChargePercent;
+                bool isCharging = status == BatteryStatus.Charging || status == BatteryStatus.Idle;
+
+                int iconIndex = (int)Math.Round(percent / 10.0);
+                if (iconIndex < 0) iconIndex = 0;
+                if (iconIndex > 10) iconIndex = 10;
+
+                int glyphCode;
+
+                if (isCharging)
+                {
+                    // Charging Icons: \xE85A (0%) to \xE863 (90%). \xE83E is 100%
+                    glyphCode = iconIndex == 10 ? 0xE83E : 0xE85A + iconIndex;
+                }
+                else if (PowerManager.EnergySaverStatus == EnergySaverStatus.On)
+                {
+                    // Battery Saver Icons: \xE864 (0%) to \xE86D (90%). \xE86E is 100%
+                    glyphCode = iconIndex == 10 ? 0xE86E : 0xE864 + iconIndex;
+                }
+                else
+                {
+                    // Normal Battery Icons: \xE850 (0%) to \xE859 (90%). \xE83F is 100%
+                    glyphCode = iconIndex == 10 ? 0xE83F : 0xE850 + iconIndex;
+                }
+
+                BatteryIcon.Glyph = ((char)glyphCode).ToString();
+
+                // Add a specific tooltip just for the battery showing the percentage
+                ToolTipService.SetToolTip(BatteryIcon, $"Battery: {percent}%");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to fetch battery status: {ex.Message}");
+                BatteryIcon.Visibility = Visibility.Collapsed;
             }
         }
         #endregion
