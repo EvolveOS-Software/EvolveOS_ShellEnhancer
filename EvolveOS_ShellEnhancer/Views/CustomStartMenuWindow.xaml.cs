@@ -8,18 +8,18 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
 using WinRT.Interop;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using System.IO;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
@@ -145,7 +145,6 @@ namespace EvolveOS_ShellEnhancer.Views
             try
             {
                 var fetchedAllApps = await StartMenuHelper.GetAllAppsAsync();
-                var fetchedPinnedApps = await StartMenuHelper.GetPinnedAppsAsync();
 
                 if (fetchedAllApps.Count > 0)
                 {
@@ -153,9 +152,34 @@ namespace EvolveOS_ShellEnhancer.Views
                     foreach (var app in fetchedAllApps) AllAppsCollection.Add(app);
 
                     PinnedAppsCollection.Clear();
-                    foreach (var app in fetchedPinnedApps) PinnedAppsCollection.Add(app);
 
-                    _ = ExtractIconsAsync(fetchedAllApps.Concat(fetchedPinnedApps).Distinct());
+                    string savedPins = SettingsEngine.StartMenuPinnedApps;
+                    if (!string.IsNullOrWhiteSpace(savedPins))
+                    {
+                        var pinNames = savedPins.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var name in pinNames)
+                        {
+                            var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
+                            if (match != null) PinnedAppsCollection.Add(match);
+                        }
+                    }
+                    else
+                    {
+                        var preferredPins = new[] { "Edge", "Settings", "File Explorer", "Store", "Photos", "Camera", "Calculator", "Clock", "Terminal", "Spotify", "Discord", "Word", "Excel" };
+                        var defaultPinned = fetchedAllApps.Where(a => preferredPins.Any(p => a.Name != null && a.Name.Contains(p, StringComparison.OrdinalIgnoreCase))).ToList();
+
+                        foreach (var app in fetchedAllApps)
+                        {
+                            if (defaultPinned.Count >= 12) break;
+                            if (!defaultPinned.Contains(app)) defaultPinned.Add(app);
+                        }
+
+                        foreach (var app in defaultPinned.Take(12)) PinnedAppsCollection.Add(app);
+                    }
+
+                    _ = ExtractIconsAsync(PinnedAppsCollection.ToList());
+
+                    _ = ExtractIconsAsync(AllAppsCollection.Except(PinnedAppsCollection).ToList());
                 }
             }
             catch (Exception ex)
@@ -378,6 +402,143 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        #endregion
+
+        #region Context Menu Handlers (Pinning / Actions)
+
+        private void AppCard_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is AppItem app)
+            {
+                if (app.ExecutablePath != null && (app.ExecutablePath.StartsWith("WEB_SEARCH:") || app.ExecutablePath.StartsWith("FILE_SEARCH:")))
+                    return;
+
+                MenuFlyout flyout = new MenuFlyout();
+
+                bool isPinnedToStart = PinnedAppsCollection.Contains(app);
+                var pinStartItem = new MenuFlyoutItem
+                {
+                    Text = isPinnedToStart ? "Unpin from Start" : "Pin to Start",
+                    Icon = new FontIcon { Glyph = "\xE141" }
+                };
+                pinStartItem.Click += (s, args) =>
+                {
+                    if (isPinnedToStart)
+                        PinnedAppsCollection.Remove(app);
+                    else
+                        PinnedAppsCollection.Add(app);
+
+                    SaveStartMenuPins();
+                };
+                flyout.Items.Add(pinStartItem);
+                flyout.Items.Add(new MenuFlyoutSeparator());
+
+                bool isPinnedToTaskbar = IsPinnedToTaskbar(app);
+                var pinTaskbarItem = new MenuFlyoutItem
+                {
+                    Text = isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar",
+                    Icon = new FontIcon { Glyph = "\xE196" }
+                };
+                pinTaskbarItem.Click += (s, args) => ToggleTaskbarPin(app, isPinnedToTaskbar);
+                flyout.Items.Add(pinTaskbarItem);
+
+                if (!app.IsUwp)
+                {
+                    flyout.Items.Add(new MenuFlyoutSeparator());
+
+                    var adminItem = new MenuFlyoutItem { Text = "Run as administrator", Icon = new FontIcon { Glyph = "\xE7EF" } };
+                    adminItem.Click += (s, args) => LaunchApp(app, true);
+                    flyout.Items.Add(adminItem);
+
+                    var locItem = new MenuFlyoutItem { Text = "Open file location", Icon = new FontIcon { Glyph = "\xE8DA" } };
+                    locItem.Click += (s, args) =>
+                    {
+                        try
+                        {
+                            string? dir = Path.GetDirectoryName(app.ExecutablePath);
+                            if (!string.IsNullOrEmpty(dir))
+                                Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
+                        }
+                        catch (Exception ex) { Debug.WriteLine(ex.Message); }
+                        HideMenu();
+                    };
+                    flyout.Items.Add(locItem);
+                }
+
+                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+
+                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
+                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
+                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255))));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
+
+                flyout.ShowAt(element, e.GetPosition(element));
+                e.Handled = true;
+            }
+        }
+
+        private void SaveStartMenuPins()
+        {
+            var names = PinnedAppsCollection.Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n));
+            SettingsEngine.StartMenuPinnedApps = string.Join(",", names);
+        }
+
+        private string GetTaskbarFolderPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
+
+        private bool IsPinnedToTaskbar(AppItem app)
+        {
+            if (string.IsNullOrEmpty(app.Name)) return false;
+            string dir = GetTaskbarFolderPath();
+            if (!Directory.Exists(dir)) return false;
+
+            var shortcuts = Directory.GetFiles(dir, "*.lnk");
+            foreach (var lnk in shortcuts)
+            {
+                if (Path.GetFileNameWithoutExtension(lnk).Equals(app.Name, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
+        }
+
+        private void ToggleTaskbarPin(AppItem app, bool isPinned)
+        {
+            if (string.IsNullOrEmpty(app.Name) || string.IsNullOrEmpty(app.ExecutablePath)) return;
+            string dir = GetTaskbarFolderPath();
+            string lnkPath = Path.Combine(dir, $"{app.Name}.lnk");
+
+            try
+            {
+                if (isPinned)
+                {
+                    if (File.Exists(lnkPath)) File.Delete(lnkPath);
+                }
+                else
+                {
+                    if (app.IsUwp)
+                    {
+                        IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
+                        IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
+                        shortcut.TargetPath = "explorer.exe";
+                        shortcut.Arguments = $@"shell:appsFolder\{app.ExecutablePath}";
+                        shortcut.Save();
+                    }
+                    else
+                    {
+                        IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
+                        IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
+                        shortcut.TargetPath = app.ExecutablePath;
+                        shortcut.Save();
+                    }
+                }
+
+                TaskbarManager.ReloadAll();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Taskbar pin toggle failed: " + ex.Message);
+            }
+        }
         #endregion
 
         #region Search & Action Handlers

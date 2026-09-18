@@ -84,7 +84,7 @@
                             <GridView Grid.Row="1" x:Name="StandardPinnedAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                 <GridView.ItemTemplate>
                                     <DataTemplate x:DataType="helpers:AppItem">
-                                        <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent">
+                                        <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped">
                                             <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
                                                           Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
 
@@ -295,7 +295,7 @@
                                         <GridView x:Name="ProductivityAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                             <GridView.ItemTemplate>
                                                 <DataTemplate x:DataType="helpers:AppItem">
-                                                    <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent">
+                                                    <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped">
                                                         <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
                                                                       Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
                                                         <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"
@@ -324,7 +324,7 @@
                                         <GridView x:Name="SecondaryAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                             <GridView.ItemTemplate>
                                                 <DataTemplate x:DataType="helpers:AppItem">
-                                                    <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent">
+                                                    <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped">
                                                         <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
                                                                       Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
                                                         <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"

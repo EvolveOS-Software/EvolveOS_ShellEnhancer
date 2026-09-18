@@ -1,6 +1,5 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
-
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -18,7 +17,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             }
             catch (Exception e)
             {
-
                 Debug.WriteLine(e);
             }
         }
@@ -28,12 +26,15 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
     {
         private static readonly Dictionary<string, object> _defaultSettings = new Dictionary<string, object>
         {
-            ["TaskbarPinnedAppsOrder"] = string.Empty
+            ["TaskbarPinnedAppsOrder"] = string.Empty,
+            ["StartMenuPinnedApps"] = string.Empty
         };
 
         private static readonly Dictionary<string, object> _cachedSettings = new Dictionary<string, object>(_defaultSettings);
 
         internal static string TaskbarPinnedAppsOrder { get => (string)_cachedSettings["TaskbarPinnedAppsOrder"]; set => ChangingParameters("TaskbarPinnedAppsOrder", value); }
+
+        internal static string StartMenuPinnedApps { get => (string)_cachedSettings["StartMenuPinnedApps"]; set => ChangingParameters("StartMenuPinnedApps", value); }
 
         #region Shell Settings
         internal static string Shell_TaskbarAlignment
