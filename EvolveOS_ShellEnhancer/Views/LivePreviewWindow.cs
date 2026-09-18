@@ -77,6 +77,12 @@ namespace EvolveOS_ShellEnhancer.Views
         private IntPtr _peekingHwnd = IntPtr.Zero;
 
         private bool _isPeekActive = false;
+        private bool _isRedrawing = false;
+
+        private int _lastCardScreenX;
+        private int _lastCardScreenY;
+        private int _lastCardWidth;
+        private int _lastCardHeight;
         #endregion
 
         #region Constructor
@@ -152,258 +158,282 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void ExecuteShow(List<IntPtr> sourceHwnds, int cardScreenX, int cardScreenY, int cardWidth, int cardHeight)
         {
-            _hideTimer.Stop();
-
-            double smallFontSize = 12;
-            if (Application.Current.Resources.TryGetValue("AppFontSizeSmall", out var sizeRes) && sizeRes is double s)
+            _isRedrawing = true;
+            try
             {
-                smallFontSize = s;
-            }
+                _hideTimer.Stop();
+                _peekTimer.Stop();
 
-            FontFamily customFont = new FontFamily("Segoe UI");
-            if (Application.Current.Resources.TryGetValue("AppCustomFont", out var fontRes) && fontRes is FontFamily f)
-            {
-                customFont = f;
-            }
-
-            foreach (var thumb in _thumbHandles)
-            {
-                Win32Helper.DwmUnregisterThumbnail(thumb);
-            }
-            _thumbHandles.Clear();
-            _currentSourceHwnds.Clear();
-            _rootStackPanel.Children.Clear();
-
-            if (sourceHwnds == null || sourceHwnds.Count == 0) return;
-
-            _currentSourceHwnds.AddRange(sourceHwnds);
-
-            string position = SettingsEngine.Shell_TaskbarPosition;
-            bool isVertical = (position == "Left" || position == "Right");
-
-            _rootStackPanel.Orientation = isVertical ? Orientation.Vertical : Orientation.Horizontal;
-
-            int itemWidth = ThumbWidth + (HighlightPaddingX * 2);
-            int itemHeight = ThumbHeight + ActionPanelHeight;
-
-            int totalWidth, totalHeight;
-            if (isVertical)
-            {
-                totalWidth = SlotMargin + itemWidth + SlotMargin;
-                totalHeight = SlotMargin + (sourceHwnds.Count * itemHeight) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
-            }
-            else
-            {
-                totalWidth = SlotMargin + (sourceHwnds.Count * itemWidth) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
-                totalHeight = SlotMargin + itemHeight + SlotMargin;
-            }
-
-            int x, y;
-
-            var point = new Windows.Graphics.PointInt32(cardScreenX, cardScreenY);
-            var displayArea = DisplayArea.GetFromPoint(point, DisplayAreaFallback.Nearest);
-
-            int screenLeft = displayArea.OuterBounds.X;
-            int screenTop = displayArea.OuterBounds.Y;
-            int screenRight = screenLeft + displayArea.OuterBounds.Width;
-            int screenBottom = screenTop + displayArea.OuterBounds.Height;
-
-            switch (position)
-            {
-                case "Top":
-                    x = cardScreenX - (totalWidth / 2) + (cardWidth / 2);
-                    y = cardScreenY + cardHeight + SlotMargin;
-                    break;
-                case "Left":
-                    x = cardScreenX + cardWidth + SlotMargin;
-                    y = cardScreenY - (totalHeight / 2) + (cardHeight / 2);
-                    break;
-                case "Right":
-                    x = cardScreenX - totalWidth - SlotMargin;
-                    y = cardScreenY - (totalHeight / 2) + (cardHeight / 2);
-                    break;
-                case "Bottom":
-                default:
-                    x = cardScreenX - (totalWidth / 2) + (cardWidth / 2);
-                    y = cardScreenY - totalHeight - SlotMargin;
-                    break;
-            }
-
-            if (x < screenLeft + 10) x = screenLeft + 10;
-            if (x + totalWidth > screenRight - 10) x = screenRight - totalWidth - 10;
-            if (y < screenTop + 10) y = screenTop + 10;
-            if (y + totalHeight > screenBottom - 10) y = screenBottom - totalHeight - 10;
-
-            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, totalWidth, totalHeight));
-            SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
-            IntPtr currentHwnd = WindowNative.GetWindowHandle(this);
-
-            for (int i = 0; i < sourceHwnds.Count; i++)
-            {
-                IntPtr targetHwnd = sourceHwnds[i];
-
-                Grid slotGrid = new Grid
+                if (_peekingHwnd != IntPtr.Zero)
                 {
-                    Width = itemWidth,
-                    Height = itemHeight,
-                    CornerRadius = new CornerRadius(8),
-                    Background = _transparentBrush
-                };
+                    SafeToggleAeroPeek(false, _peekingHwnd);
+                    _peekingHwnd = IntPtr.Zero;
+                }
 
-                System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
-                GetWindowText(targetHwnd, sb, 256);
-                string windowTitle = sb.ToString();
-                if (string.IsNullOrWhiteSpace(windowTitle)) windowTitle = "Application";
+                _lastCardScreenX = cardScreenX;
+                _lastCardScreenY = cardScreenY;
+                _lastCardWidth = cardWidth;
+                _lastCardHeight = cardHeight;
 
-                TextBlock titleBlock = new TextBlock
+                double smallFontSize = 12;
+                if (Application.Current.Resources.TryGetValue("AppFontSizeSmall", out var sizeRes) && sizeRes is double s)
                 {
-                    Text = windowTitle,
-                    FontSize = smallFontSize,
-                    FontFamily = customFont,
-                    FontWeight = FontWeights.SemiBold,
-                    Foreground = new SolidColorBrush(Colors.White),
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Top,
-                    Margin = new Thickness(HighlightPaddingX, 3, 12, 0),
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                    MaxLines = 1
-                };
+                    smallFontSize = s;
+                }
 
-                StackPanel actionPanel = new StackPanel
+                FontFamily customFont = new FontFamily("Segoe UI");
+                if (Application.Current.Resources.TryGetValue("AppCustomFont", out var fontRes) && fontRes is FontFamily f)
                 {
-                    Orientation = Orientation.Horizontal,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Bottom,
-                    Margin = new Thickness(0, 0, 0, 8),
-                    Spacing = 16,
-                    Visibility = Visibility.Visible
-                };
+                    customFont = f;
+                }
 
-                var closeBtn = new Button
+                foreach (var thumb in _thumbHandles)
                 {
-                    Content = new StackPanel
+                    Win32Helper.DwmUnregisterThumbnail(thumb);
+                }
+                _thumbHandles.Clear();
+                _currentSourceHwnds.Clear();
+                _rootStackPanel.Children.Clear();
+
+                if (sourceHwnds == null || sourceHwnds.Count == 0) return;
+
+                _currentSourceHwnds.AddRange(sourceHwnds);
+
+                string position = SettingsEngine.Shell_TaskbarPosition;
+                bool isVertical = (position == "Left" || position == "Right");
+
+                _rootStackPanel.Orientation = isVertical ? Orientation.Vertical : Orientation.Horizontal;
+
+                int itemWidth = ThumbWidth + (HighlightPaddingX * 2);
+                int itemHeight = ThumbHeight + ActionPanelHeight;
+
+                int totalWidth, totalHeight;
+                if (isVertical)
+                {
+                    totalWidth = SlotMargin + itemWidth + SlotMargin;
+                    totalHeight = SlotMargin + (sourceHwnds.Count * itemHeight) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
+                }
+                else
+                {
+                    totalWidth = SlotMargin + (sourceHwnds.Count * itemWidth) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
+                    totalHeight = SlotMargin + itemHeight + SlotMargin;
+                }
+
+                int x, y;
+
+                var point = new Windows.Graphics.PointInt32(cardScreenX, cardScreenY);
+                var displayArea = DisplayArea.GetFromPoint(point, DisplayAreaFallback.Nearest);
+
+                int screenLeft = displayArea.OuterBounds.X;
+                int screenTop = displayArea.OuterBounds.Y;
+                int screenRight = screenLeft + displayArea.OuterBounds.Width;
+                int screenBottom = screenTop + displayArea.OuterBounds.Height;
+
+                switch (position)
+                {
+                    case "Top":
+                        x = cardScreenX - (totalWidth / 2) + (cardWidth / 2);
+                        y = cardScreenY + cardHeight + SlotMargin;
+                        break;
+                    case "Left":
+                        x = cardScreenX + cardWidth + SlotMargin;
+                        y = cardScreenY - (totalHeight / 2) + (cardHeight / 2);
+                        break;
+                    case "Right":
+                        x = cardScreenX - totalWidth - SlotMargin;
+                        y = cardScreenY - (totalHeight / 2) + (cardHeight / 2);
+                        break;
+                    case "Bottom":
+                    default:
+                        x = cardScreenX - (totalWidth / 2) + (cardWidth / 2);
+                        y = cardScreenY - totalHeight - SlotMargin;
+                        break;
+                }
+
+                if (x < screenLeft + 10) x = screenLeft + 10;
+                if (x + totalWidth > screenRight - 10) x = screenRight - totalWidth - 10;
+                if (y < screenTop + 10) y = screenTop + 10;
+                if (y + totalHeight > screenBottom - 10) y = screenBottom - totalHeight - 10;
+
+                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, totalWidth, totalHeight));
+                SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+                IntPtr currentHwnd = WindowNative.GetWindowHandle(this);
+
+                for (int i = 0; i < sourceHwnds.Count; i++)
+                {
+                    IntPtr targetHwnd = sourceHwnds[i];
+
+                    Grid slotGrid = new Grid
                     {
-                        Orientation = Orientation.Horizontal,
-                        Spacing = 6,
-                        Children = {
-                            new FontIcon { Glyph = "\uE8BB", FontSize = 12 },
-                            new TextBlock { Text = "Close", FontSize = smallFontSize, FontFamily = customFont }
-                        }
-                    },
-                    Height = 28,
-                    Padding = new Thickness(8, 0, 8, 0),
-                    CornerRadius = new CornerRadius(4)
-                };
-
-                var killBtn = new Button
-                {
-                    Content = new StackPanel
-                    {
-                        Orientation = Orientation.Horizontal,
-                        Spacing = 6,
-                        Children = {
-                            new FontIcon { Glyph = "\uE74D", FontSize = 12 },
-                            new TextBlock { Text = "Kill", FontSize = smallFontSize, FontFamily = customFont }
-                        }
-                    },
-                    Height = 28,
-                    Padding = new Thickness(8, 0, 8, 0),
-                    CornerRadius = new CornerRadius(4),
-                    Background = new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 0, 0))
-                };
-
-                killBtn.Visibility = EnableActionButtons ? Visibility.Visible : Visibility.Collapsed;
-
-                closeBtn.Click += (s, e) => CloseWindow(targetHwnd);
-                killBtn.Click += (s, e) => KillProcess(targetHwnd);
-
-                actionPanel.Children.Add(closeBtn);
-                actionPanel.Children.Add(killBtn);
-
-                slotGrid.Children.Add(titleBlock);
-                slotGrid.Children.Add(actionPanel);
-
-                slotGrid.PointerEntered += (s, e) =>
-                {
-                    _hideTimer.Stop();
-                    slotGrid.Background = _hoverBrush;
-
-                    if (_peekingHwnd != IntPtr.Zero && _peekingHwnd != targetHwnd)
-                    {
-                        SafeToggleAeroPeek(false, _peekingHwnd);
-                    }
-
-                    _peekingHwnd = targetHwnd;
-                    _peekTimer.Start();
-                };
-
-                slotGrid.PointerExited += (s, e) =>
-                {
-                    slotGrid.Background = _transparentBrush;
-
-                    _peekTimer.Stop();
-
-                    if (_peekingHwnd != IntPtr.Zero)
-                    {
-                        SafeToggleAeroPeek(false, _peekingHwnd);
-                        _peekingHwnd = IntPtr.Zero;
-                    }
-
-                    StartHideTimer();
-                };
-
-                slotGrid.PointerReleased += (s, e) =>
-                {
-                    try { slotGrid.ReleasePointerCaptures(); } catch { }
-
-                    _peekTimer.Stop();
-                    if (_peekingHwnd != IntPtr.Zero)
-                    {
-                        SafeToggleAeroPeek(false, _peekingHwnd);
-                        _peekingHwnd = IntPtr.Zero;
-                    }
-
-                    if (Win32Helper.IsIconic(targetHwnd)) Win32Helper.ShowWindow(targetHwnd, Win32Helper.SW_RESTORE);
-                    Win32Helper.SetForegroundWindow(targetHwnd);
-                    this.DispatcherQueue.TryEnqueue(() => ExecuteHide());
-                };
-
-                _rootStackPanel.Children.Add(slotGrid);
-
-                int hr = Win32Helper.DwmRegisterThumbnail(currentHwnd, targetHwnd, out IntPtr thumbHandle);
-                if (hr == 0 && thumbHandle != IntPtr.Zero)
-                {
-                    _thumbHandles.Add(thumbHandle);
-
-                    int leftOffset, topOffset;
-                    if (isVertical)
-                    {
-                        leftOffset = SlotMargin + HighlightPaddingX;
-                        topOffset = SlotMargin + (i * (itemHeight + SlotMargin)) + 24;
-                    }
-                    else
-                    {
-                        leftOffset = SlotMargin + (i * (itemWidth + SlotMargin)) + HighlightPaddingX;
-                        topOffset = SlotMargin + 24;
-                    }
-
-                    Win32Helper.DWM_THUMBNAIL_PROPERTIES props = new Win32Helper.DWM_THUMBNAIL_PROPERTIES
-                    {
-                        dwFlags = Win32Helper.DWM_TNP_VISIBLE | Win32Helper.DWM_TNP_RECTDESTINATION | Win32Helper.DWM_TNP_OPACITY,
-                        fVisible = true,
-                        opacity = 255,
-                        rcDestination = new Win32Helper.RECT
-                        {
-                            Left = leftOffset,
-                            Top = topOffset,
-                            Right = leftOffset + ThumbWidth,
-                            Bottom = topOffset + (ThumbHeight - 24)
-                        }
+                        Width = itemWidth,
+                        Height = itemHeight,
+                        CornerRadius = new CornerRadius(8),
+                        Background = _transparentBrush
                     };
 
-                    Win32Helper.DwmUpdateThumbnailProperties(thumbHandle, ref props);
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+                    GetWindowText(targetHwnd, sb, 256);
+                    string windowTitle = sb.ToString();
+                    if (string.IsNullOrWhiteSpace(windowTitle)) windowTitle = "Application";
+
+                    TextBlock titleBlock = new TextBlock
+                    {
+                        Text = windowTitle,
+                        FontSize = smallFontSize,
+                        FontFamily = customFont,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = new SolidColorBrush(Colors.White),
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        VerticalAlignment = VerticalAlignment.Top,
+                        Margin = new Thickness(HighlightPaddingX, 3, 12, 0),
+                        TextTrimming = TextTrimming.CharacterEllipsis,
+                        MaxLines = 1
+                    };
+
+                    StackPanel actionPanel = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Bottom,
+                        Margin = new Thickness(0, 0, 0, 8),
+                        Spacing = 16,
+                        Visibility = Visibility.Visible
+                    };
+
+                    var closeBtn = new Button
+                    {
+                        Content = new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Spacing = 6,
+                            Children = {
+                                new FontIcon { Glyph = "\uE8BB", FontSize = 12 },
+                                new TextBlock { Text = "Close", FontSize = smallFontSize, FontFamily = customFont }
+                            }
+                        },
+                        Height = 28,
+                        Padding = new Thickness(8, 0, 8, 0),
+                        CornerRadius = new CornerRadius(4)
+                    };
+
+                    var killBtn = new Button
+                    {
+                        Content = new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Spacing = 6,
+                            Children = {
+                                new FontIcon { Glyph = "\uE74D", FontSize = 12 },
+                                new TextBlock { Text = "Kill", FontSize = smallFontSize, FontFamily = customFont }
+                            }
+                        },
+                        Height = 28,
+                        Padding = new Thickness(8, 0, 8, 0),
+                        CornerRadius = new CornerRadius(4),
+                        Background = new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 0, 0))
+                    };
+
+                    killBtn.Visibility = EnableActionButtons ? Visibility.Visible : Visibility.Collapsed;
+
+                    closeBtn.Click += (s, e) => CloseWindow(targetHwnd);
+                    killBtn.Click += (s, e) => KillProcess(targetHwnd);
+
+                    actionPanel.Children.Add(closeBtn);
+                    actionPanel.Children.Add(killBtn);
+
+                    slotGrid.Children.Add(titleBlock);
+                    slotGrid.Children.Add(actionPanel);
+
+                    slotGrid.PointerEntered += (s, e) =>
+                    {
+                        if (_isRedrawing) return;
+
+                        _hideTimer.Stop();
+                        slotGrid.Background = _hoverBrush;
+
+                        if (_peekingHwnd != IntPtr.Zero && _peekingHwnd != targetHwnd)
+                        {
+                            SafeToggleAeroPeek(false, _peekingHwnd);
+                        }
+
+                        _peekingHwnd = targetHwnd;
+                        _peekTimer.Start();
+                    };
+
+                    slotGrid.PointerExited += (s, e) =>
+                    {
+                        if (_isRedrawing) return;
+
+                        slotGrid.Background = _transparentBrush;
+
+                        _peekTimer.Stop();
+
+                        if (_peekingHwnd != IntPtr.Zero)
+                        {
+                            SafeToggleAeroPeek(false, _peekingHwnd);
+                            _peekingHwnd = IntPtr.Zero;
+                        }
+
+                        StartHideTimer();
+                    };
+
+                    slotGrid.PointerReleased += (s, e) =>
+                    {
+                        try { slotGrid.ReleasePointerCaptures(); } catch { }
+
+                        _peekTimer.Stop();
+                        if (_peekingHwnd != IntPtr.Zero)
+                        {
+                            SafeToggleAeroPeek(false, _peekingHwnd);
+                            _peekingHwnd = IntPtr.Zero;
+                        }
+
+                        if (Win32Helper.IsIconic(targetHwnd)) Win32Helper.ShowWindow(targetHwnd, Win32Helper.SW_RESTORE);
+                        Win32Helper.SetForegroundWindow(targetHwnd);
+                        this.DispatcherQueue.TryEnqueue(() => ExecuteHide());
+                    };
+
+                    _rootStackPanel.Children.Add(slotGrid);
+
+                    int hr = Win32Helper.DwmRegisterThumbnail(currentHwnd, targetHwnd, out IntPtr thumbHandle);
+                    if (hr == 0 && thumbHandle != IntPtr.Zero)
+                    {
+                        _thumbHandles.Add(thumbHandle);
+
+                        int leftOffset, topOffset;
+                        if (isVertical)
+                        {
+                            leftOffset = SlotMargin + HighlightPaddingX;
+                            topOffset = SlotMargin + (i * (itemHeight + SlotMargin)) + 24;
+                        }
+                        else
+                        {
+                            leftOffset = SlotMargin + (i * (itemWidth + SlotMargin)) + HighlightPaddingX;
+                            topOffset = SlotMargin + 24;
+                        }
+
+                        Win32Helper.DWM_THUMBNAIL_PROPERTIES props = new Win32Helper.DWM_THUMBNAIL_PROPERTIES
+                        {
+                            dwFlags = Win32Helper.DWM_TNP_VISIBLE | Win32Helper.DWM_TNP_RECTDESTINATION | Win32Helper.DWM_TNP_OPACITY,
+                            fVisible = true,
+                            opacity = 255,
+                            rcDestination = new Win32Helper.RECT
+                            {
+                                Left = leftOffset,
+                                Top = topOffset,
+                                Right = leftOffset + ThumbWidth,
+                                Bottom = topOffset + (ThumbHeight - 24)
+                            }
+                        };
+
+                        Win32Helper.DwmUpdateThumbnailProperties(thumbHandle, ref props);
+                    }
                 }
+            }
+            finally
+            {
+                _isRedrawing = false;
             }
         }
 
@@ -437,12 +467,43 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void CloseWindow(IntPtr handle)
         {
+            if (_peekingHwnd == handle || _isPeekActive)
+            {
+                SafeToggleAeroPeek(false, handle);
+                _peekingHwnd = IntPtr.Zero;
+            }
+            _peekTimer.Stop();
+            _hideTimer.Stop();
+
             PostMessage(handle, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-            ExecuteHide();
+
+            _currentSourceHwnds.Remove(handle);
+
+            var remainingWindows = new List<IntPtr>(_currentSourceHwnds);
+
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (remainingWindows.Count > 0)
+                {
+                    ExecuteShow(remainingWindows, _lastCardScreenX, _lastCardScreenY, _lastCardWidth, _lastCardHeight);
+                }
+                else
+                {
+                    ExecuteHide();
+                }
+            });
         }
 
         private void KillProcess(IntPtr handle)
         {
+            if (_peekingHwnd == handle || _isPeekActive)
+            {
+                SafeToggleAeroPeek(false, handle);
+                _peekingHwnd = IntPtr.Zero;
+            }
+            _peekTimer.Stop();
+            _hideTimer.Stop();
+
             GetWindowThreadProcessId(handle, out uint pid);
             if (pid > 0)
             {
@@ -452,8 +513,31 @@ namespace EvolveOS_ShellEnhancer.Views
                     p.Kill();
                 }
                 catch { }
+
+                _currentSourceHwnds.RemoveAll(h =>
+                {
+                    GetWindowThreadProcessId(h, out uint targetPid);
+                    return targetPid == pid;
+                });
             }
-            ExecuteHide();
+            else
+            {
+                _currentSourceHwnds.Remove(handle);
+            }
+
+            var remainingWindows = new List<IntPtr>(_currentSourceHwnds);
+
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (remainingWindows.Count > 0)
+                {
+                    ExecuteShow(remainingWindows, _lastCardScreenX, _lastCardScreenY, _lastCardWidth, _lastCardHeight);
+                }
+                else
+                {
+                    ExecuteHide();
+                }
+            });
         }
 
         public void StartHideTimer()
@@ -470,28 +554,36 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void ExecuteHide()
         {
-            _hideTimer.Stop();
-            _peekTimer.Stop();
-
-            if (_peekingHwnd != IntPtr.Zero)
+            _isRedrawing = true;
+            try
             {
-                SafeToggleAeroPeek(false, _peekingHwnd);
-                _peekingHwnd = IntPtr.Zero;
-            }
-            else if (_isPeekActive)
-            {
-                SafeToggleAeroPeek(false, IntPtr.Zero);
-            }
+                _hideTimer.Stop();
+                _peekTimer.Stop();
 
-            foreach (var thumb in _thumbHandles)
-            {
-                Win32Helper.DwmUnregisterThumbnail(thumb);
-            }
-            _thumbHandles.Clear();
-            _currentSourceHwnds.Clear();
-            _rootStackPanel.Children.Clear();
+                if (_peekingHwnd != IntPtr.Zero)
+                {
+                    SafeToggleAeroPeek(false, _peekingHwnd);
+                    _peekingHwnd = IntPtr.Zero;
+                }
+                else if (_isPeekActive)
+                {
+                    SafeToggleAeroPeek(false, IntPtr.Zero);
+                }
 
-            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
+                foreach (var thumb in _thumbHandles)
+                {
+                    Win32Helper.DwmUnregisterThumbnail(thumb);
+                }
+                _thumbHandles.Clear();
+                _currentSourceHwnds.Clear();
+                _rootStackPanel.Children.Clear();
+
+                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
+            }
+            finally
+            {
+                _isRedrawing = false;
+            }
         }
         #endregion
     }
