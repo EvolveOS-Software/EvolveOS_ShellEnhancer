@@ -1,6 +1,7 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
@@ -306,7 +307,118 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
 
         #endregion
 
-        #region Scroll & StartMenu Animations
+        #region Start Menu Native Animations
+
+        private static bool _isSmAnimating = false;
+        private static DateTime _smAnimStartTime;
+        private static double _smAnimDuration;
+        private static AppWindow? _smAppWindow;
+        private static string _smAnimStyle = "Standard";
+        private static int _smStartX, _smStartY, _smStartW, _smStartH;
+        private static int _smTargetX, _smTargetY, _smTargetW, _smTargetH;
+        private static Action? _smOnComplete;
+
+        public static void PlayStartMenuAnimation(
+            AppWindow appWindow,
+            string animStyle, double animSpeed, bool isEntrance,
+            int startX, int startY, int startW, int startH,
+            int targetX, int targetY, int targetW, int targetH,
+            Action? onComplete)
+        {
+            StopStartMenuAnimation();
+
+            _smAppWindow = appWindow;
+            _smAnimStyle = animStyle;
+            _smStartX = startX; _smStartY = startY; _smStartW = startW; _smStartH = startH;
+            _smTargetX = targetX; _smTargetY = targetY; _smTargetW = targetW; _smTargetH = targetH;
+            _smOnComplete = onComplete;
+
+            int baseDuration = isEntrance ? 300 : 250;
+            _smAnimDuration = baseDuration / Math.Max(0.1, animSpeed);
+            _smAnimStartTime = DateTime.Now;
+            _isSmAnimating = true;
+
+            CompositionTarget.Rendering += SmAnim_Rendering;
+        }
+
+        public static void StopStartMenuAnimation()
+        {
+            if (_isSmAnimating)
+            {
+                _isSmAnimating = false;
+                CompositionTarget.Rendering -= SmAnim_Rendering;
+                _smAppWindow = null;
+                _smOnComplete = null;
+            }
+        }
+
+        private static void SmAnim_Rendering(object? sender, object e)
+        {
+            if (!_isSmAnimating || _smAppWindow == null) return;
+
+            double elapsed = (DateTime.Now - _smAnimStartTime).TotalMilliseconds;
+            double t = elapsed / _smAnimDuration;
+            if (t >= 1.0) t = 1.0;
+
+            double easeBounds = CalculateSmEasing(t, _smAnimStyle);
+
+            if (t >= 1.0) easeBounds = 1.0;
+
+            int curX = (int)(_smStartX + (_smTargetX - _smStartX) * easeBounds);
+            int curY = (int)(_smStartY + (_smTargetY - _smStartY) * easeBounds);
+            int curW = (int)(_smStartW + (_smTargetW - _smStartW) * easeBounds);
+            int curH = (int)(_smStartH + (_smTargetH - _smStartH) * easeBounds);
+
+            _smAppWindow.MoveAndResize(new Windows.Graphics.RectInt32(curX, curY, curW, curH));
+
+            if (t >= 1.0)
+            {
+                var callback = _smOnComplete;
+                StopStartMenuAnimation();
+                callback?.Invoke();
+            }
+        }
+
+        private static double CalculateSmEasing(double t, string style)
+        {
+            if (t <= 0) return 0;
+            if (t >= 1) return 1;
+
+            switch (style)
+            {
+                case "Glide":
+                    return 1 - Math.Pow(1 - t, 3);
+                case "Spring":
+                    return 1 - Math.Exp(-t * 6) * Math.Cos(t * Math.PI * 1.5);
+                case "Bounce":
+                    double n1 = 7.5625;
+                    double d1 = 2.75;
+                    if (t < 1 / d1) return n1 * t * t;
+                    else if (t < 2 / d1) return n1 * (t -= 1.5 / d1) * t + 0.75;
+                    else if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375;
+                    else return n1 * (t -= 2.625 / d1) * t + 0.984375;
+                case "Elastic":
+                    double c4 = (2 * Math.PI) / 0.3;
+                    return Math.Pow(2, -10 * t) * Math.Sin((t * 10 - 0.75) * c4) + 1;
+                case "Exponential":
+                    return 1 - Math.Pow(2, -10 * t);
+                case "Overshoot":
+                    double c1 = 1.70158;
+                    double c3 = c1 + 1;
+                    return 1 + c3 * Math.Pow(t - 1, 3) + c1 * Math.Pow(t - 1, 2);
+                case "Circle":
+                    return Math.Sqrt(1 - Math.Pow(t - 1, 2));
+                case "Sine":
+                    return Math.Sin((t * Math.PI) / 2);
+                case "Standard":
+                default:
+                    return 1 - Math.Pow(1 - t, 4);
+            }
+        }
+
+        #endregion
+
+        #region Scroll & StartMenu Panel Animations
 
         public static async Task PlayScrollTransitionAsync(
             UIElement rootElement,

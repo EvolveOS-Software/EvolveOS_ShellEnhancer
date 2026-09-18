@@ -239,6 +239,19 @@ namespace EvolveOS_ShellEnhancer
                         _startMenuWindow.SetStyle(value);
                         break;
 
+                    case "StartMenu_Animation":
+                        CustomStartMenuWindow.EnableAnimations = bool.Parse(value);
+                        break;
+
+                    case "StartMenu_AnimStyle":
+                        CustomStartMenuWindow.AnimationStyle = value;
+                        break;
+
+                    case "StartMenu_AnimSpeed":
+                        if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double smSpeed))
+                            CustomStartMenuWindow.AnimationSpeed = smSpeed;
+                        break;
+
                     case "Taskbar_Enable":
                         _isTaskbarEnabled = bool.Parse(value);
                         if (_isTaskbarEnabled)

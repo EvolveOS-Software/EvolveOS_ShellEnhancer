@@ -1,6 +1,7 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using EvolveOS_ShellEnhancer.Utilities.Animations;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
@@ -36,6 +37,10 @@ namespace EvolveOS_ShellEnhancer.Views
         private string _currentAlignment = "Center";
         private string _currentPosition = "Bottom";
         private string _currentStyle = "SplitStandard";
+
+        public static bool EnableAnimations { get; set; } = true;
+        public static string AnimationStyle { get; set; } = "Standard";
+        public static double AnimationSpeed { get; set; } = 1.0;
 
         public ObservableCollection<AppItem> PinnedAppsCollection { get; } = new();
         public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
@@ -178,7 +183,6 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
 
                     _ = ExtractIconsAsync(PinnedAppsCollection.ToList());
-
                     _ = ExtractIconsAsync(AllAppsCollection.Except(PinnedAppsCollection).ToList());
                 }
             }
@@ -292,18 +296,73 @@ namespace EvolveOS_ShellEnhancer.Views
                     break;
             }
 
-            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, menuWidth, menuHeight));
-            _appWindow.Show();
-            _isVisible = true;
+            if (EnableAnimations)
+            {
+                int startX = x, startY = y;
+                if (targetPos == "Top") startY = y - menuHeight - 15;
+                else if (targetPos == "Left") startX = x - menuWidth - 15;
+                else if (targetPos == "Right") startX = x + menuWidth + 15;
+                else startY = y + menuHeight + 15;
 
-            TaskbarOverlayManager.EnsureTopmost(_hWnd);
+                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(startX, startY, menuWidth, menuHeight));
+                _appWindow.Show();
+                _isVisible = true;
+
+                TaskbarOverlayManager.EnsureTopmost(_hWnd);
+
+                FactoryAnimation.PlayStartMenuAnimation(
+                    _appWindow, AnimationStyle, AnimationSpeed, true,
+                    startX, startY, menuWidth, menuHeight,
+                    x, y, menuWidth, menuHeight,
+                    null);
+            }
+            else
+            {
+                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, menuWidth, menuHeight));
+                _appWindow.Show();
+                _isVisible = true;
+                TaskbarOverlayManager.EnsureTopmost(_hWnd);
+            }
         }
 
         private void HideMenu()
         {
-            _appWindow.Hide();
+            if (!_isVisible) return;
+
             _isVisible = false;
             App.LastStartMenuCloseTime = DateTime.Now;
+
+            if (EnableAnimations)
+            {
+                int startX = _appWindow.Position.X;
+                int startY = _appWindow.Position.Y;
+                int width = _appWindow.Size.Width;
+                int height = _appWindow.Size.Height;
+
+                int targetX = startX;
+                int targetY = startY;
+
+                var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+                string targetPos = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
+
+                if (targetPos == "Top") targetY = startY - height - 15;
+                else if (targetPos == "Left") targetX = startX - width - 15;
+                else if (targetPos == "Right") targetX = startX + width + 15;
+                else targetY = startY + height + 15;
+
+                FactoryAnimation.PlayStartMenuAnimation(
+                    _appWindow, AnimationStyle, AnimationSpeed, false,
+                    startX, startY, width, height,
+                    targetX, targetY, width, height,
+                    () =>
+                    {
+                        _appWindow.Hide();
+                    });
+            }
+            else
+            {
+                _appWindow.Hide();
+            }
         }
         #endregion
 
