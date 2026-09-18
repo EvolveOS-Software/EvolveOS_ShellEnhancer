@@ -125,8 +125,8 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 Orientation = Orientation.Horizontal,
                 Background = _hitTestBrush,
-                Padding = new Thickness(SlotMargin),
-                Spacing = SlotMargin
+                Padding = new Thickness(0),
+                Spacing = 0
             };
 
             _rootStackPanel.PointerEntered += (s, e) => { _hideTimer?.Stop(); };
@@ -363,30 +363,30 @@ namespace EvolveOS_ShellEnhancer.Views
 
             _currentSourceHwnds.AddRange(sourceHwnds);
 
-            string position = SettingsEngine.Shell_TaskbarPosition;
+            var point = new Windows.Graphics.PointInt32(cardScreenX, cardScreenY);
+            var displayArea = DisplayArea.GetFromPoint(point, DisplayAreaFallback.Nearest);
+
+            string position = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
             bool isVertical = (position == "Left" || position == "Right");
 
             _rootStackPanel.Orientation = isVertical ? Orientation.Vertical : Orientation.Horizontal;
 
-            int itemWidth = ThumbWidth + (HighlightPaddingX * 2);
-            int itemHeight = ThumbHeight + ActionPanelHeight;
+            int itemWidth = ThumbWidth + (HighlightPaddingX * 2) + (SlotMargin * 2);
+            int itemHeight = ThumbHeight + ActionPanelHeight + (SlotMargin * 2);
 
             int totalWidth, totalHeight;
             if (isVertical)
             {
-                totalWidth = SlotMargin + itemWidth + SlotMargin;
-                totalHeight = SlotMargin + (sourceHwnds.Count * itemHeight) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
+                totalWidth = itemWidth;
+                totalHeight = sourceHwnds.Count * itemHeight;
             }
             else
             {
-                totalWidth = SlotMargin + (sourceHwnds.Count * itemWidth) + ((sourceHwnds.Count - 1) * SlotMargin) + SlotMargin;
-                totalHeight = SlotMargin + itemHeight + SlotMargin;
+                totalWidth = sourceHwnds.Count * itemWidth;
+                totalHeight = itemHeight;
             }
 
             int x, y;
-
-            var point = new Windows.Graphics.PointInt32(cardScreenX, cardScreenY);
-            var displayArea = DisplayArea.GetFromPoint(point, DisplayAreaFallback.Nearest);
 
             int screenLeft = displayArea.OuterBounds.X;
             int screenTop = displayArea.OuterBounds.Y;
@@ -475,7 +475,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     Foreground = new SolidColorBrush(Colors.White),
                     HorizontalAlignment = HorizontalAlignment.Left,
                     VerticalAlignment = VerticalAlignment.Top,
-                    Margin = new Thickness(HighlightPaddingX, 3, 12, 0),
+                    Margin = new Thickness(HighlightPaddingX + SlotMargin, SlotMargin + 3, SlotMargin + 12, 0),
                     TextTrimming = TextTrimming.CharacterEllipsis,
                     MaxLines = 1
                 };
@@ -485,7 +485,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     Orientation = Orientation.Horizontal,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Bottom,
-                    Margin = new Thickness(0, 0, 0, 8),
+                    Margin = new Thickness(0, 0, 0, SlotMargin + 8),
                     Spacing = 16,
                     Visibility = Visibility.Visible
                 };
@@ -588,11 +588,11 @@ namespace EvolveOS_ShellEnhancer.Views
                     if (isVertical)
                     {
                         leftOffset = SlotMargin + HighlightPaddingX;
-                        topOffset = SlotMargin + (i * (itemHeight + SlotMargin)) + 24;
+                        topOffset = (i * itemHeight) + SlotMargin + 24;
                     }
                     else
                     {
-                        leftOffset = SlotMargin + (i * (itemWidth + SlotMargin)) + HighlightPaddingX;
+                        leftOffset = (i * itemWidth) + SlotMargin + HighlightPaddingX;
                         topOffset = SlotMargin + 24;
                     }
 
@@ -796,7 +796,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (AnimationStyle != "Fade")
                 {
-                    string position = SettingsEngine.Shell_TaskbarPosition;
+                    var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Nearest);
+                    string position = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
+
                     if (position == "Top") targetY = _startY - _startH - 15;
                     else if (position == "Left") targetX = _startX - _startW - 15;
                     else if (position == "Right") targetX = _startX + _startW + 15;
