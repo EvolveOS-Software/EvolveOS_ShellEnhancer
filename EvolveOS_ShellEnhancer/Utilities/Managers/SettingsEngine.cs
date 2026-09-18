@@ -145,6 +145,26 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 return "Segoe UI";
             }
         }
+
+        internal static double Shell_AppFontSize
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Shell_AppFontSize") != null)
+                    {
+                        return Convert.ToDouble(key.GetValue("Shell_AppFontSize"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_AppFontSize Error: {ex.Message}");
+                }
+                return 14.0;
+            }
+        }
         #endregion
 
         private static void ChangingParameters(string key, object value)

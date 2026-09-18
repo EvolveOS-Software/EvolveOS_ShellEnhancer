@@ -154,6 +154,18 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             _hideTimer.Stop();
 
+            double smallFontSize = 12;
+            if (Application.Current.Resources.TryGetValue("AppFontSizeSmall", out var sizeRes) && sizeRes is double s)
+            {
+                smallFontSize = s;
+            }
+
+            FontFamily customFont = new FontFamily("Segoe UI");
+            if (Application.Current.Resources.TryGetValue("AppCustomFont", out var fontRes) && fontRes is FontFamily f)
+            {
+                customFont = f;
+            }
+
             foreach (var thumb in _thumbHandles)
             {
                 Win32Helper.DwmUnregisterThumbnail(thumb);
@@ -247,7 +259,8 @@ namespace EvolveOS_ShellEnhancer.Views
                 TextBlock titleBlock = new TextBlock
                 {
                     Text = windowTitle,
-                    FontSize = 12,
+                    FontSize = smallFontSize,
+                    FontFamily = customFont,
                     FontWeight = FontWeights.SemiBold,
                     Foreground = new SolidColorBrush(Colors.White),
                     HorizontalAlignment = HorizontalAlignment.Left,
@@ -267,8 +280,38 @@ namespace EvolveOS_ShellEnhancer.Views
                     Visibility = Visibility.Visible
                 };
 
-                var closeBtn = new Button { Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { new FontIcon { Glyph = "\uE8BB", FontSize = 12 }, new TextBlock { Text = "Close", FontSize = 12 } } }, Height = 28, Padding = new Thickness(8, 0, 8, 0), CornerRadius = new CornerRadius(4) };
-                var killBtn = new Button { Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { new FontIcon { Glyph = "\uE74D", FontSize = 12 }, new TextBlock { Text = "Kill", FontSize = 12 } } }, Height = 28, Padding = new Thickness(8, 0, 8, 0), CornerRadius = new CornerRadius(4), Background = new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 0, 0)) };
+                var closeBtn = new Button
+                {
+                    Content = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 6,
+                        Children = {
+                            new FontIcon { Glyph = "\uE8BB", FontSize = 12 },
+                            new TextBlock { Text = "Close", FontSize = smallFontSize, FontFamily = customFont }
+                        }
+                    },
+                    Height = 28,
+                    Padding = new Thickness(8, 0, 8, 0),
+                    CornerRadius = new CornerRadius(4)
+                };
+
+                var killBtn = new Button
+                {
+                    Content = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 6,
+                        Children = {
+                            new FontIcon { Glyph = "\uE74D", FontSize = 12 },
+                            new TextBlock { Text = "Kill", FontSize = smallFontSize, FontFamily = customFont }
+                        }
+                    },
+                    Height = 28,
+                    Padding = new Thickness(8, 0, 8, 0),
+                    CornerRadius = new CornerRadius(4),
+                    Background = new SolidColorBrush(Windows.UI.Color.FromArgb(70, 255, 0, 0))
+                };
 
                 killBtn.Visibility = EnableActionButtons ? Visibility.Visible : Visibility.Collapsed;
 

@@ -55,6 +55,7 @@ namespace EvolveOS_ShellEnhancer
             СheckingGlobalParameters.Initialize();
 
             ApplyFontGlobally(SettingsEngine.Shell_AppFont);
+            ApplyFontSizeGlobally(SettingsEngine.Shell_AppFontSize);
 
             _startMenuWindow = new CustomStartMenuWindow();
 
@@ -101,6 +102,39 @@ namespace EvolveOS_ShellEnhancer
             Application.Current.Resources["AppCustomFont"] = targetFont;
             Application.Current.Resources["ContentControlThemeFontFamily"] = targetFont;
 
+            if (_startMenuWindow != null && _startMenuWindow.Content is FrameworkElement root)
+            {
+                var currentTheme = root.RequestedTheme;
+                var oppositeTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+
+                root.RequestedTheme = oppositeTheme;
+                root.RequestedTheme = currentTheme;
+            }
+
+            if (_isTaskbarEnabled)
+            {
+                TaskbarManager.ReloadAll();
+            }
+        }
+
+        private void ApplyFontSizeGlobally(double baseSize)
+        {
+            if (baseSize <= 0) baseSize = 14.0;
+
+            Application.Current.Resources["AppFontSizeBase"] = baseSize;
+            Application.Current.Resources["AppFontSizeSmall"] = Math.Max(baseSize - 2, 9.0);   // E.g., 12 (Clamped so it never goes below 9)
+            Application.Current.Resources["AppFontSizeTiny"] = Math.Max(baseSize - 4, 8.0);    // E.g., 10
+            Application.Current.Resources["AppFontSizeHeader"] = baseSize + 2;                 // E.g., 18
+            Application.Current.Resources["AppFontSizeTitle"] = baseSize + 8;                 // E.g., 24
+
+            Application.Current.Resources["ControlContentThemeFontSize"] = baseSize;
+            Application.Current.Resources["BodyTextBlockFontSize"] = baseSize;
+
+            RefreshUITheme();
+        }
+
+        private void RefreshUITheme()
+        {
             if (_startMenuWindow != null && _startMenuWindow.Content is FrameworkElement root)
             {
                 var currentTheme = root.RequestedTheme;
@@ -270,6 +304,13 @@ namespace EvolveOS_ShellEnhancer
 
                     case "Shell_Font":
                         ApplyFontGlobally(value);
+                        break;
+
+                    case "Shell_FontSize":
+                        if (double.TryParse(value, out double size))
+                        {
+                            ApplyFontSizeGlobally(size);
+                        }
                         break;
                 }
             });

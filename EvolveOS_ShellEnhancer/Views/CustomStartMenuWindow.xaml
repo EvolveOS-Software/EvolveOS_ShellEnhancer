@@ -68,7 +68,7 @@
                             </DropDownButton>
                         </Grid>
 
-                        <!-- Pinned Apps / Search Results (FIXED SCROLLING HERE) -->
+                        <!-- Pinned Apps / Search Results -->
                         <Grid Grid.Row="1" Margin="0,24,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -76,9 +76,9 @@
                             </Grid.RowDefinitions>
 
                             <Grid Grid.Row="0" Margin="0,0,0,16">
-                                <TextBlock Text="Pinned" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="Pinned" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
                                 <Button Content="All apps >" Background="Transparent" BorderThickness="0" 
-                                            HorizontalAlignment="Right" FontSize="12" Click="BtnAllApps_Click"/>
+                                            HorizontalAlignment="Right" FontSize="{ThemeResource AppFontSizeSmall}" Click="BtnAllApps_Click"/>
                             </Grid>
 
                             <GridView Grid.Row="1" x:Name="StandardPinnedAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
@@ -95,7 +95,7 @@
                                                 </Image.RenderTransform>
                                             </Image>
 
-                                            <TextBlock Text="{x:Bind Name}" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"
+                                            <TextBlock Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center"
                                                            TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                         </StackPanel>
                                     </DataTemplate>
@@ -117,10 +117,10 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Profile (Restored to its proper inline position) -->
+                                <!-- Profile -->
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="12" Margin="0,12,0,24">
                                     <PersonPicture x:Name="ProfilePic1" Height="88" Width="88"/>
-                                    <TextBlock x:Name="ProfileName1" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="ProfileName1" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
                                 <!-- Quick Folders -->
@@ -202,7 +202,7 @@
 
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="16" Margin="0,12,0,24">
                                     <Image x:Name="SearchDetailsIcon1" Width="72" Height="72" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                    <TextBlock x:Name="SearchDetailsName1" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                                    <TextBlock x:Name="SearchDetailsName1" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
                                 </StackPanel>
 
                                 <MenuFlyoutSeparator Grid.Row="1" Margin="0,0,0,16"/>
@@ -288,9 +288,9 @@
                                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" Padding="16">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,12">
-                                            <TextBlock Text="Productivity" FontWeight="SemiBold" FontSize="14"/>
+                                            <TextBlock Text="Productivity" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}"/>
                                             <Button Content="All apps >" Background="Transparent" BorderThickness="0" 
-                                                        HorizontalAlignment="Right" FontSize="12" Click="BtnAllApps_Click"/>
+                                                        HorizontalAlignment="Right" FontSize="{ThemeResource AppFontSizeSmall}" Click="BtnAllApps_Click"/>
                                         </Grid>
                                         <GridView x:Name="ProductivityAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                             <GridView.ItemTemplate>
@@ -304,7 +304,7 @@
                                                                 <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                             </Image.RenderTransform>
                                                         </Image>
-                                                        <TextBlock Text="{x:Bind Name}" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"
+                                                        <TextBlock Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center"
                                                                        TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                                     </StackPanel>
                                                 </DataTemplate>
@@ -317,9 +317,9 @@
                                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" Padding="16">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,12">
-                                            <TextBlock Text="Notes" FontWeight="SemiBold" FontSize="14"/>
-                                            <TextBlock Text="Games" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                            <TextBlock Text="Photo" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="Notes" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="Games" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="Photo" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                         </StackPanel>
                                         <GridView x:Name="SecondaryAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                             <GridView.ItemTemplate>
@@ -333,7 +333,7 @@
                                                                 <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                             </Image.RenderTransform>
                                                         </Image>
-                                                        <TextBlock Text="{x:Bind Name}" FontSize="11" HorizontalAlignment="Center" TextAlignment="Center"
+                                                        <TextBlock Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center"
                                                                        TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                                     </StackPanel>
                                                 </DataTemplate>
@@ -358,10 +358,10 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Profile (Restored to its proper inline position) -->
+                                <!-- Profile -->
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="12" Margin="0,12,0,24">
                                     <PersonPicture x:Name="ProfilePic2" Height="88" Width="88"/>
-                                    <TextBlock x:Name="ProfileName2" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="ProfileName2" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
                                 <!-- Quick Folders -->
@@ -443,7 +443,7 @@
 
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="16" Margin="0,12,0,24">
                                     <Image x:Name="SearchDetailsIcon2" Width="72" Height="72" Stretch="Uniform" HorizontalAlignment="Center"/>
-                                    <TextBlock x:Name="SearchDetailsName2" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                                    <TextBlock x:Name="SearchDetailsName2" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
                                 </StackPanel>
 
                                 <MenuFlyoutSeparator Grid.Row="1" Margin="0,0,0,16"/>

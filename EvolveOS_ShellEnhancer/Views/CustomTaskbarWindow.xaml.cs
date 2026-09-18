@@ -555,6 +555,26 @@ namespace EvolveOS_ShellEnhancer.Views
         public void ReloadTaskbar()
         {
             _ = LoadPinnedAppsAsync();
+
+            if (this.Content is FrameworkElement root)
+            {
+                var currentTheme = root.RequestedTheme;
+                root.RequestedTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+                root.RequestedTheme = currentTheme;
+            }
+
+            if (ClockText != null && DateText != null)
+            {
+                if (Application.Current.Resources.TryGetValue("AppFontSizeBase", out var baseObj) && baseObj is double baseSize)
+                {
+                    ClockText.FontSize = baseSize;
+                }
+
+                if (Application.Current.Resources.TryGetValue("AppFontSizeSmall", out var smallObj) && smallObj is double smallSize)
+                {
+                    DateText.FontSize = smallSize;
+                }
+            }
         }
 
         private async Task LoadPinnedAppsAsync()
@@ -1405,12 +1425,30 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (ClockText != null && DateText != null)
                 {
-                    ClockText.FontSize = isVertical ? 9.5 : 11;
-                    DateText.FontSize = isVertical ? 8 : 9;
-                    ClockText.HorizontalAlignment = HorizontalAlignment.Center;
-                    DateText.HorizontalAlignment = HorizontalAlignment.Center;
-                    ClockText.TextAlignment = TextAlignment.Center;
-                    DateText.TextAlignment = TextAlignment.Center;
+                    ClockText.HorizontalAlignment = isVertical ? HorizontalAlignment.Center : HorizontalAlignment.Right;
+                    DateText.HorizontalAlignment = isVertical ? HorizontalAlignment.Center : HorizontalAlignment.Right;
+                    ClockText.TextAlignment = isVertical ? TextAlignment.Center : TextAlignment.Right;
+                    DateText.TextAlignment = isVertical ? TextAlignment.Center : TextAlignment.Right;
+                }
+
+                if (ClockContentPanel != null)
+                {
+                    ClockContentPanel.Orientation = Orientation.Vertical;
+                    ClockContentPanel.HorizontalAlignment = isVertical ? HorizontalAlignment.Center : HorizontalAlignment.Right;
+                }
+
+                if (BtnClock != null)
+                {
+                    if (isVertical)
+                    {
+                        BtnClock.MaxWidth = 44;
+                        BtnClock.Padding = new Thickness(2, 0, 2, 0);
+                    }
+                    else
+                    {
+                        BtnClock.MaxWidth = double.PositiveInfinity;
+                        BtnClock.Padding = new Thickness(12, 0, 12, 0);
+                    }
                 }
 
                 if (BtnClock?.Content is StackPanel clockSp)
