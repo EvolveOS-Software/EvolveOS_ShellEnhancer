@@ -7,6 +7,7 @@ using EvolveOS_ShellEnhancer.Utilities.Managers;
 using EvolveOS_ShellEnhancer.Views;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
@@ -53,6 +54,8 @@ namespace EvolveOS_ShellEnhancer
         {
             СheckingGlobalParameters.Initialize();
 
+            ApplyFontGlobally(SettingsEngine.Shell_AppFont);
+
             _startMenuWindow = new CustomStartMenuWindow();
 
             _startMenuWindow.SetStyle(SettingsEngine.Shell_StartMenuStyle);
@@ -76,6 +79,41 @@ namespace EvolveOS_ShellEnhancer
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
         {
             RestoreWindowsDefaults();
+        }
+
+        private void ApplyFontGlobally(string fontName)
+        {
+            if (string.IsNullOrWhiteSpace(fontName))
+            {
+                fontName = "Segoe UI";
+            }
+
+            FontFamily targetFont;
+            if (Application.Current.Resources.TryGetValue(fontName, out var resource) && resource is FontFamily customFont)
+            {
+                targetFont = customFont;
+            }
+            else
+            {
+                targetFont = new FontFamily(fontName);
+            }
+
+            Application.Current.Resources["AppCustomFont"] = targetFont;
+            Application.Current.Resources["ContentControlThemeFontFamily"] = targetFont;
+
+            if (_startMenuWindow != null && _startMenuWindow.Content is FrameworkElement root)
+            {
+                var currentTheme = root.RequestedTheme;
+                var oppositeTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+
+                root.RequestedTheme = oppositeTheme;
+                root.RequestedTheme = currentTheme;
+            }
+
+            if (_isTaskbarEnabled)
+            {
+                TaskbarManager.ReloadAll();
+            }
         }
 
         private void RestoreWindowsDefaults()
@@ -228,6 +266,10 @@ namespace EvolveOS_ShellEnhancer
                     case "Taskbar_MonitorAware":
                         CustomTaskbarWindow.MonitorAwareApps = bool.Parse(value);
                         TaskbarManager.ReloadAll();
+                        break;
+
+                    case "Shell_Font":
+                        ApplyFontGlobally(value);
                         break;
                 }
             });

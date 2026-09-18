@@ -33,7 +33,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         private static readonly Dictionary<string, object> _cachedSettings = new Dictionary<string, object>(_defaultSettings);
 
         internal static string TaskbarPinnedAppsOrder { get => (string)_cachedSettings["TaskbarPinnedAppsOrder"]; set => ChangingParameters("TaskbarPinnedAppsOrder", value); }
-
         internal static string StartMenuPinnedApps { get => (string)_cachedSettings["StartMenuPinnedApps"]; set => ChangingParameters("StartMenuPinnedApps", value); }
 
         #region Shell Settings
@@ -121,9 +120,29 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[Settings] Read Shell_StartMenuStyle Error: {ex.Message}");
+                    Debug.WriteLine($"[Settings] Read Shell_StartMenuStyle Error: {ex.Message}");
                 }
                 return "SplitStandard";
+            }
+        }
+
+        internal static string Shell_AppFont
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Shell_AppFont") is string val && !string.IsNullOrEmpty(val))
+                    {
+                        return val;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_AppFont Error: {ex.Message}");
+                }
+                return "Segoe UI";
             }
         }
         #endregion
