@@ -271,6 +271,10 @@ namespace EvolveOS_ShellEnhancer
                         LivePreviewWindow.EnableActionButtons = bool.Parse(value);
                         break;
 
+                    case "Taskbar_PreviewAnimation":
+                        LivePreviewWindow.EnableAnimations = bool.Parse(value);
+                        break;
+
                     case "Taskbar_ClockSeconds":
                         CustomTaskbarWindow.ShowSeconds = bool.Parse(value);
                         break;

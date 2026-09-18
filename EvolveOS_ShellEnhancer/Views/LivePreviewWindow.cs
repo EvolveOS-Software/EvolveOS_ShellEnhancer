@@ -63,6 +63,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private StackPanel _rootStackPanel;
 
         public static bool EnableActionButtons { get; set; } = true;
+        public static bool EnableAnimations { get; set; } = true;
 
         private const int ThumbWidth = 220;
         private const int ThumbHeight = 142;
@@ -73,11 +74,22 @@ namespace EvolveOS_ShellEnhancer.Views
         private readonly SolidColorBrush _hoverBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
         private readonly SolidColorBrush _transparentBrush = new SolidColorBrush(Colors.Transparent);
 
+        private readonly SolidColorBrush _hitTestBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(1, 0, 0, 0));
+
         private DispatcherTimer _peekTimer;
         private IntPtr _peekingHwnd = IntPtr.Zero;
 
         private bool _isPeekActive = false;
         private bool _isRedrawing = false;
+
+        private enum AnimState { None, Entrance, Redraw, Exit }
+        private AnimState _currentAnimState = AnimState.None;
+        private bool _isAnimating = false;
+        private DateTime _animStartTime;
+        private int _animDuration;
+        private int _startX, _startY, _startW, _startH;
+        private int _targetX, _targetY, _targetW, _targetH;
+        private byte _lastAlpha = 255;
 
         private int _lastCardScreenX;
         private int _lastCardScreenY;
@@ -111,10 +123,13 @@ namespace EvolveOS_ShellEnhancer.Views
             _rootStackPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Background = _transparentBrush,
+                Background = _hitTestBrush,
                 Padding = new Thickness(SlotMargin),
                 Spacing = SlotMargin
             };
+
+            _rootStackPanel.PointerEntered += (s, e) => { if (!_isRedrawing) _hideTimer?.Stop(); };
+            _rootStackPanel.PointerExited += (s, e) => { if (!_isRedrawing) StartHideTimer(); };
 
             this.Content = _rootStackPanel;
 
@@ -141,6 +156,88 @@ namespace EvolveOS_ShellEnhancer.Views
         }
         #endregion
 
+        #region VSync Native Animation Engine
+        private void StartBoundsAnimation()
+        {
+            _animStartTime = DateTime.Now;
+            _isAnimating = true;
+            CompositionTarget.Rendering -= BoundsAnim_Rendering;
+            CompositionTarget.Rendering += BoundsAnim_Rendering;
+        }
+
+        private void StopBoundsAnimation()
+        {
+            _isAnimating = false;
+            CompositionTarget.Rendering -= BoundsAnim_Rendering;
+        }
+
+        private void BoundsAnim_Rendering(object? sender, object e)
+        {
+            if (!_isAnimating) return;
+
+            double elapsed = (DateTime.Now - _animStartTime).TotalMilliseconds;
+            double t = elapsed / _animDuration;
+
+            if (t >= 1.0)
+            {
+                t = 1.0;
+                StopBoundsAnimation();
+            }
+
+            double ease = t == 1.0 ? 1.0 : 1 - Math.Pow(2, -10 * t);
+
+            int curX = (int)(_startX + (_targetX - _startX) * ease);
+            int curY = (int)(_startY + (_targetY - _startY) * ease);
+            int curW = (int)(_startW + (_targetW - _startW) * ease);
+            int curH = (int)(_startH + (_targetH - _startH) * ease);
+
+            _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(curX, curY, curW, curH));
+
+            if (_currentAnimState == AnimState.Entrance)
+            {
+                double opacity = Math.Min(1.0, ease * 1.5);
+                _rootStackPanel.Opacity = opacity;
+                byte alpha = (byte)(opacity * 255);
+
+                if (alpha != _lastAlpha)
+                {
+                    _lastAlpha = alpha;
+                    foreach (var thumb in _thumbHandles)
+                    {
+                        var props = new Win32Helper.DWM_THUMBNAIL_PROPERTIES { dwFlags = Win32Helper.DWM_TNP_OPACITY, opacity = alpha };
+                        Win32Helper.DwmUpdateThumbnailProperties(thumb, ref props);
+                    }
+                }
+            }
+            else if (_currentAnimState == AnimState.Exit)
+            {
+                double fadeOutEase = 1 - ease;
+                _rootStackPanel.Opacity = fadeOutEase;
+                byte alpha = (byte)(fadeOutEase * 255);
+
+                if (alpha != _lastAlpha)
+                {
+                    _lastAlpha = alpha;
+                    foreach (var thumb in _thumbHandles)
+                    {
+                        var props = new Win32Helper.DWM_THUMBNAIL_PROPERTIES { dwFlags = Win32Helper.DWM_TNP_OPACITY, opacity = alpha };
+                        Win32Helper.DwmUpdateThumbnailProperties(thumb, ref props);
+                    }
+                }
+
+                if (t >= 1.0)
+                {
+                    foreach (var thumb in _thumbHandles) Win32Helper.DwmUnregisterThumbnail(thumb);
+                    _thumbHandles.Clear();
+                    _currentSourceHwnds.Clear();
+                    _rootStackPanel.Children.Clear();
+                    _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
+                    _currentAnimState = AnimState.None;
+                }
+            }
+        }
+        #endregion
+
         #region Preview Methods
         public void ShowPreviews(List<IntPtr> sourceHwnds, int cardScreenX, int cardScreenY, int cardWidth, int cardHeight)
         {
@@ -161,6 +258,7 @@ namespace EvolveOS_ShellEnhancer.Views
             _isRedrawing = true;
             try
             {
+                StopBoundsAnimation();
                 _hideTimer.Stop();
                 _peekTimer.Stop();
 
@@ -255,10 +353,75 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (y < screenTop + 10) y = screenTop + 10;
                 if (y + totalHeight > screenBottom - 10) y = screenBottom - totalHeight - 10;
 
-                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, totalWidth, totalHeight));
+                bool isFirstShow = _appWindow.Position.Y == -32000;
+
+                _targetX = x;
+                _targetY = y;
+                _targetW = totalWidth;
+                _targetH = totalHeight;
+
+                if (isFirstShow)
+                {
+                    if (EnableAnimations)
+                    {
+                        _currentAnimState = AnimState.Entrance;
+                        _animDuration = 200;
+                        _startW = _targetW;
+                        _startH = _targetH;
+                        _startX = _targetX;
+
+                        if (position == "Top") _startY = _targetY - 20;
+                        else if (position == "Left") { _startY = _targetY; _startX = _targetX - 20; }
+                        else if (position == "Right") { _startY = _targetY; _startX = _targetX + 20; }
+                        else _startY = _targetY + 20;
+
+                        _rootStackPanel.Opacity = 0;
+                        _lastAlpha = 0;
+                    }
+                    else
+                    {
+                        _currentAnimState = AnimState.None;
+                        _startW = _targetW;
+                        _startH = _targetH;
+                        _startX = _targetX;
+                        _startY = _targetY;
+
+                        _rootStackPanel.Opacity = 1;
+                        _lastAlpha = 255;
+                    }
+                }
+                else
+                {
+                    if (EnableAnimations)
+                    {
+                        _currentAnimState = AnimState.Redraw;
+                        _animDuration = 150;
+                        _startX = _appWindow.Position.X;
+                        _startY = _appWindow.Position.Y;
+                        _startW = _appWindow.Size.Width;
+                        _startH = _appWindow.Size.Height;
+
+                        _rootStackPanel.Opacity = 1;
+                        _lastAlpha = 255;
+                    }
+                    else
+                    {
+                        _currentAnimState = AnimState.None;
+                        _startW = _targetW;
+                        _startH = _targetH;
+                        _startX = _targetX;
+                        _startY = _targetY;
+
+                        _rootStackPanel.Opacity = 1;
+                        _lastAlpha = 255;
+                    }
+                }
+
+                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(_startX, _startY, _startW, _startH));
                 SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
                 IntPtr currentHwnd = WindowNative.GetWindowHandle(this);
+                byte initialOpacity = _lastAlpha;
 
                 for (int i = 0; i < sourceHwnds.Count; i++)
                 {
@@ -348,7 +511,6 @@ namespace EvolveOS_ShellEnhancer.Views
                     slotGrid.PointerEntered += (s, e) =>
                     {
                         if (_isRedrawing) return;
-
                         _hideTimer.Stop();
                         slotGrid.Background = _hoverBrush;
 
@@ -356,7 +518,6 @@ namespace EvolveOS_ShellEnhancer.Views
                         {
                             SafeToggleAeroPeek(false, _peekingHwnd);
                         }
-
                         _peekingHwnd = targetHwnd;
                         _peekTimer.Start();
                     };
@@ -364,9 +525,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     slotGrid.PointerExited += (s, e) =>
                     {
                         if (_isRedrawing) return;
-
                         slotGrid.Background = _transparentBrush;
-
                         _peekTimer.Stop();
 
                         if (_peekingHwnd != IntPtr.Zero)
@@ -374,14 +533,11 @@ namespace EvolveOS_ShellEnhancer.Views
                             SafeToggleAeroPeek(false, _peekingHwnd);
                             _peekingHwnd = IntPtr.Zero;
                         }
-
-                        StartHideTimer();
                     };
 
                     slotGrid.PointerReleased += (s, e) =>
                     {
                         try { slotGrid.ReleasePointerCaptures(); } catch { }
-
                         _peekTimer.Stop();
                         if (_peekingHwnd != IntPtr.Zero)
                         {
@@ -417,7 +573,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         {
                             dwFlags = Win32Helper.DWM_TNP_VISIBLE | Win32Helper.DWM_TNP_RECTDESTINATION | Win32Helper.DWM_TNP_OPACITY,
                             fVisible = true,
-                            opacity = 255,
+                            opacity = initialOpacity,
                             rcDestination = new Win32Helper.RECT
                             {
                                 Left = leftOffset,
@@ -429,6 +585,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
                         Win32Helper.DwmUpdateThumbnailProperties(thumbHandle, ref props);
                     }
+                }
+
+                if (EnableAnimations)
+                {
+                    StartBoundsAnimation();
                 }
             }
             finally
@@ -557,6 +718,7 @@ namespace EvolveOS_ShellEnhancer.Views
             _isRedrawing = true;
             try
             {
+                StopBoundsAnimation();
                 _hideTimer.Stop();
                 _peekTimer.Stop();
 
@@ -570,15 +732,43 @@ namespace EvolveOS_ShellEnhancer.Views
                     SafeToggleAeroPeek(false, IntPtr.Zero);
                 }
 
-                foreach (var thumb in _thumbHandles)
-                {
-                    Win32Helper.DwmUnregisterThumbnail(thumb);
-                }
-                _thumbHandles.Clear();
-                _currentSourceHwnds.Clear();
-                _rootStackPanel.Children.Clear();
+                if (_appWindow.Position.Y == -32000) return;
 
-                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
+                if (EnableAnimations)
+                {
+                    _currentAnimState = AnimState.Exit;
+                    _animDuration = 150;
+
+                    _startX = _appWindow.Position.X;
+                    _startY = _appWindow.Position.Y;
+                    _startW = _appWindow.Size.Width;
+                    _startH = _appWindow.Size.Height;
+                    _targetW = _startW;
+                    _targetH = _startH;
+                    _targetX = _startX;
+                    _targetY = _startY;
+
+                    string position = SettingsEngine.Shell_TaskbarPosition;
+                    if (position == "Top") _targetY = _startY - 20;
+                    else if (position == "Left") _targetX = _startX - 20;
+                    else if (position == "Right") _targetX = _startX + 20;
+                    else _targetY = _startY + 20;
+
+                    _lastAlpha = 255;
+                    StartBoundsAnimation();
+                }
+                else
+                {
+                    foreach (var thumb in _thumbHandles)
+                    {
+                        Win32Helper.DwmUnregisterThumbnail(thumb);
+                    }
+                    _thumbHandles.Clear();
+                    _currentSourceHwnds.Clear();
+                    _rootStackPanel.Children.Clear();
+                    _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
+                    _currentAnimState = AnimState.None;
+                }
             }
             finally
             {
