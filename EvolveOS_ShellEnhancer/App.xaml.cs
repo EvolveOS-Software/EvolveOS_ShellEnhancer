@@ -277,6 +277,22 @@ namespace EvolveOS_ShellEnhancer
                         TaskbarManager.SetPosition(value);
                         break;
 
+                    case "Taskbar_Size":
+                        if (int.TryParse(value, out int tSize))
+                        {
+                            CustomTaskbarWindow.TaskbarSize = tSize;
+                            TaskbarManager.ReloadAll();
+                        }
+                        break;
+
+                    case "Taskbar_IconSize":
+                        if (int.TryParse(value, out int iSize))
+                        {
+                            CustomTaskbarWindow.TaskbarIconSize = iSize;
+                            TaskbarManager.ReloadAll();
+                        }
+                        break;
+
                     case "Taskbar_Animation":
                         CustomTaskbarWindow.PositionAnimationStyle = value;
                         break;

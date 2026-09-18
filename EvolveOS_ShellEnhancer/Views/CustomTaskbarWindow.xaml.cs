@@ -179,6 +179,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public static bool MonitorAwareApps = false;
 
+        public static int TaskbarSize { get; set; } = 48;
+        public static int TaskbarIconSize { get; set; } = 24;
+
         private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
         {
             "SystemSettings", "ApplicationFrameHost", "SearchHost", "StartMenuExperienceHost",
@@ -255,6 +258,53 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (BtnClock != null) BtnClock.IsHitTestVisible = false;
             }
+
+            UpdateSizes();
+        }
+        #endregion
+
+        #region Sizing Engine
+        private void UpdateSizes()
+        {
+            int btnSize = TaskbarSize - 8;
+
+            if (BtnStart != null)
+            {
+                BtnStart.Width = btnSize;
+                BtnStart.Height = btnSize;
+            }
+            if (StartIconImage != null)
+            {
+                StartIconImage.Width = TaskbarIconSize;
+                StartIconImage.Height = TaskbarIconSize;
+            }
+
+            if (BtnChevron != null)
+            {
+                BtnChevron.MinWidth = TaskbarSize - 4;
+                BtnChevron.Height = btnSize;
+            }
+            if (ChevronIcon != null)
+            {
+                ChevronIcon.FontSize = Math.Max(10, TaskbarIconSize - 10);
+            }
+
+            if (BtnQuickSettings != null)
+            {
+                BtnQuickSettings.MinWidth = TaskbarSize - 4;
+                BtnQuickSettings.Height = btnSize;
+            }
+
+            if (BtnClock != null)
+            {
+                BtnClock.MinWidth = TaskbarSize - 4;
+                BtnClock.Height = btnSize;
+            }
+
+            int trayIconSize = Math.Max(12, TaskbarIconSize - 8);
+            if (BatteryIcon != null) BatteryIcon.FontSize = trayIconSize;
+            if (NetworkIcon != null) NetworkIcon.FontSize = trayIconSize;
+            if (VolumeIcon != null) VolumeIcon.FontSize = trayIconSize;
         }
         #endregion
 
@@ -579,6 +629,13 @@ namespace EvolveOS_ShellEnhancer.Views
                     DateText.FontSize = smallSize;
                 }
             }
+
+            UpdateSizes();
+
+            if (_appWindow.IsVisible)
+            {
+                ShowDock();
+            }
         }
 
         private async Task LoadPinnedAppsAsync()
@@ -737,8 +794,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
             Grid iconContainer = new Grid
             {
-                Width = 32,
-                Height = 32,
+                Width = TaskbarIconSize + 8,
+                Height = TaskbarIconSize + 8,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -746,7 +803,7 @@ namespace EvolveOS_ShellEnhancer.Views
             FontIcon fallbackIcon = new FontIcon
             {
                 Glyph = appItem.FallbackGlyph ?? "\xE738",
-                FontSize = 20,
+                FontSize = TaskbarIconSize - 4,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 Visibility = appItem.IconSource == null ? Visibility.Visible : Visibility.Collapsed
@@ -754,8 +811,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
             Image backIcon = new Image
             {
-                Width = 24,
-                Height = 24,
+                Width = TaskbarIconSize,
+                Height = TaskbarIconSize,
                 Stretch = Stretch.Uniform,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -767,8 +824,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
             Image appIcon = new Image
             {
-                Width = 24,
-                Height = 24,
+                Width = TaskbarIconSize,
+                Height = TaskbarIconSize,
                 Stretch = Stretch.Uniform,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -803,8 +860,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
             Border appCard = new Border
             {
-                Width = 40,
-                Height = 40,
+                Width = TaskbarSize - 8,
+                Height = TaskbarSize - 8,
                 Padding = new Thickness(0),
                 Margin = new Thickness(2, 0, 2, 0),
                 Background = new SolidColorBrush(Colors.Transparent),
@@ -1162,7 +1219,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 int screenWidth = MonitorArea.OuterBounds.Width;
                 int screenHeight = MonitorArea.OuterBounds.Height;
 
-                int taskbarSize = 48;
+                int taskbarSize = TaskbarSize;
                 int margin = (_currentStyle == "Floating") ? 5 : 0;
                 int reservedSpace = taskbarSize + (margin * 2);
 
@@ -1445,7 +1502,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     if (isVertical)
                     {
-                        BtnClock.MaxWidth = 44;
+                        BtnClock.MaxWidth = TaskbarSize - 4;
                         BtnClock.Padding = new Thickness(2, 0, 2, 0);
                     }
                     else
@@ -1670,22 +1727,18 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (profile == null)
                 {
-                    // Disconnected - Globe Icon
                     NetworkIcon.Glyph = "\xEB55";
                 }
                 else if (profile.IsWlanConnectionProfile)
                 {
-                    // Wi-Fi Connected
                     NetworkIcon.Glyph = "\xE704";
                 }
                 else if (profile.IsWwanConnectionProfile)
                 {
-                    // Cellular / Mobile Data
                     NetworkIcon.Glyph = "\xE81C";
                 }
                 else
                 {
-                    // Ethernet / Wired Connection - Network Tower Icon
                     NetworkIcon.Glyph = "\xE839";
                 }
             }
@@ -1729,23 +1782,19 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (isCharging)
                 {
-                    // Charging Icons: \xE85A (0%) to \xE863 (90%). \xE83E is 100%
                     glyphCode = iconIndex == 10 ? 0xE83E : 0xE85A + iconIndex;
                 }
                 else if (PowerManager.EnergySaverStatus == EnergySaverStatus.On)
                 {
-                    // Battery Saver Icons: \xE864 (0%) to \xE86D (90%). \xE86E is 100%
                     glyphCode = iconIndex == 10 ? 0xE86E : 0xE864 + iconIndex;
                 }
                 else
                 {
-                    // Normal Battery Icons: \xE850 (0%) to \xE859 (90%). \xE83F is 100%
                     glyphCode = iconIndex == 10 ? 0xE83F : 0xE850 + iconIndex;
                 }
 
                 BatteryIcon.Glyph = ((char)glyphCode).ToString();
 
-                // Add a specific tooltip just for the battery showing the percentage
                 ToolTipService.SetToolTip(BatteryIcon, $"Battery: {percent}%");
             }
             catch (Exception ex)

@@ -17,7 +17,7 @@
                 <!-- Left Panel -->
                 <StackPanel x:Name="LeftPanel" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left" VerticalAlignment="Center">
                     <Button Width="40" Height="40" Padding="0" Background="Transparent" BorderThickness="0" CornerRadius="4" x:Name="BtnStart" Click="BtnStart_Click">
-                        <Image Source="ms-appx:///Assets/StartMenuLogo.png" Width="24" Height="24"/>
+                        <Image x:Name="StartIconImage" Source="ms-appx:///Assets/StartMenuLogo.png" Width="24" Height="24"/>
                     </Button>
                 </StackPanel>
 
@@ -39,7 +39,7 @@
 
                     <!-- Chevron (Hidden Icons) -->
                     <Button x:Name="BtnChevron" MinWidth="44" Height="40" Padding="0" HorizontalAlignment="Center" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnTrayOverflow_Click" ToolTipService.ToolTip="Show hidden icons">
-                        <FontIcon Glyph="&#xE70D;" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <FontIcon x:Name="ChevronIcon" Glyph="&#xE70D;" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
 
                     <!-- Combined Quick Settings (Network & Volume) -->
