@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 
@@ -273,6 +274,15 @@ namespace EvolveOS_ShellEnhancer
 
                     case "Taskbar_PreviewAnimation":
                         LivePreviewWindow.EnableAnimations = bool.Parse(value);
+                        break;
+
+                    case "Taskbar_PreviewAnimStyle":
+                        LivePreviewWindow.AnimationStyle = value;
+                        break;
+
+                    case "Taskbar_PreviewAnimSpeed":
+                        if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double pSpeed))
+                            LivePreviewWindow.AnimationSpeed = pSpeed;
                         break;
 
                     case "Taskbar_ClockSeconds":
