@@ -61,8 +61,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         #region Constants & Exclusion Lists
         private static readonly string[] JunkKeywords = new[]
         {
-            "uninstall", "setup", "update", "readme", "help", "manual",
-            "documentation", "website", "visit", "license", "support", "pdf", "html", "install"
+            "uninstall", "readme", "manual", "documentation", "license"
         };
 
         // Add keywords for any UWP app that already has a giant/full-bleed icon.
@@ -94,6 +93,12 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         foreach (var entry in appEntries)
                         {
                             string name = entry.DisplayInfo.DisplayName;
+
+                            if (string.IsNullOrWhiteSpace(name))
+                            {
+                                name = pkg.Id.Name.Replace("Microsoft.Windows", "").Replace("Microsoft.", "");
+                            }
+
                             if (string.IsNullOrWhiteSpace(name) || !uniqueNames.Add(name)) continue;
 
                             bool isUnpadded = UnpaddedUwpKeywords.Any(keyword =>
@@ -122,24 +127,26 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
             var paths = new[]
             {
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms),
-                Environment.GetFolderPath(Environment.SpecialFolder.Programs)
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs"),
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory),
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)
             };
 
             foreach (var path in paths)
             {
-                if (!Directory.Exists(path)) continue;
+                if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) continue;
 
                 try
                 {
-                    var shortcutFiles = Directory.GetFiles(path, "*.lnk", SearchOption.TopDirectoryOnly)
-                        .Concat(Directory.GetDirectories(path).SelectMany(subDir => Directory.GetFiles(subDir, "*.lnk", SearchOption.TopDirectoryOnly)));
+                    var shortcutFiles = SafeGetShortcuts(path);
 
                     foreach (var file in shortcutFiles)
                     {
                         string name = Path.GetFileNameWithoutExtension(file);
 
-                        if (JunkKeywords.Any(junk => name.Contains(junk, StringComparison.OrdinalIgnoreCase))) continue;
+                        var lowerName = name.ToLowerInvariant();
+                        if (JunkKeywords.Any(junk => lowerName.Contains(junk)) || lowerName.EndsWith(" help") || lowerName.StartsWith("visit ")) continue;
 
                         string target = ParseShortcutTarget(file);
                         if (!string.IsNullOrEmpty(target) && target.StartsWith("http", StringComparison.OrdinalIgnoreCase)) continue;
@@ -181,7 +188,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public static async Task<List<AppItem>> GetPinnedAppsAsync()
         {
             var allApps = await GetAllAppsAsync();
-            var preferredPins = new[] { "Edge", "Settings", "File Explorer", "Store", "Photos", "Mail", "Calculator", "Notepad", "Terminal", "Spotify", "Discord", "Word", "Excel" };
+            var preferredPins = new[] { "Edge", "Settings", "File Explorer", "Store", "Photos", "Camera", "Calculator", "Clock", "Terminal", "Spotify", "Discord", "Word", "Excel" };
 
             var pinned = allApps.Where(a => preferredPins.Any(p => a.Name != null && a.Name.Contains(p, StringComparison.OrdinalIgnoreCase))).ToList();
 
@@ -193,6 +200,31 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
             return pinned.Take(12).ToList();
         }
+
+        private static List<string> SafeGetShortcuts(string rootPath)
+        {
+            var files = new List<string>();
+            var dirs = new Queue<string>();
+            dirs.Enqueue(rootPath);
+
+            while (dirs.Count > 0)
+            {
+                string currentDir = dirs.Dequeue();
+                try
+                {
+                    files.AddRange(Directory.GetFiles(currentDir, "*.lnk"));
+                    files.AddRange(Directory.GetFiles(currentDir, "*.appref-ms"));
+                    files.AddRange(Directory.GetFiles(currentDir, "*.url"));
+
+                    foreach (var dir in Directory.GetDirectories(currentDir))
+                    {
+                        dirs.Enqueue(dir);
+                    }
+                }
+                catch { /* Safely ignore protected/inaccessible folders */ }
+            }
+            return files;
+        }
         #endregion
 
         #region Shortcut Parsing
@@ -200,6 +232,13 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         {
             try
             {
+                if (lnkPath.EndsWith(".url", StringComparison.OrdinalIgnoreCase))
+                {
+                    var lines = File.ReadAllLines(lnkPath);
+                    var urlLine = lines.FirstOrDefault(l => l.StartsWith("URL=", StringComparison.OrdinalIgnoreCase));
+                    if (urlLine != null) return urlLine.Substring(4).Trim();
+                }
+
                 IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
                 IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
                 return shortcut.TargetPath?.Trim().Trim('"', '\'') ?? string.Empty;
