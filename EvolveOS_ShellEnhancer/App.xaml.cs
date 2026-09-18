@@ -9,18 +9,24 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.Win32;
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 
 namespace EvolveOS_ShellEnhancer
 {
     public partial class App : Application
     {
+        #region Fields & Properties
         private CustomStartMenuWindow? _startMenuWindow;
 
         private bool _isStartMenuEnabled = false;
         private bool _isTaskbarEnabled = false;
 
         public static DateTime LastStartMenuCloseTime = DateTime.MinValue;
+        #endregion
 
+        #region Initialization
         public App()
         {
             this.InitializeComponent();
@@ -32,14 +38,14 @@ namespace EvolveOS_ShellEnhancer
             {
                 if (e.ExceptionObject is Exception ex)
                 {
-                    System.IO.File.WriteAllText("CrashLog.txt", $"Fatal: {ex.Message}\n{ex.StackTrace}");
+                    File.WriteAllText("CrashLog.txt", $"Fatal: {ex.Message}\n{ex.StackTrace}");
                 }
             };
 
             this.UnhandledException += (s, e) =>
             {
-                System.IO.File.WriteAllText("ShellEnhancer_CrashLog_UI.txt", $"Fatal UI: {e.Exception.Message}\n{e.Exception.StackTrace}");
-                e.Handled = true; // Attempt to keep the app alive
+                File.WriteAllText("ShellEnhancer_CrashLog_UI.txt", $"Fatal UI: {e.Exception.Message}\n{e.Exception.StackTrace}");
+                e.Handled = true;
             };
         }
 
@@ -58,10 +64,13 @@ namespace EvolveOS_ShellEnhancer
             IpcServerManager.CommandReceived += OnIpcCommandReceived;
             IpcServerManager.StartListening();
         }
+        #endregion
 
+        #region Lifecycle & Cleanup
         private void CurrentDomain_ProcessExit(object? sender, EventArgs e)
         {
             RestoreWindowsDefaults();
+            HandleCleanup();
         }
 
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
@@ -84,6 +93,34 @@ namespace EvolveOS_ShellEnhancer
             catch { }
         }
 
+        private void HandleCleanup()
+        {
+            try
+            {
+                string appName = Assembly.GetExecutingAssembly().GetName().Name ?? "EvolveOS_ShellEnhancer";
+                string netTempPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", ".net", appName);
+
+                if (Directory.Exists(netTempPath))
+                {
+                    var directories = Directory.GetDirectories(netTempPath);
+                    foreach (var dir in directories)
+                    {
+                        try
+                        {
+                            Directory.Delete(dir, true);
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[App Temp Cleanup Error] {ex.Message}");
+            }
+        }
+        #endregion
+
+        #region Core Functionality
         public void ToggleStartMenu(DisplayArea? displayArea = null, bool forceCustom = false)
         {
             if (!forceCustom && !SettingsEngine.Shell_StartMenuEnabled)
@@ -108,7 +145,9 @@ namespace EvolveOS_ShellEnhancer
                 Win32Helper.OpenNativeStartMenu();
             }
         }
+        #endregion
 
+        #region IPC Handling
         private void OnIpcCommandReceived(string command, string value)
         {
             _startMenuWindow!.DispatcherQueue.TryEnqueue(() =>
@@ -193,7 +232,9 @@ namespace EvolveOS_ShellEnhancer
                 }
             });
         }
+        #endregion
 
+        #region Input Handling & Destructor
         private void OnWindowsKeyPressed()
         {
             ToggleStartMenu();
@@ -204,5 +245,6 @@ namespace EvolveOS_ShellEnhancer
             IpcServerManager.StopListening();
             KeyboardHookManager.StopHook();
         }
+        #endregion
     }
 }
