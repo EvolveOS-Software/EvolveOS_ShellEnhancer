@@ -36,6 +36,59 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static string StartMenuPinnedApps { get => (string)_cachedSettings["StartMenuPinnedApps"]; set => ChangingParameters("StartMenuPinnedApps", value); }
 
         #region Shell Settings
+        internal static bool Shell_MasterEnabled
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Shell_MasterEnabled") is object val)
+                    {
+                        if (val is int intVal) return intVal == 1;
+                        if (val is string strVal && bool.TryParse(strVal, out bool boolVal)) return boolVal;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_MasterEnabled Error: {ex.Message}");
+                }
+                return false;
+            }
+            set
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.CreateSubKey(@"Software\EvolveOS_Optimizer", true);
+                    key?.SetValue("Shell_MasterEnabled", value ? 1 : 0, RegistryValueKind.DWord);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Write Shell_MasterEnabled Error: {ex.Message}");
+                }
+            }
+        }
+
+        internal static string Shell_Language
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Shell_Language") is string val && !string.IsNullOrEmpty(val))
+                    {
+                        return val;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_Language Error: {ex.Message}");
+                }
+                return "en-us";
+            }
+        }
+
         internal static string Shell_TaskbarAlignment
         {
             get

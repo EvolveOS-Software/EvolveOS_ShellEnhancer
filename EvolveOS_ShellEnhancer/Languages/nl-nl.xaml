@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="using:System">
+
+    <!-- region TaskBar -->
+
+    <!-- endregion TaskBar -->
+
+    <!-- region StartMenu -->
+
+    <!-- Front-end Strings -->
+    <sys:String x:Key="StartMenu_SearchPlaceholder">Zoeken naar apps en bestanden</sys:String>
+    <sys:String x:Key="StartMenu_FilterApps">Apps</sys:String>
+    <sys:String x:Key="StartMenu_FilterFiles">Bestanden</sys:String>
+    <sys:String x:Key="StartMenu_FilterWeb">Web</sys:String>
+    <sys:String x:Key="StartMenu_Pinned">Vastgemaakt</sys:String>
+    <sys:String x:Key="StartMenu_AllApps">Alle apps &gt;</sys:String>
+    <sys:String x:Key="StartMenu_CategoryProductivity">Productiviteit</sys:String>
+    <sys:String x:Key="StartMenu_CategoryNotes">Notities</sys:String>
+    <sys:String x:Key="StartMenu_CategoryGames">Games</sys:String>
+    <sys:String x:Key="StartMenu_CategoryPhoto">Foto's</sys:String>
+    <sys:String x:Key="StartMenu_FolderDocuments">Documenten</sys:String>
+    <sys:String x:Key="StartMenu_FolderDownloads">Downloads</sys:String>
+    <sys:String x:Key="StartMenu_FolderMusic">Muziek</sys:String>
+    <sys:String x:Key="StartMenu_FolderPictures">Afbeeldingen</sys:String>
+    <sys:String x:Key="StartMenu_FolderSettings">Instellingen</sys:String>
+    <sys:String x:Key="StartMenu_FolderRun">Uitvoeren...</sys:String>
+    <sys:String x:Key="StartMenu_PowerSleep">Slaapstand</sys:String>
+    <sys:String x:Key="StartMenu_PowerShutdown">Afsluiten</sys:String>
+    <sys:String x:Key="StartMenu_PowerRestart">Opnieuw opstarten</sys:String>
+    <sys:String x:Key="StartMenu_ActionOpen">Openen</sys:String>
+    <sys:String x:Key="StartMenu_ActionRunAsAdmin">Als administrator uitvoeren</sys:String>
+    <sys:String x:Key="StartMenu_ActionOpenLocation">Bestandslocatie openen</sys:String>
+
+    <!-- Back-end Strings -->
+    <sys:String x:Key="StartMenu_BackToPinned">&lt; Terug naar Vastgemaakt</sys:String>
+    <sys:String x:Key="StartMenu_ContextPinStart">Aan Start vastmaken</sys:String>
+    <sys:String x:Key="StartMenu_ContextUnpinStart">Van Start losmaken</sys:String>
+    <sys:String x:Key="StartMenu_ContextPinTaskbar">Aan taakbalk vastmaken</sys:String>
+    <sys:String x:Key="StartMenu_ContextUnpinTaskbar">Van taakbalk losmaken</sys:String>
+    <sys:String x:Key="StartMenu_SearchNoResults">Geen resultaten gevonden</sys:String>
+
+    <!-- We use {0} as a placeholder for the user's search query -->
+    <sys:String x:Key="StartMenu_SearchPCPrefix">Hele pc doorzoeken op '{0}'</sys:String>
+    <sys:String x:Key="StartMenu_SearchWebPrefix">Op het web zoeken naar '{0}'</sys:String>
+
+    <!-- endregion StartMenu -->
+
+</ResourceDictionary>

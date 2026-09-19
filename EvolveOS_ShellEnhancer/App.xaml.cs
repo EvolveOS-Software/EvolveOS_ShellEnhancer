@@ -4,6 +4,7 @@
 using EvolveOS_ShellEnhancer.Utilities;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
+using EvolveOS_ShellEnhancer.Utilities.Services;
 using EvolveOS_ShellEnhancer.Views;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -55,6 +56,12 @@ namespace EvolveOS_ShellEnhancer
         {
             СheckingGlobalParameters.Initialize();
 
+            string savedLang = SettingsEngine.Shell_Language;
+            if (!string.IsNullOrEmpty(savedLang))
+            {
+                LocalizationService.Instance.SetLanguage(savedLang);
+            }
+
             try
             {
                 var process = Process.GetCurrentProcess();
@@ -76,6 +83,23 @@ namespace EvolveOS_ShellEnhancer
             _startMenuWindow.SetPosition(SettingsEngine.Shell_TaskbarPosition);
 
             KeyboardHookManager.WindowsKeyPressed += OnWindowsKeyPressed;
+
+            try
+            {
+                bool isMasterEnabled = SettingsEngine.Shell_MasterEnabled;
+                if (isMasterEnabled)
+                {
+                    _isTaskbarEnabled = true;
+                    _ = TaskbarManager.InitializeAndShowTaskbarsAsync();
+
+                    _isStartMenuEnabled = true;
+                    KeyboardHookManager.StartHook();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Self-Start] Failed to initialize overlays on boot: {ex.Message}");
+            }
 
             IpcServerManager.CommandReceived += OnIpcCommandReceived;
             IpcServerManager.StartListening();
@@ -370,6 +394,10 @@ namespace EvolveOS_ShellEnhancer
                         {
                             ApplyFontSizeGlobally(size);
                         }
+                        break;
+
+                    case "Shell_Language":
+                        LocalizationService.Instance.SetLanguage(value);
                         break;
 
                     case "Shell_HighPriority":

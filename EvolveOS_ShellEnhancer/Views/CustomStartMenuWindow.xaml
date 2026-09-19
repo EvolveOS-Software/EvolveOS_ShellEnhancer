@@ -44,7 +44,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <AutoSuggestBox x:Name="SearchBox1" Height="40" PlaceholderText="Search Apps and files"
+                            <AutoSuggestBox x:Name="SearchBox1" Height="40" PlaceholderText="{helpers:ResourceString Key=StartMenu_SearchPlaceholder}"
                                             Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="4"
                                             VerticalContentAlignment="Center"
                                             TextChanged="SearchBox_TextChanged">
@@ -60,9 +60,9 @@
                                 </DropDownButton.Content>
                                 <DropDownButton.Flyout>
                                     <MenuFlyout>
-                                        <MenuFlyoutItem Text="Apps" Click="SearchFilter_Click"/>
-                                        <MenuFlyoutItem Text="Files" Click="SearchFilter_Click"/>
-                                        <MenuFlyoutItem Text="Web" Click="SearchFilter_Click"/>
+                                        <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_FilterApps}" Click="SearchFilter_Click"/>
+                                        <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_FilterFiles}" Click="SearchFilter_Click"/>
+                                        <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_FilterWeb}" Click="SearchFilter_Click"/>
                                     </MenuFlyout>
                                 </DropDownButton.Flyout>
                             </DropDownButton>
@@ -76,8 +76,8 @@
                             </Grid.RowDefinitions>
 
                             <Grid Grid.Row="0" Margin="0,0,0,16">
-                                <TextBlock Text="Pinned" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
-                                <Button Content="All apps >" Background="Transparent" BorderThickness="0" 
+                                <TextBlock Text="{helpers:ResourceString Key=StartMenu_Pinned}" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
+                                <Button Content="{helpers:ResourceString Key=StartMenu_AllApps}" Background="Transparent" BorderThickness="0" 
                                             HorizontalAlignment="Right" FontSize="{ThemeResource AppFontSizeSmall}" Click="BtnAllApps_Click"/>
                             </Grid>
 
@@ -86,17 +86,17 @@
                                     <DataTemplate x:DataType="helpers:AppItem">
                                         <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped">
                                             <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
-                                                          Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                      Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
 
                                             <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center"
-                                                       Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                   Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                 <Image.RenderTransform>
                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                 </Image.RenderTransform>
                                             </Image>
 
                                             <TextBlock Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center"
-                                                           TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
+                                                       TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </GridView.ItemTemplate>
@@ -128,37 +128,37 @@
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Documents" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8A5;" FontSize="16"/>
-                                            <TextBlock Text="Documents"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderDocuments}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Downloads" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE896;" FontSize="16"/>
-                                            <TextBlock Text="Downloads"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderDownloads}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Music" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8D6;" FontSize="16"/>
-                                            <TextBlock Text="Music"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderMusic}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Pictures" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8B9;" FontSize="16"/>
-                                            <TextBlock Text="Pictures"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderPictures}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Settings" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE713;" FontSize="16"/>
-                                            <TextBlock Text="Settings"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderSettings}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Run" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE78B;" FontSize="16"/>
-                                            <TextBlock Text="Run..."/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderRun}"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
@@ -171,17 +171,17 @@
                                         </DropDownButton.Content>
                                         <DropDownButton.Flyout>
                                             <MenuFlyout>
-                                                <MenuFlyoutItem Text="Sleep" Click="PowerSleep_Click">
+                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerSleep}" Click="PowerSleep_Click">
                                                     <MenuFlyoutItem.Icon>
                                                         <FontIcon Glyph="&#xE708;"/>
                                                     </MenuFlyoutItem.Icon>
                                                 </MenuFlyoutItem>
-                                                <MenuFlyoutItem Text="Shut down" Click="PowerShutdown_Click">
+                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerShutdown}" Click="PowerShutdown_Click">
                                                     <MenuFlyoutItem.Icon>
                                                         <FontIcon Glyph="&#xE7E8;"/>
                                                     </MenuFlyoutItem.Icon>
                                                 </MenuFlyoutItem>
-                                                <MenuFlyoutItem Text="Restart" Click="PowerRestart_Click">
+                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerRestart}" Click="PowerRestart_Click">
                                                     <MenuFlyoutItem.Icon>
                                                         <FontIcon Glyph="&#xE777;"/>
                                                     </MenuFlyoutItem.Icon>
@@ -211,19 +211,19 @@
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Click="SearchAction_Open_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8A7;" FontSize="16"/>
-                                            <TextBlock Text="Open"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_ActionOpen}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button x:Name="AdminBtn1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Click="SearchAction_RunAsAdmin_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE7EF;" FontSize="16"/>
-                                            <TextBlock Text="Run as administrator"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_ActionRunAsAdmin}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button x:Name="LocationBtn1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Click="SearchAction_OpenLocation_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8DA;" FontSize="16"/>
-                                            <TextBlock Text="Open file location"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_ActionOpenLocation}"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
@@ -258,7 +258,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <AutoSuggestBox x:Name="SearchBox2" Height="40" PlaceholderText="Search Apps and files"
+                            <AutoSuggestBox x:Name="SearchBox2" Height="40" PlaceholderText="{helpers:ResourceString Key=StartMenu_SearchPlaceholder}"
                                             Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="4"
                                             VerticalContentAlignment="Center"
                                             TextChanged="SearchBox_TextChanged">
@@ -274,9 +274,9 @@
                                 </DropDownButton.Content>
                                 <DropDownButton.Flyout>
                                     <MenuFlyout>
-                                        <MenuFlyoutItem Text="Apps" Click="SearchFilter_Click"/>
-                                        <MenuFlyoutItem Text="Files" Click="SearchFilter_Click"/>
-                                        <MenuFlyoutItem Text="Web" Click="SearchFilter_Click"/>
+                                        <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_FilterApps}" Click="SearchFilter_Click"/>
+                                        <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_FilterFiles}" Click="SearchFilter_Click"/>
+                                        <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_FilterWeb}" Click="SearchFilter_Click"/>
                                     </MenuFlyout>
                                 </DropDownButton.Flyout>
                             </DropDownButton>
@@ -288,8 +288,8 @@
                                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" Padding="16">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,12">
-                                            <TextBlock Text="Productivity" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}"/>
-                                            <Button Content="All apps >" Background="Transparent" BorderThickness="0" 
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_CategoryProductivity}" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}"/>
+                                            <Button Content="{helpers:ResourceString Key=StartMenu_AllApps}" Background="Transparent" BorderThickness="0" 
                                                         HorizontalAlignment="Right" FontSize="{ThemeResource AppFontSizeSmall}" Click="BtnAllApps_Click"/>
                                         </Grid>
                                         <GridView x:Name="ProductivityAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
@@ -317,9 +317,9 @@
                                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" Padding="16">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,0,0,12">
-                                            <TextBlock Text="Notes" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                            <TextBlock Text="Games" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                                            <TextBlock Text="Photo" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_CategoryNotes}" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_CategoryGames}" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_CategoryPhoto}" FontSize="{ThemeResource AppFontSizeBase}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                         </StackPanel>
                                         <GridView x:Name="SecondaryAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                             <GridView.ItemTemplate>
@@ -369,37 +369,37 @@
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Documents" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8A5;" FontSize="16"/>
-                                            <TextBlock Text="Documents"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderDocuments}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Downloads" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE896;" FontSize="16"/>
-                                            <TextBlock Text="Downloads"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderDownloads}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Music" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8D6;" FontSize="16"/>
-                                            <TextBlock Text="Music"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderMusic}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Pictures" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8B9;" FontSize="16"/>
-                                            <TextBlock Text="Pictures"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderPictures}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Settings" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE713;" FontSize="16"/>
-                                            <TextBlock Text="Settings"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderSettings}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Tag="Run" Click="QuickFolder_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE78B;" FontSize="16"/>
-                                            <TextBlock Text="Run..."/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_FolderRun}"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
@@ -412,17 +412,17 @@
                                         </DropDownButton.Content>
                                         <DropDownButton.Flyout>
                                             <MenuFlyout>
-                                                <MenuFlyoutItem Text="Sleep" Click="PowerSleep_Click">
+                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerSleep}" Click="PowerSleep_Click">
                                                     <MenuFlyoutItem.Icon>
                                                         <FontIcon Glyph="&#xE708;"/>
                                                     </MenuFlyoutItem.Icon>
                                                 </MenuFlyoutItem>
-                                                <MenuFlyoutItem Text="Shut down" Click="PowerShutdown_Click">
+                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerShutdown}" Click="PowerShutdown_Click">
                                                     <MenuFlyoutItem.Icon>
                                                         <FontIcon Glyph="&#xE7E8;"/>
                                                     </MenuFlyoutItem.Icon>
                                                 </MenuFlyoutItem>
-                                                <MenuFlyoutItem Text="Restart" Click="PowerRestart_Click">
+                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerRestart}" Click="PowerRestart_Click">
                                                     <MenuFlyoutItem.Icon>
                                                         <FontIcon Glyph="&#xE777;"/>
                                                     </MenuFlyoutItem.Icon>
@@ -452,19 +452,19 @@
                                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Click="SearchAction_Open_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8A7;" FontSize="16"/>
-                                            <TextBlock Text="Open"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_ActionOpen}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button x:Name="AdminBtn2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Click="SearchAction_RunAsAdmin_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE7EF;" FontSize="16"/>
-                                            <TextBlock Text="Run as administrator"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_ActionRunAsAdmin}"/>
                                         </StackPanel>
                                     </Button>
                                     <Button x:Name="LocationBtn2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="12,10" Click="SearchAction_OpenLocation_Click">
                                         <StackPanel Orientation="Horizontal" Spacing="12">
                                             <FontIcon Glyph="&#xE8DA;" FontSize="16"/>
-                                            <TextBlock Text="Open file location"/>
+                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_ActionOpenLocation}"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>

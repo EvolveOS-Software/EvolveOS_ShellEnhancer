@@ -4,6 +4,7 @@
 using EvolveOS_ShellEnhancer.Utilities.Animations;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
+using EvolveOS_ShellEnhancer.Utilities.Services;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -448,13 +449,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (_isShowingAllApps)
                 {
-                    btn.Content = "< Back to Pinned";
+                    btn.Content = LocalizationService.Instance.GetString("StartMenu_BackToPinned");
                     StandardPinnedAppsGrid.ItemsSource = AllAppsCollection;
                     ProductivityAppsGrid.ItemsSource = AllAppsCollection;
                 }
                 else
                 {
-                    btn.Content = "All apps >";
+                    btn.Content = LocalizationService.Instance.GetString("StartMenu_AllApps");
                     StandardPinnedAppsGrid.ItemsSource = PinnedAppsCollection;
                     ProductivityAppsGrid.ItemsSource = PinnedAppsCollection;
                 }
@@ -477,7 +478,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 bool isPinnedToStart = PinnedAppsCollection.Contains(app);
                 var pinStartItem = new MenuFlyoutItem
                 {
-                    Text = isPinnedToStart ? "Unpin from Start" : "Pin to Start",
+                    Text = isPinnedToStart
+                        ? LocalizationService.Instance.GetString("StartMenu_ContextUnpinStart")
+                        : LocalizationService.Instance.GetString("StartMenu_ContextPinStart"),
                     Icon = new FontIcon { Glyph = "\xE141" }
                 };
                 pinStartItem.Click += (s, args) =>
@@ -495,7 +498,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 bool isPinnedToTaskbar = IsPinnedToTaskbar(app);
                 var pinTaskbarItem = new MenuFlyoutItem
                 {
-                    Text = isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar",
+                    Text = isPinnedToTaskbar
+                        ? LocalizationService.Instance.GetString("StartMenu_ContextUnpinTaskbar")
+                        : LocalizationService.Instance.GetString("StartMenu_ContextPinTaskbar"),
                     Icon = new FontIcon { Glyph = "\xE196" }
                 };
                 pinTaskbarItem.Click += (s, args) => ToggleTaskbarPin(app, isPinnedToTaskbar);
@@ -505,11 +510,19 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     flyout.Items.Add(new MenuFlyoutSeparator());
 
-                    var adminItem = new MenuFlyoutItem { Text = "Run as administrator", Icon = new FontIcon { Glyph = "\xE7EF" } };
+                    var adminItem = new MenuFlyoutItem
+                    {
+                        Text = LocalizationService.Instance.GetString("StartMenu_ActionRunAsAdmin"),
+                        Icon = new FontIcon { Glyph = "\xE7EF" }
+                    };
                     adminItem.Click += (s, args) => LaunchApp(app, true);
                     flyout.Items.Add(adminItem);
 
-                    var locItem = new MenuFlyoutItem { Text = "Open file location", Icon = new FontIcon { Glyph = "\xE8DA" } };
+                    var locItem = new MenuFlyoutItem
+                    {
+                        Text = LocalizationService.Instance.GetString("StartMenu_ActionOpenLocation"),
+                        Icon = new FontIcon { Glyph = "\xE8DA" }
+                    };
                     locItem.Click += (s, args) =>
                     {
                         try
@@ -614,9 +627,9 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (SearchBox1 == null || SearchBox2 == null || DesignSplitStandard == null) return;
 
-            if (sender is MenuFlyoutItem item)
+            if (sender is MenuFlyoutItem item && item.Tag is string tag)
             {
-                _currentSearchFilter = item.Text;
+                _currentSearchFilter = tag;
 
                 string query = DesignSplitStandard.Visibility == Visibility.Visible ? SearchBox1.Text : SearchBox2.Text;
                 PerformSearch(query);
@@ -659,7 +672,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 SearchResultsCollection.Add(new AppItem
                 {
-                    Name = $"Search entire PC for '{query}'",
+                    Name = LocalizationService.Instance.GetString("StartMenu_SearchPCPrefix", query),
                     FallbackGlyph = "\xE8A5",
                     ExecutablePath = "FILE_SEARCH:" + query
                 });
@@ -722,7 +735,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 SearchResultsCollection.Add(new AppItem
                 {
-                    Name = $"Search Web for '{query}'",
+                    Name = LocalizationService.Instance.GetString("StartMenu_SearchWebPrefix", query),
                     FallbackGlyph = "\xE8FA",
                     ExecutablePath = "WEB_SEARCH:" + query
                 });
@@ -747,8 +760,9 @@ namespace EvolveOS_ShellEnhancer.Views
             else
             {
                 _currentSearchItem = null;
-                SearchDetailsName1.Text = "No results found";
-                SearchDetailsName2.Text = "No results found";
+                string noResultsTxt = LocalizationService.Instance.GetString("StartMenu_SearchNoResults");
+                SearchDetailsName1.Text = noResultsTxt;
+                SearchDetailsName2.Text = noResultsTxt;
                 SearchDetailsIcon1.Source = null;
                 SearchDetailsIcon2.Source = null;
                 AdminBtn1.Visibility = Visibility.Collapsed;

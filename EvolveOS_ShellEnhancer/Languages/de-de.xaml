@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="using:System">
+
+    <!-- region TaskBar -->
+
+    <!-- endregion TaskBar -->
+
+    <!-- region StartMenu -->
+
+    <!-- Front-end Strings -->
+    <sys:String x:Key="StartMenu_SearchPlaceholder">Nach Apps und Dateien suchen</sys:String>
+    <sys:String x:Key="StartMenu_FilterApps">Apps</sys:String>
+    <sys:String x:Key="StartMenu_FilterFiles">Dateien</sys:String>
+    <sys:String x:Key="StartMenu_FilterWeb">Web</sys:String>
+    <sys:String x:Key="StartMenu_Pinned">Angeheftet</sys:String>
+    <sys:String x:Key="StartMenu_AllApps">Alle Apps &gt;</sys:String>
+    <sys:String x:Key="StartMenu_CategoryProductivity">Produktivität</sys:String>
+    <sys:String x:Key="StartMenu_CategoryNotes">Notizen</sys:String>
+    <sys:String x:Key="StartMenu_CategoryGames">Spiele</sys:String>
+    <sys:String x:Key="StartMenu_CategoryPhoto">Fotos</sys:String>
+    <sys:String x:Key="StartMenu_FolderDocuments">Dokumente</sys:String>
+    <sys:String x:Key="StartMenu_FolderDownloads">Downloads</sys:String>
+    <sys:String x:Key="StartMenu_FolderMusic">Musik</sys:String>
+    <sys:String x:Key="StartMenu_FolderPictures">Bilder</sys:String>
+    <sys:String x:Key="StartMenu_FolderSettings">Einstellungen</sys:String>
+    <sys:String x:Key="StartMenu_FolderRun">Ausführen...</sys:String>
+    <sys:String x:Key="StartMenu_PowerSleep">Energie sparen</sys:String>
+    <sys:String x:Key="StartMenu_PowerShutdown">Herunterfahren</sys:String>
+    <sys:String x:Key="StartMenu_PowerRestart">Neu starten</sys:String>
+    <sys:String x:Key="StartMenu_ActionOpen">Öffnen</sys:String>
+    <sys:String x:Key="StartMenu_ActionRunAsAdmin">Als Administrator ausführen</sys:String>
+    <sys:String x:Key="StartMenu_ActionOpenLocation">Dateipfad öffnen</sys:String>
+
+    <!-- Back-end Strings -->
+    <sys:String x:Key="StartMenu_BackToPinned">&lt; Zurück zu Angeheftet</sys:String>
+    <sys:String x:Key="StartMenu_ContextPinStart">An Start anheften</sys:String>
+    <sys:String x:Key="StartMenu_ContextUnpinStart">Von Start lösen</sys:String>
+    <sys:String x:Key="StartMenu_ContextPinTaskbar">An Taskleiste anheften</sys:String>
+    <sys:String x:Key="StartMenu_ContextUnpinTaskbar">Von Taskleiste lösen</sys:String>
+    <sys:String x:Key="StartMenu_SearchNoResults">Keine Ergebnisse gefunden</sys:String>
+
+    <!-- We use {0} as a placeholder for the user's search query -->
+    <sys:String x:Key="StartMenu_SearchPCPrefix">Gesamten PC nach '{0}' durchsuchen</sys:String>
+    <sys:String x:Key="StartMenu_SearchWebPrefix">Im Web nach '{0}' suchen</sys:String>
+
+    <!-- endregion StartMenu -->
+
+</ResourceDictionary>
