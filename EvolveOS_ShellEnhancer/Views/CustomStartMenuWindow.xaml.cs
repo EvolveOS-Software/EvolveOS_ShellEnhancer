@@ -53,6 +53,10 @@ namespace EvolveOS_ShellEnhancer.Views
         private AppItem? _currentSearchItem;
 
         private CancellationTokenSource? _searchCts;
+
+        private FileSystemWatcher? _userStartMenuWatcher;
+        private FileSystemWatcher? _systemStartMenuWatcher;
+        private DispatcherTimer? _appRefreshDebounceTimer;
         #endregion
 
         #region Initialization & Data Loading
@@ -88,8 +92,71 @@ namespace EvolveOS_ShellEnhancer.Views
 
             this.Activated += OnWindowActivated;
 
+            InitializeAppWatchers();
             LoadAppsData();
             LoadUserProfile();
+        }
+
+        private void InitializeAppWatchers()
+        {
+            try
+            {
+                _appRefreshDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                _appRefreshDebounceTimer.Tick += (s, e) =>
+                {
+                    _appRefreshDebounceTimer.Stop();
+                    _isDataLoaded = false; // Invalidate cache
+
+                    LoadAppsData();
+                };
+
+                string userStartMenu = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs");
+                string systemStartMenu = Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms);
+
+                if (Directory.Exists(userStartMenu))
+                {
+                    _userStartMenuWatcher = new FileSystemWatcher(userStartMenu)
+                    {
+                        IncludeSubdirectories = true,
+                        EnableRaisingEvents = true,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
+                    };
+                    _userStartMenuWatcher.Created += OnStartMenuChanged;
+                    _userStartMenuWatcher.Deleted += OnStartMenuChanged;
+                    _userStartMenuWatcher.Renamed += OnStartMenuChanged;
+                }
+
+                if (Directory.Exists(systemStartMenu))
+                {
+                    _systemStartMenuWatcher = new FileSystemWatcher(systemStartMenu)
+                    {
+                        IncludeSubdirectories = true,
+                        EnableRaisingEvents = true,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
+                    };
+                    _systemStartMenuWatcher.Created += OnStartMenuChanged;
+                    _systemStartMenuWatcher.Deleted += OnStartMenuChanged;
+                    _systemStartMenuWatcher.Renamed += OnStartMenuChanged;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to initialize start menu watchers: {ex.Message}");
+            }
+        }
+
+        private void OnStartMenuChanged(object sender, FileSystemEventArgs e)
+        {
+            if (e.FullPath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ||
+                e.FullPath.EndsWith(".url", StringComparison.OrdinalIgnoreCase) ||
+                Directory.Exists(e.FullPath))
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    _appRefreshDebounceTimer?.Stop();
+                    _appRefreshDebounceTimer?.Start();
+                });
+            }
         }
 
         private async void LoadUserProfile()
