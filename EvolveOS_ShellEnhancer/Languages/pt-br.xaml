@@ -4,6 +4,38 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="using:System">
 
+    <!-- region Message Window -->
+
+    <!-- Shared Message Window Strings -->
+    <sys:String x:Key="noty_message">Este aplicativo será fechado automaticamente</sys:String>
+    <sys:String x:Key="button_message">Aceitar</sys:String>
+
+    <!-- General Warning Message -->
+    <sys:String x:Key="title_message">Aviso do Aplicativo</sys:String>
+    <sys:String x:Key="part1_message">Você está prestes a iniciar um</sys:String>
+    <sys:String x:Key="part2_message">recurso experimental</sys:String>
+    <sys:String x:Key="part3_message">. Prossiga com cuidado, pois isso pode causar instabilidade no sistema.</sys:String>
+
+    <!-- Not Supported Message -->
+    <sys:String x:Key="title_nosupport_message">Sistema Não Suportado</sys:String>
+    <sys:String x:Key="part1_nosupport_message">A sua</sys:String>
+    <sys:String x:Key="part2_nosupport_message">versão atual do sistema operacional</sys:String>
+    <sys:String x:Key="part3_nosupport_message">não é totalmente suportada por esta versão do EvolveOS Shell Enhancer.</sys:String>
+
+    <!-- Already Running Message -->
+    <sys:String x:Key="title_alreadyrunning_message">Aplicativo Já em Execução</sys:String>
+    <sys:String x:Key="part1_alreadyrunning_message">Uma instância do</sys:String>
+    <sys:String x:Key="part2_alreadyrunning_message">EvolveOS Shell Enhancer</sys:String>
+    <sys:String x:Key="part3_alreadyrunning_message">já está em execução em segundo plano. Verifique a bandeja do sistema.</sys:String>
+
+    <!-- Missing Optimizer Message -->
+    <sys:String x:Key="title_missingoptimizer_message">Componente Principal Ausente</sys:String>
+    <sys:String x:Key="part1_missingoptimizer_message">O aplicativo</sys:String>
+    <sys:String x:Key="part2_missingoptimizer_message">EvolveOS Optimizer</sys:String>
+    <sys:String x:Key="part3_missingoptimizer_message">não pôde ser encontrado. Certifique-se de que ele esteja localizado exatamente no mesmo diretório do Shell Enhancer para continuar.</sys:String>
+
+    <!-- endregion Message Window -->
+
     <!-- region TaskBar -->
 
     <!-- endregion TaskBar -->

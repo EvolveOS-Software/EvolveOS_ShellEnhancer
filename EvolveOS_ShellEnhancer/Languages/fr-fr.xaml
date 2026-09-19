@@ -4,6 +4,38 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="using:System">
 
+    <!-- region Message Window -->
+
+    <!-- Shared Message Window Strings -->
+    <sys:String x:Key="noty_message">Cette application se fermera automatiquement</sys:String>
+    <sys:String x:Key="button_message">Accepter</sys:String>
+
+    <!-- General Warning Message -->
+    <sys:String x:Key="title_message">Avertissement de l'application</sys:String>
+    <sys:String x:Key="part1_message">Vous êtes sur le point de lancer une</sys:String>
+    <sys:String x:Key="part2_message">fonctionnalité expérimentale</sys:String>
+    <sys:String x:Key="part3_message">. Veuillez faire preuve de prudence car cela peut provoquer une instabilité du système.</sys:String>
+
+    <!-- Not Supported Message -->
+    <sys:String x:Key="title_nosupport_message">Système non pris en charge</sys:String>
+    <sys:String x:Key="part1_nosupport_message">Votre</sys:String>
+    <sys:String x:Key="part2_nosupport_message">version actuelle du système d'exploitation</sys:String>
+    <sys:String x:Key="part3_nosupport_message">n'est pas entièrement prise en charge par cette version d'EvolveOS Shell Enhancer.</sys:String>
+
+    <!-- Already Running Message -->
+    <sys:String x:Key="title_alreadyrunning_message">Application déjà en cours d'exécution</sys:String>
+    <sys:String x:Key="part1_alreadyrunning_message">Une instance d'</sys:String>
+    <sys:String x:Key="part2_alreadyrunning_message">EvolveOS Shell Enhancer</sys:String>
+    <sys:String x:Key="part3_alreadyrunning_message">est déjà en cours d'exécution en arrière-plan. Veuillez vérifier votre zone de notification.</sys:String>
+
+    <!-- Missing Optimizer Message -->
+    <sys:String x:Key="title_missingoptimizer_message">Composant principal manquant</sys:String>
+    <sys:String x:Key="part1_missingoptimizer_message">L'application</sys:String>
+    <sys:String x:Key="part2_missingoptimizer_message">EvolveOS Optimizer</sys:String>
+    <sys:String x:Key="part3_missingoptimizer_message">est introuvable. Veuillez vous assurer qu'elle se trouve exactement dans le même répertoire que le Shell Enhancer pour continuer.</sys:String>
+
+    <!-- endregion Message Window -->
+
     <!-- region TaskBar -->
 
     <!-- endregion TaskBar -->

@@ -21,6 +21,8 @@ namespace EvolveOS_ShellEnhancer
     public partial class App : Application
     {
         #region Fields & Properties
+        private static System.Threading.Mutex? _appMutex;
+
         private CustomStartMenuWindow? _startMenuWindow;
 
         private bool _isStartMenuEnabled = false;
@@ -54,6 +56,25 @@ namespace EvolveOS_ShellEnhancer
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
+            _appMutex = new System.Threading.Mutex(true, "EvolveOS_ShellEnhancer_Unique_Instance_Mutex", out bool isFirstInstance);
+
+            if (!isFirstInstance)
+            {
+                var runningMsgWindow = new MessageWindow(Enums.MessageWindowState.AlreadyRunning);
+                runningMsgWindow.Activate();
+                return;
+            }
+
+            string exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+            string optimizerPath = Path.Combine(exeDir, "EvolveOS_Optimizer.exe");
+
+            if (!File.Exists(optimizerPath))
+            {
+                var msgWindow = new MessageWindow(Enums.MessageWindowState.MissingOptimizer);
+                msgWindow.Activate();
+                return;
+            }
+
             СheckingGlobalParameters.Initialize();
 
             string savedLang = SettingsEngine.Shell_Language;
@@ -201,7 +222,14 @@ namespace EvolveOS_ShellEnhancer
             catch { }
         }
 
-        private void HandleCleanup()
+        public static void ExitApp()
+        {
+            HandleCleanup();
+
+            Application.Current.Exit();
+        }
+
+        private static void HandleCleanup()
         {
             try
             {

@@ -4,6 +4,38 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="using:System">
 
+    <!-- region Message Window -->
+
+    <!-- Shared Message Window Strings -->
+    <sys:String x:Key="noty_message">Deze applicatie wordt automatisch gesloten</sys:String>
+    <sys:String x:Key="button_message">Accepteren</sys:String>
+
+    <!-- General Warning Message -->
+    <sys:String x:Key="title_message">Applicatiewaarschuwing</sys:String>
+    <sys:String x:Key="part1_message">Je staat op het punt een</sys:String>
+    <sys:String x:Key="part2_message">experimentele functie</sys:String>
+    <sys:String x:Key="part3_message">te starten. Ga voorzichtig te werk, aangezien dit systeeminstabiliteit kan veroorzaken.</sys:String>
+
+    <!-- Not Supported Message -->
+    <sys:String x:Key="title_nosupport_message">Niet-ondersteund systeem</sys:String>
+    <sys:String x:Key="part1_nosupport_message">Je huidige</sys:String>
+    <sys:String x:Key="part2_nosupport_message">besturingssysteemversie</sys:String>
+    <sys:String x:Key="part3_nosupport_message">wordt niet volledig ondersteund door deze build van EvolveOS Shell Enhancer.</sys:String>
+
+    <!-- Already Running Message -->
+    <sys:String x:Key="title_alreadyrunning_message">Applicatie is al actief</sys:String>
+    <sys:String x:Key="part1_alreadyrunning_message">Er draait al een instantie van</sys:String>
+    <sys:String x:Key="part2_alreadyrunning_message">EvolveOS Shell Enhancer</sys:String>
+    <sys:String x:Key="part3_alreadyrunning_message">op de achtergrond. Controleer je systeemvak.</sys:String>
+
+    <!-- Missing Optimizer Message -->
+    <sys:String x:Key="title_missingoptimizer_message">Ontbrekend kernonderdeel</sys:String>
+    <sys:String x:Key="part1_missingoptimizer_message">De</sys:String>
+    <sys:String x:Key="part2_missingoptimizer_message">EvolveOS Optimizer</sys:String>
+    <sys:String x:Key="part3_missingoptimizer_message">-applicatie kon niet worden gevonden. Zorg ervoor dat deze zich in exact dezelfde map bevindt als de Shell Enhancer om door te gaan.</sys:String>
+
+    <!-- endregion Message Window -->
+
     <!-- region TaskBar -->
 
     <!-- endregion TaskBar -->

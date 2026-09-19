@@ -16,36 +16,36 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         #region Native Methods & P/Invokes
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+        public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
         [DllImport("user32.dll")]
-        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+        public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
         [DllImport("dwmapi.dll", PreserveSig = true)]
         public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+        public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
+        public static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+        public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
         public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+        public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+        public static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
         [DllImport("user32.dll")]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -55,51 +55,51 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public static extern bool IsIconic(IntPtr hWnd);
 
         [DllImport("user32.dll")]
-        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
         [DllImport("user32.dll")]
-        private static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
+        public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool IsWindowVisible(IntPtr hWnd);
+        public static extern bool IsWindowVisible(IntPtr hWnd);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetCursorPos(out POINT lpPoint);
+        public static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetCursorPos(int X, int Y);
+        public static extern bool GetCursorPos(out POINT lpPoint);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+        public static extern bool SetCursorPos(int X, int Y);
 
         [DllImport("user32.dll")]
-        private static extern IntPtr SetFocus(IntPtr hWnd);
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         [DllImport("user32.dll")]
-        private static extern int ShowCursor(bool bShow);
+        public static extern IntPtr SetFocus(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern int ShowCursor(bool bShow);
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool EnumChildWindows(IntPtr hwndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+        public static extern bool EnumChildWindows(IntPtr hwndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
         [DllImport("user32.dll")]
-        private static extern IntPtr WindowFromPoint(POINT Point);
+        public static extern IntPtr WindowFromPoint(POINT Point);
 
         [DllImport("user32.dll")]
-        private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+        public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
 
         [DllImport("dwmapi.dll", EntryPoint = "#113")]
         public static extern int DwmpActivateLivePreview(uint enable, IntPtr hWnd, IntPtr top, uint peekType);
@@ -164,54 +164,54 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const int SW_RESTORE = 9;
 
         // Base Styles
-        private const int GWL_STYLE = -16;
-        private const int WS_THICKFRAME = 0x00040000;
-        private const int WS_BORDER = 0x00800000;
-        private const int WS_CAPTION = 0x00C00000;
-        private const uint WS_POPUP = 0x80000000;
+        public const int GWL_STYLE = -16;
+        public const int WS_THICKFRAME = 0x00040000;
+        public const int WS_BORDER = 0x00800000;
+        public const int WS_CAPTION = 0x00C00000;
+        public const uint WS_POPUP = 0x80000000;
 
         // Extended Styles
-        private const int GWL_EXSTYLE = -20;
-        private const int WS_EX_CLIENTEDGE = 0x00000200;
-        private const int WS_EX_WINDOWEDGE = 0x00000100;
-        private const int WS_EX_DLGMODALFRAME = 0x00000001;
-        private const int WS_EX_LAYERED = 0x00080000;
-        private const int WS_EX_TRANSPARENT = 0x00000020;
+        public const int GWL_EXSTYLE = -20;
+        public const int WS_EX_CLIENTEDGE = 0x00000200;
+        public const int WS_EX_WINDOWEDGE = 0x00000100;
+        public const int WS_EX_DLGMODALFRAME = 0x00000001;
+        public const int WS_EX_LAYERED = 0x00080000;
+        public const int WS_EX_TRANSPARENT = 0x00000020;
 
         // SetWindowPos Flags
-        private const uint SWP_NOMOVE = 0x0002;
-        private const uint SWP_NOSIZE = 0x0001;
-        private const uint SWP_NOZORDER = 0x0004;
-        private const uint SWP_NOACTIVATE = 0x0010;
-        private const uint SWP_FRAMECHANGED = 0x0020;
+        public const uint SWP_NOMOVE = 0x0002;
+        public const uint SWP_NOSIZE = 0x0001;
+        public const uint SWP_NOZORDER = 0x0004;
+        public const uint SWP_NOACTIVATE = 0x0010;
+        public const uint SWP_FRAMECHANGED = 0x0020;
         public const uint WM_SETTINGCHANGE = 0x001A;
 
         // DWM Attributes
-        private const int DWMWA_BORDER_COLOR = 34;
-        private const int DWM_COLOR_NONE = unchecked((int)0xFFFFFFFE);
-        private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+        public const int DWMWA_BORDER_COLOR = 34;
+        public const int DWM_COLOR_NONE = unchecked((int)0xFFFFFFFE);
+        public const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
 
         public const int DWMWCP_DEFAULT = 0;
         public const int DWMWCP_DONOTROUND = 1;
         public const int DWMWCP_ROUND = 2;
         public const int DWMWCP_ROUNDSMALL = 3;
 
-        private const int SW_HIDE = 0;
-        private const int SW_SHOW = 5;
+        public const int SW_HIDE = 0;
+        public const int SW_SHOW = 5;
 
-        private const byte VK_LWIN = 0x5B;
-        private const uint KEYEVENTF_KEYUP = 0x0002;
+        public const byte VK_LWIN = 0x5B;
+        public const uint KEYEVENTF_KEYUP = 0x0002;
 
-        private const uint MOUSEEVENTF_MOVE = 0x0001;
-        private const uint MOUSEEVENTF_WHEEL = 0x0800;
-        private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
-        private const uint MOUSEEVENTF_LEFTUP = 0x0004;
+        public const uint MOUSEEVENTF_MOVE = 0x0001;
+        public const uint MOUSEEVENTF_WHEEL = 0x0800;
+        public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+        public const uint MOUSEEVENTF_LEFTUP = 0x0004;
 
-        private const int WS_EX_NOACTIVATE = 0x08000000;
-        private const int WS_EX_TOOLWINDOW = 0x00000080;
+        public const int WS_EX_NOACTIVATE = 0x08000000;
+        public const int WS_EX_TOOLWINDOW = 0x00000080;
 
-        private const uint WM_CHANGEUISTATE = 0x0127;
-        private const uint LWA_ALPHA = 0x2;
+        public const uint WM_CHANGEUISTATE = 0x0127;
+        public const uint LWA_ALPHA = 0x2;
 
         public const int DWMWA_EXCLUDED_FROM_PEEK = 12;
 

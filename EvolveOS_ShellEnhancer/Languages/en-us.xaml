@@ -4,6 +4,38 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="using:System">
 
+    <!-- region Message Window -->
+
+    <!-- Shared Message Window Strings -->
+    <sys:String x:Key="noty_message">This application will close automatically</sys:String>
+    <sys:String x:Key="button_message">Accept</sys:String>
+
+    <!-- General Warning Message -->
+    <sys:String x:Key="title_message">Application Warning</sys:String>
+    <sys:String x:Key="part1_message">You are about to launch an</sys:String>
+    <sys:String x:Key="part2_message">experimental feature</sys:String>
+    <sys:String x:Key="part3_message">. Please proceed with caution as this may cause system instability.</sys:String>
+
+    <!-- Not Supported Message -->
+    <sys:String x:Key="title_nosupport_message">Unsupported System</sys:String>
+    <sys:String x:Key="part1_nosupport_message">Your current</sys:String>
+    <sys:String x:Key="part2_nosupport_message">operating system version</sys:String>
+    <sys:String x:Key="part3_nosupport_message">is not fully supported by this build of EvolveOS Shell Enhancer.</sys:String>
+
+    <!-- Already Running Message -->
+    <sys:String x:Key="title_alreadyrunning_message">Application Already Running</sys:String>
+    <sys:String x:Key="part1_alreadyrunning_message">An instance of</sys:String>
+    <sys:String x:Key="part2_alreadyrunning_message">EvolveOS Shell Enhancer</sys:String>
+    <sys:String x:Key="part3_alreadyrunning_message">is already running in the background. Please check your system tray.</sys:String>
+
+    <!-- Missing Optimizer Message -->
+    <sys:String x:Key="title_missingoptimizer_message">Missing Core Component</sys:String>
+    <sys:String x:Key="part1_missingoptimizer_message">The</sys:String>
+    <sys:String x:Key="part2_missingoptimizer_message">EvolveOS Optimizer</sys:String>
+    <sys:String x:Key="part3_missingoptimizer_message">application could not be found. Please ensure it is located in the exact same directory as the Shell Enhancer to continue.</sys:String>
+
+    <!-- endregion Message Window -->
+
     <!-- region TaskBar -->
 
     <!-- endregion TaskBar -->
