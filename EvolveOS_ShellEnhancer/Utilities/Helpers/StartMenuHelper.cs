@@ -1,8 +1,7 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Data;
+using EvolveOS_ShellEnhancer.Models;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -20,42 +19,6 @@ using Windows.Storage.Streams;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {
-    #region AppItem Model
-    [Bindable]
-    public class AppItem : System.ComponentModel.INotifyPropertyChanged
-    {
-        public string? Name { get; set; }
-        public string? ExecutablePath { get; set; }
-        public string? FallbackGlyph { get; set; }
-        public bool IsUwp { get; set; }
-
-        public double IconScale { get; set; } = 1.0;
-
-        private ImageSource? _iconSource;
-        public ImageSource? IconSource
-        {
-            get => _iconSource;
-            set
-            {
-                if (_iconSource != value)
-                {
-                    _iconSource = value;
-                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IconSource)));
-                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(HasIcon)));
-                    PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(HasNoIcon)));
-                }
-            }
-        }
-
-        internal IRandomAccessStreamReference? UwpLogoStreamRef { get; set; }
-
-        public Visibility HasIcon => IconSource != null ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility HasNoIcon => IconSource == null ? Visibility.Visible : Visibility.Collapsed;
-
-        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
-    }
-    #endregion
-
     public static class StartMenuHelper
     {
         #region Constants & Exclusion Lists

@@ -22,6 +22,7 @@ using WinRT.Interop;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.IO;
+using EvolveOS_ShellEnhancer.Models;
 
 namespace EvolveOS_ShellEnhancer.Views
 {

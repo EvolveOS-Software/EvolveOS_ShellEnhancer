@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:helpers="using:EvolveOS_ShellEnhancer.Utilities.Helpers"
+    xmlns:models="using:EvolveOS_ShellEnhancer.Models"
     mc:Ignorable="d"
     Title="CustomStartMenuWindow">
 
@@ -20,9 +21,7 @@
                 PointerPressed="MenuContainer_PointerPressed">
 
             <Grid>
-                <!-- ========================================== -->
                 <!-- 1: Split Standard -->
-                <!-- ========================================== -->
                 <Grid x:Name="DesignSplitStandard" Visibility="Visible">
 
                     <Grid.ColumnDefinitions>
@@ -83,7 +82,7 @@
 
                             <GridView Grid.Row="1" x:Name="StandardPinnedAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                 <GridView.ItemTemplate>
-                                    <DataTemplate x:DataType="helpers:AppItem">
+                                    <DataTemplate x:DataType="models:AppItem">
                                         <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped">
                                             <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
                                                       Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
@@ -234,9 +233,7 @@
                 </Grid>
 
 
-                <!-- ========================================== -->
                 <!-- 2: Split Grouped -->
-                <!-- ========================================== -->
                 <Grid x:Name="DesignSplitGrouped" Visibility="Collapsed">
 
                     <Grid.ColumnDefinitions>
@@ -294,7 +291,7 @@
                                         </Grid>
                                         <GridView x:Name="ProductivityAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                             <GridView.ItemTemplate>
-                                                <DataTemplate x:DataType="helpers:AppItem">
+                                                <DataTemplate x:DataType="models:AppItem">
                                                     <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped">
                                                         <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
                                                                       Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
@@ -323,7 +320,7 @@
                                         </StackPanel>
                                         <GridView x:Name="SecondaryAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
                                             <GridView.ItemTemplate>
-                                                <DataTemplate x:DataType="helpers:AppItem">
+                                                <DataTemplate x:DataType="models:AppItem">
                                                     <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped">
                                                         <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center"
                                                                       Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>

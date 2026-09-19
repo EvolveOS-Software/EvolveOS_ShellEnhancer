@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using EvolveOS_ShellEnhancer.Models;
 using EvolveOS_ShellEnhancer.Utilities.Animations;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
@@ -22,6 +23,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Graphics;
@@ -147,7 +149,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private readonly LivePreviewWindow _previewWindow;
 
-        private readonly List<(string processName, Rectangle indicator, Image backIcon)> _appIndicators = new();
+        private readonly List<(string processName, Rectangle indicator, Image backIcon, Border appCard, string displayTitle)> _appIndicators = new();
 
         private Border? _activeDraggedCard = null;
         private Point _dragStartPoint;
@@ -337,11 +339,11 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (r.Right - r.Left <= 0 || r.Bottom - r.Top <= 0) return false;
             }
 
-            System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+            StringBuilder sb = new StringBuilder(256);
             GetWindowText(hWnd, sb, 256);
             if (string.IsNullOrWhiteSpace(sb.ToString()))
             {
-                System.Text.StringBuilder cb = new System.Text.StringBuilder(256);
+                StringBuilder cb = new StringBuilder(256);
                 GetClassName(hWnd, cb, 256);
                 if (cb.ToString() != "CabinetWClass") return false;
             }
@@ -415,7 +417,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (isExplorer)
                 {
-                    System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+                    StringBuilder sb = new StringBuilder(256);
                     GetClassName(hWnd, sb, sb.Capacity);
                     if (sb.ToString() == "CabinetWClass")
                     {
@@ -446,7 +448,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (MonitorAwareApps && !IsWindowOnThisMonitor(hWnd)) return true;
 
-                System.Text.StringBuilder cb = new System.Text.StringBuilder(256);
+                StringBuilder cb = new StringBuilder(256);
                 GetClassName(hWnd, cb, cb.Capacity);
                 if (cb.ToString() == "CabinetWClass") return true;
 
@@ -468,7 +470,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         string exePath = string.Empty;
                         try { exePath = proc.MainModule?.FileName ?? string.Empty; } catch { }
 
-                        System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
+                        StringBuilder sb = new StringBuilder(256);
                         GetWindowText(hWnd, sb, 256);
                         string title = sb.ToString();
 
@@ -494,7 +496,26 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
 
                 List<IntPtr> handles = GetAppWindowHandles(item.processName);
-                item.indicator.Visibility = (handles.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
+                bool isRunning = handles.Count > 0;
+
+                item.indicator.Visibility = isRunning ? Visibility.Visible : Visibility.Collapsed;
+
+                object? currentTip = ToolTipService.GetToolTip(item.appCard);
+
+                if (isRunning)
+                {
+                    if (currentTip != null)
+                    {
+                        ToolTipService.SetToolTip(item.appCard, null);
+                    }
+                }
+                else
+                {
+                    if (currentTip == null)
+                    {
+                        ToolTipService.SetToolTip(item.appCard, item.displayTitle);
+                    }
+                }
             }
 
             if (ShowUnpinnedApps)
@@ -961,7 +982,7 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             appCard.ContextFlyout = contextFlyout;
-            _appIndicators.Add((processName, indicator, backIcon));
+            _appIndicators.Add((processName, indicator, backIcon, appCard, displayTitle));
 
             appCard.PointerPressed += (s, e) =>
             {
@@ -1031,6 +1052,21 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (_isTrackingDrag || string.IsNullOrEmpty(processName)) return;
 
                 var handles = GetAppWindowHandles(processName);
+
+                if (handles.Count > 0)
+                {
+                    if (ToolTipService.GetToolTip(appCard) != null)
+                    {
+                        ToolTipService.SetToolTip(appCard, null);
+                    }
+                }
+                else
+                {
+                    if (ToolTipService.GetToolTip(appCard) == null)
+                    {
+                        ToolTipService.SetToolTip(appCard, displayTitle);
+                    }
+                }
 
                 if (handles.Count > 1)
                 {
