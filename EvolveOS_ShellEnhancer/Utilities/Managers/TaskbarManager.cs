@@ -142,6 +142,18 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             }
         }
 
+        public static void EnsureAllTaskbarsTopmost()
+        {
+            foreach (var taskbar in _taskbars)
+            {
+                if (taskbar != null)
+                {
+                    var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(taskbar);
+                    TaskbarOverlayManager.EnsureTopmost(hWnd);
+                }
+            }
+        }
+
         public static void ResizeAll()
         {
             foreach (var window in _taskbars)

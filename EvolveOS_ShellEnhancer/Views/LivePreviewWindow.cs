@@ -446,6 +446,8 @@ namespace EvolveOS_ShellEnhancer.Views
             _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(startX, startY, startW, startH));
             SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
+            TaskbarManager.EnsureAllTaskbarsTopmost();
+
             IntPtr currentHwnd = WindowNative.GetWindowHandle(this);
             byte initialOpacity = (byte)(isFirstShow && EnableAnimations ? 0 : 255);
 

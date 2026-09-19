@@ -311,6 +311,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 TaskbarOverlayManager.EnsureTopmost(_hWnd);
 
+                TaskbarManager.EnsureAllTaskbarsTopmost();
+
                 FactoryAnimation.PlayStartMenuAnimation(
                     _appWindow, AnimationStyle, AnimationSpeed, true,
                     startX, startY, menuWidth, menuHeight,
@@ -323,6 +325,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 _appWindow.Show();
                 _isVisible = true;
                 TaskbarOverlayManager.EnsureTopmost(_hWnd);
+                TaskbarManager.EnsureAllTaskbarsTopmost();
             }
         }
 
