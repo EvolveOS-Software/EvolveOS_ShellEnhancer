@@ -112,7 +112,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             {
                 try
                 {
-                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
                     if (key?.GetValue("Shell_StartMenuStyle") is string val && !string.IsNullOrEmpty(val))
                     {
                         return val;
@@ -163,6 +163,91 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                     Debug.WriteLine($"[Settings] Read Shell_AppFontSize Error: {ex.Message}");
                 }
                 return 14.0;
+            }
+        }
+
+        internal static bool Shell_HighPriority
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    var val = key?.GetValue("Shell_HighPriority");
+                    if (val != null)
+                    {
+                        if (bool.TryParse(val.ToString(), out bool result)) return result;
+                        if (int.TryParse(val.ToString(), out int intVal)) return intVal != 0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_HighPriority Error: {ex.Message}");
+                }
+                return false;
+            }
+        }
+
+        internal static int Shell_TaskbarSize
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    var val = key?.GetValue("Shell_TaskbarSize");
+                    if (val != null && int.TryParse(val.ToString(), out int size))
+                    {
+                        return size;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_TaskbarSize Error: {ex.Message}");
+                }
+                return 48;
+            }
+        }
+
+        internal static int Shell_TaskbarIconSize
+        {
+            get
+            {
+                try
+                {
+                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    var val = key?.GetValue("Shell_TaskbarIconSize");
+                    if (val != null && int.TryParse(val.ToString(), out int size))
+                    {
+                        return size;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_TaskbarIconSize Error: {ex.Message}");
+                }
+                return 24;
+            }
+        }
+
+        internal static double Shell_TaskbarPreviewDelay
+        {
+            get
+            {
+                try
+                {
+                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    var val = key?.GetValue("Shell_TaskbarPreviewDelay");
+                    if (val != null && double.TryParse(val.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double delay))
+                    {
+                        return delay;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Shell_TaskbarPreviewDelay Error: {ex.Message}");
+                }
+                return 0.5;
             }
         }
         #endregion

@@ -55,6 +55,17 @@ namespace EvolveOS_ShellEnhancer
         {
             СheckingGlobalParameters.Initialize();
 
+            try
+            {
+                var process = Process.GetCurrentProcess();
+                process.PriorityBoostEnabled = true;
+                process.PriorityClass = SettingsEngine.Shell_HighPriority ? ProcessPriorityClass.High : ProcessPriorityClass.Normal;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to set initial process priority: {ex.Message}");
+            }
+
             ApplyFontGlobally(SettingsEngine.Shell_AppFont);
             ApplyFontSizeGlobally(SettingsEngine.Shell_AppFontSize);
 
@@ -358,6 +369,22 @@ namespace EvolveOS_ShellEnhancer
                         if (double.TryParse(value, out double size))
                         {
                             ApplyFontSizeGlobally(size);
+                        }
+                        break;
+
+                    case "Shell_HighPriority":
+                        if (bool.TryParse(value, out bool highPriority))
+                        {
+                            try
+                            {
+                                var process = Process.GetCurrentProcess();
+                                process.PriorityBoostEnabled = true;
+                                process.PriorityClass = highPriority ? ProcessPriorityClass.High : ProcessPriorityClass.Normal;
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"Failed to set process priority: {ex.Message}");
+                            }
                         }
                         break;
                 }
