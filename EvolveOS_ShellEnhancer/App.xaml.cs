@@ -1,7 +1,6 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using EvolveOS_ShellEnhancer.Utilities;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
 using EvolveOS_ShellEnhancer.Utilities.Services;
@@ -15,6 +14,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Text;
 
 namespace EvolveOS_ShellEnhancer
 {
@@ -410,6 +410,39 @@ namespace EvolveOS_ShellEnhancer
 
                     case "Taskbar_MonitorAware":
                         CustomTaskbarWindow.MonitorAwareApps = bool.Parse(value);
+                        TaskbarManager.ReloadAll();
+                        break;
+
+                    case "Taskbar_PinItem":
+                        try
+                        {
+                            string decodedPath = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(value));
+                            CustomTaskbarWindow.PinItemToTaskbar(decodedPath);
+                        }
+                        catch
+                        {
+                            CustomTaskbarWindow.PinItemToTaskbar(value);
+                        }
+                        break;
+
+                    case "Taskbar_FolderSubmenus":
+                        if (bool.TryParse(value, out bool showSubmenus))
+                        {
+                            SettingsEngine.Taskbar_ShowFoldersAsSubmenus = showSubmenus;
+                            TaskbarManager.ReloadAll();
+                        }
+                        break;
+
+                    case "Taskbar_FilteredFolders":
+                        try
+                        {
+                            string decodedPaths = Encoding.UTF8.GetString(Convert.FromBase64String(value));
+                            SettingsEngine.Taskbar_FilteredFolders = decodedPaths;
+                        }
+                        catch
+                        {
+                            SettingsEngine.Taskbar_FilteredFolders = value;
+                        }
                         TaskbarManager.ReloadAll();
                         break;
 

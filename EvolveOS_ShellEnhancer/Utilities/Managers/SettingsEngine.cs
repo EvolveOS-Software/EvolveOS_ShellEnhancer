@@ -1,5 +1,6 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
+
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
 {
     internal sealed class СheckingGlobalParameters
     {
+        #region Initialization
         internal static void Initialize()
         {
             try
@@ -20,20 +22,27 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 Debug.WriteLine(e);
             }
         }
+        #endregion
     }
 
     internal sealed class SettingsEngine
     {
+        #region Fields & Defaults
         private static readonly Dictionary<string, object> _defaultSettings = new Dictionary<string, object>
         {
             ["TaskbarPinnedAppsOrder"] = string.Empty,
-            ["StartMenuPinnedApps"] = string.Empty
+            ["StartMenuPinnedApps"] = string.Empty,
+            ["Taskbar_FilteredFolders"] = string.Empty
         };
 
         private static readonly Dictionary<string, object> _cachedSettings = new Dictionary<string, object>(_defaultSettings);
+        #endregion
 
+        #region Properties
         internal static string TaskbarPinnedAppsOrder { get => (string)_cachedSettings["TaskbarPinnedAppsOrder"]; set => ChangingParameters("TaskbarPinnedAppsOrder", value); }
         internal static string StartMenuPinnedApps { get => (string)_cachedSettings["StartMenuPinnedApps"]; set => ChangingParameters("StartMenuPinnedApps", value); }
+        internal static string Taskbar_FilteredFolders { get => (string)_cachedSettings["Taskbar_FilteredFolders"]; set => ChangingParameters("Taskbar_FilteredFolders", value); }
+        #endregion
 
         #region Shell Settings
         internal static bool Shell_MasterEnabled
@@ -65,6 +74,70 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[Settings] Write Shell_MasterEnabled Error: {ex.Message}");
+                }
+            }
+        }
+
+        internal static string Taskbar_Style
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Taskbar_Style") is string val && !string.IsNullOrEmpty(val))
+                    {
+                        return val;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Taskbar_Style Error: {ex.Message}");
+                }
+                return "Standard";
+            }
+            set
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.CreateSubKey(@"Software\EvolveOS_Optimizer", true);
+                    key?.SetValue("Taskbar_Style", value);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Write Taskbar_Style Error: {ex.Message}");
+                }
+            }
+        }
+
+        internal static bool Taskbar_ShowFoldersAsSubmenus
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Taskbar_ShowFoldersAsSubmenus") is string val && bool.TryParse(val, out bool result))
+                    {
+                        return result;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Read Taskbar_ShowFoldersAsSubmenus Error: {ex.Message}");
+                }
+                return true;
+            }
+            set
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.CreateSubKey(@"Software\EvolveOS_Optimizer");
+                    key?.SetValue("Taskbar_ShowFoldersAsSubmenus", value.ToString());
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Settings] Write Taskbar_ShowFoldersAsSubmenus Error: {ex.Message}");
                 }
             }
         }
@@ -305,6 +378,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         }
         #endregion
 
+        #region Registry Engine
         private static void ChangingParameters(string key, object value)
         {
             _cachedSettings[key] = value;
@@ -359,6 +433,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 Debug.WriteLine($"[Settings] CheckingParameters Error: {ex.Message}");
             }
         }
+        #endregion
 
         #region Registry
         internal static class RegistryPath

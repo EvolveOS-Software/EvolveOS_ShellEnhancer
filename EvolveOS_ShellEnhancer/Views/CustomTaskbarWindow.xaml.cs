@@ -11,6 +11,7 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
@@ -203,6 +204,8 @@ namespace EvolveOS_ShellEnhancer.Views
         public CustomTaskbarWindow(DisplayArea? displayArea)
         {
             this.InitializeComponent();
+
+            _currentStyle = SettingsEngine.Taskbar_Style ?? "Standard";
 
             _hWnd = WindowNative.GetWindowHandle(this);
             Microsoft.UI.WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
@@ -527,6 +530,15 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     if (child is Border card && card.Tag is string tagStr)
                     {
+                        if (tagStr.StartsWith("FOLDER:"))
+                        {
+                            if (isScrollMode && _showingAllRunningView)
+                            {
+                                cardsToRemove.Add(card);
+                            }
+                            continue;
+                        }
+
                         bool isUnpinned = tagStr.StartsWith("UNPINNED:");
                         string processName = isUnpinned ? tagStr.Substring("UNPINNED:".Length) : GetProcessNameFromShortcut(tagStr);
 
@@ -624,6 +636,62 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        public static void PinItemToTaskbar(string targetPath)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(targetPath)) return;
+
+                    if (!File.Exists(targetPath) && !Directory.Exists(targetPath)) return;
+
+                    string taskbarPath = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
+                    );
+
+                    if (!Directory.Exists(taskbarPath))
+                    {
+                        Directory.CreateDirectory(taskbarPath);
+                    }
+
+                    string itemName = System.IO.Path.GetFileNameWithoutExtension(targetPath);
+                    if (string.IsNullOrEmpty(itemName))
+                    {
+                        itemName = System.IO.Path.GetFileName(targetPath);
+                    }
+
+                    string lnkPath = System.IO.Path.Combine(taskbarPath, $"{itemName}.lnk");
+
+                    int counter = 1;
+                    while (File.Exists(lnkPath))
+                    {
+                        lnkPath = System.IO.Path.Combine(taskbarPath, $"{itemName} ({counter}).lnk");
+                        counter++;
+                    }
+
+                    Type? wshShellType = Type.GetTypeFromProgID("WScript.Shell");
+                    if (wshShellType != null)
+                    {
+                        dynamic shell = Activator.CreateInstance(wshShellType)!;
+                        dynamic shortcut = shell.CreateShortcut(lnkPath);
+                        shortcut.TargetPath = targetPath;
+                        shortcut.Save();
+
+                        Marshal.ReleaseComObject(shortcut);
+                        Marshal.ReleaseComObject(shell);
+                    }
+
+                    TaskbarManager.ReloadAll();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to pin item to taskbar: {ex.Message}");
+                }
+            });
+        }
+
         private string GetProcessNameFromShortcut(string lnkPath)
         {
             string shortcutName = System.IO.Path.GetFileNameWithoutExtension(lnkPath);
@@ -639,34 +707,37 @@ namespace EvolveOS_ShellEnhancer.Views
         #region App Loading & Icon Extraction
         public void ReloadTaskbar()
         {
-            _ = LoadPinnedAppsAsync();
-
-            if (this.Content is FrameworkElement root)
+            this.DispatcherQueue.TryEnqueue(() =>
             {
-                var currentTheme = root.RequestedTheme;
-                root.RequestedTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
-                root.RequestedTheme = currentTheme;
-            }
+                _ = LoadPinnedAppsAsync();
 
-            if (ClockText != null && DateText != null)
-            {
-                if (Application.Current.Resources.TryGetValue("AppFontSizeBase", out var baseObj) && baseObj is double baseSize)
+                if (this.Content is FrameworkElement root)
                 {
-                    ClockText.FontSize = baseSize;
+                    var currentTheme = root.RequestedTheme;
+                    root.RequestedTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+                    root.RequestedTheme = currentTheme;
                 }
 
-                if (Application.Current.Resources.TryGetValue("AppFontSizeSmall", out var smallObj) && smallObj is double smallSize)
+                if (ClockText != null && DateText != null)
                 {
-                    DateText.FontSize = smallSize;
+                    if (Application.Current.Resources.TryGetValue("AppFontSizeBase", out var baseObj) && baseObj is double baseSize)
+                    {
+                        ClockText.FontSize = baseSize;
+                    }
+
+                    if (Application.Current.Resources.TryGetValue("AppFontSizeSmall", out var smallObj) && smallObj is double smallSize)
+                    {
+                        DateText.FontSize = smallSize;
+                    }
                 }
-            }
 
-            UpdateSizes();
+                UpdateSizes();
 
-            if (_appWindow.IsVisible)
-            {
-                ShowDock();
-            }
+                if (_appWindow.IsVisible)
+                {
+                    ShowDock();
+                }
+            });
         }
 
         private async Task LoadPinnedAppsAsync()
@@ -734,8 +805,9 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             bool isScrollMode = UnpinnedDisplayMode.Equals("Scroll", StringComparison.OrdinalIgnoreCase);
+            bool showOnlyRunning = isScrollMode && _showingAllRunningView;
 
-            if (!isScrollMode)
+            if (!showOnlyRunning)
             {
                 foreach (string lnk in shortcuts)
                 {
@@ -743,52 +815,54 @@ namespace EvolveOS_ShellEnhancer.Views
                     await CreateAppCardAsync(lnk, lnk, isShortcut: true);
                 }
 
-                if (ShowUnpinnedApps)
+                string savedFilteredFolders = SettingsEngine.Taskbar_FilteredFolders;
+                if (!string.IsNullOrWhiteSpace(savedFilteredFolders))
                 {
-                    var unpinnedApps = GetUnpinnedRunningApps(pinnedNormalizedNames);
-                    foreach (var unpinned in unpinnedApps)
+                    var folderPaths = savedFilteredFolders.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string folderPath in folderPaths)
                     {
-                        var handles = GetAppWindowHandles(unpinned.processName);
-                        if (handles.Count > 0)
+                        if (Directory.Exists(folderPath))
                         {
-                            await CreateAppCardAsync(unpinned.processName, unpinned.exePath, isShortcut: false, windowTitle: unpinned.windowTitle);
+                            string folderName = System.IO.Path.GetFileName(folderPath);
+                            if (string.IsNullOrEmpty(folderName)) folderName = folderPath;
+
+                            await CreateAppCardAsync(
+                                identifier: folderName,
+                                pathOrLnk: folderPath,
+                                isShortcut: false,
+                                windowTitle: folderName
+                            );
                         }
                     }
                 }
             }
             else
             {
-                if (!_showingAllRunningView)
+                foreach (string lnk in shortcuts)
                 {
-                    foreach (string lnk in shortcuts)
+                    if (!File.Exists(lnk)) continue;
+
+                    string targetExe = ParseShortcut(lnk);
+                    if (!string.IsNullOrWhiteSpace(targetExe)) targetExe = Environment.ExpandEnvironmentVariables(targetExe);
+                    if (Directory.Exists(targetExe)) continue;
+
+                    string pName = GetProcessNameFromShortcut(lnk);
+                    if (GetAppWindowHandles(pName).Count > 0)
                     {
-                        if (!File.Exists(lnk)) continue;
                         await CreateAppCardAsync(lnk, lnk, isShortcut: true);
                     }
                 }
-                else
-                {
-                    foreach (string lnk in shortcuts)
-                    {
-                        if (!File.Exists(lnk)) continue;
-                        string pName = GetProcessNameFromShortcut(lnk);
-                        if (GetAppWindowHandles(pName).Count > 0)
-                        {
-                            await CreateAppCardAsync(lnk, lnk, isShortcut: true);
-                        }
-                    }
+            }
 
-                    if (ShowUnpinnedApps)
+            if (ShowUnpinnedApps)
+            {
+                var unpinnedApps = GetUnpinnedRunningApps(pinnedNormalizedNames);
+                foreach (var unpinned in unpinnedApps)
+                {
+                    var handles = GetAppWindowHandles(unpinned.processName);
+                    if (handles.Count > 0)
                     {
-                        var unpinnedApps = GetUnpinnedRunningApps(pinnedNormalizedNames);
-                        foreach (var unpinned in unpinnedApps)
-                        {
-                            var handles = GetAppWindowHandles(unpinned.processName);
-                            if (handles.Count > 0)
-                            {
-                                await CreateAppCardAsync(unpinned.processName, unpinned.exePath, isShortcut: false, windowTitle: unpinned.windowTitle);
-                            }
-                        }
+                        await CreateAppCardAsync(unpinned.processName, unpinned.exePath, isShortcut: false, windowTitle: unpinned.windowTitle);
                     }
                 }
             }
@@ -801,11 +875,13 @@ namespace EvolveOS_ShellEnhancer.Views
             string targetExe = isShortcut ? ParseShortcut(pathOrLnk) : pathOrLnk;
             if (!string.IsNullOrWhiteSpace(targetExe)) targetExe = Environment.ExpandEnvironmentVariables(targetExe);
 
+            bool isDirectory = Directory.Exists(targetExe);
+
             string processName = isShortcut ? GetProcessNameFromShortcut(pathOrLnk) : NormalizeProcessName(identifier, targetExePath: targetExe);
             string shortcutName = isShortcut ? System.IO.Path.GetFileNameWithoutExtension(pathOrLnk) : identifier;
 
             AppItem? matchingApp = null;
-            if (_allAppsCache != null)
+            if (_allAppsCache != null && !isDirectory)
             {
                 matchingApp = _allAppsCache.FirstOrDefault(a =>
                     (a.ExecutablePath != null && a.ExecutablePath.Equals(targetExe, StringComparison.OrdinalIgnoreCase)) ||
@@ -818,7 +894,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 ExecutablePath = targetExe,
                 IsUwp = targetExe.Contains("!"),
                 IconScale = 1.0,
-                FallbackGlyph = "\xE738"
+                FallbackGlyph = isDirectory ? "\xE8B7" : "\xE738"
             };
 
             Grid iconGrid = new Grid();
@@ -835,6 +911,8 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 Glyph = appItem.FallbackGlyph ?? "\xE738",
                 FontSize = TaskbarIconSize - 4,
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                Foreground = isDirectory ? new SolidColorBrush(Microsoft.UI.Colors.Gold) : new SolidColorBrush(Microsoft.UI.Colors.White),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 Visibility = appItem.IconSource == null ? Visibility.Visible : Visibility.Collapsed
@@ -898,7 +976,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 Background = new SolidColorBrush(Colors.Transparent),
                 CornerRadius = new CornerRadius(4),
                 Child = iconGrid,
-                Tag = isShortcut ? pathOrLnk : $"UNPINNED:{processName}"
+                Tag = isDirectory ? $"FOLDER:{targetExe}" : (isShortcut ? pathOrLnk : $"UNPINNED:{processName}")
             };
 
             string displayTitle = isShortcut ? shortcutName : (string.IsNullOrEmpty(windowTitle) ? processName : windowTitle);
@@ -908,6 +986,19 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 try
                 {
+                    if (isDirectory)
+                    {
+                        if (!isShortcut)
+                        {
+                            ShowFolderSubmenu(appCard, targetExe);
+                        }
+                        else
+                        {
+                            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{targetExe}\"") { UseShellExecute = true });
+                        }
+                        return;
+                    }
+
                     if (processName.Equals("explorer", StringComparison.OrdinalIgnoreCase))
                     {
                         Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
@@ -932,15 +1023,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
             MenuFlyout contextFlyout = new MenuFlyout();
 
-            contextFlyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
-
             Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
-
-            flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
+            flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(220, 20, 20, 20))));
             flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
             flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
             flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-
             contextFlyout.MenuFlyoutPresenterStyle = flyoutStyle;
 
             var launchItem = new MenuFlyoutItem
@@ -954,22 +1041,35 @@ namespace EvolveOS_ShellEnhancer.Views
             contextFlyout.Items.Add(launchItem);
             contextFlyout.Items.Add(new MenuFlyoutSeparator());
 
-            var closeItem = new MenuFlyoutItem { Text = "Close window", Icon = new FontIcon { Glyph = "\uE8BB" } };
-            closeItem.Click += (s, e) =>
+            if (!isDirectory)
             {
-                var handles = GetAppWindowHandles(processName);
-                foreach (var h in handles) { PostMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero); }
-            };
-            contextFlyout.Items.Add(closeItem);
+                var closeItem = new MenuFlyoutItem { Text = "Close window", Icon = new FontIcon { Glyph = "\uE8BB" } };
+                closeItem.Click += (s, e) =>
+                {
+                    var handles = GetAppWindowHandles(processName);
+                    foreach (var h in handles) { PostMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero); }
+                };
+                contextFlyout.Items.Add(closeItem);
+            }
 
-            if (isShortcut)
+            if (isShortcut || isDirectory)
             {
                 var unpinItem = new MenuFlyoutItem { Text = "Unpin from taskbar", Icon = new FontIcon { Glyph = "\uE196" } };
                 unpinItem.Click += (s, e) =>
                 {
                     try
                     {
-                        if (File.Exists(pathOrLnk)) File.Delete(pathOrLnk);
+                        if (isDirectory && !isShortcut)
+                        {
+                            string saved = SettingsEngine.Taskbar_FilteredFolders;
+                            var paths = saved.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
+                            paths.RemoveAll(p => p.Equals(targetExe, StringComparison.OrdinalIgnoreCase));
+                            SettingsEngine.Taskbar_FilteredFolders = string.Join(";", paths);
+                        }
+                        else if (File.Exists(pathOrLnk))
+                        {
+                            File.Delete(pathOrLnk);
+                        }
                         _ = LoadPinnedAppsAsync();
                     }
                     catch (Exception ex)
@@ -982,7 +1082,7 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             appCard.ContextFlyout = contextFlyout;
-            _appIndicators.Add((processName, indicator, backIcon, appCard, displayTitle));
+            if (!isDirectory) _appIndicators.Add((processName, indicator, backIcon, appCard, displayTitle));
 
             appCard.PointerPressed += (s, e) =>
             {
@@ -1012,7 +1112,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 var shiftState = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift);
                 bool isShiftPressed = (shiftState & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
 
-                if (isShiftPressed)
+                if (isShiftPressed || isDirectory)
                 {
                     launchNewInstance();
                     return;
@@ -1049,23 +1149,17 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 FactoryAnimation.AnimateAppCardHoverEnter(appCard, HoverAnimationStyle);
 
-                if (_isTrackingDrag || string.IsNullOrEmpty(processName)) return;
+                if (_isTrackingDrag || string.IsNullOrEmpty(processName) || isDirectory) return;
 
                 var handles = GetAppWindowHandles(processName);
 
                 if (handles.Count > 0)
                 {
-                    if (ToolTipService.GetToolTip(appCard) != null)
-                    {
-                        ToolTipService.SetToolTip(appCard, null);
-                    }
+                    if (ToolTipService.GetToolTip(appCard) != null) ToolTipService.SetToolTip(appCard, null);
                 }
                 else
                 {
-                    if (ToolTipService.GetToolTip(appCard) == null)
-                    {
-                        ToolTipService.SetToolTip(appCard, displayTitle);
-                    }
+                    if (ToolTipService.GetToolTip(appCard) == null) ToolTipService.SetToolTip(appCard, displayTitle);
                 }
 
                 if (handles.Count > 1)
@@ -1106,7 +1200,6 @@ namespace EvolveOS_ShellEnhancer.Views
                 _pendingPreviewAction = null;
 
                 appCard.Background = new SolidColorBrush(Colors.Transparent);
-
                 FactoryAnimation.AnimateAppCardHoverExit(appCard, HoverAnimationStyle);
 
                 backIcon.Visibility = Visibility.Collapsed;
@@ -1115,7 +1208,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 _previewWindow.StartHideTimer();
             };
 
-            if (isShortcut)
+            if (isShortcut && !isDirectory)
             {
                 appCard.PointerPressed += (s, e) =>
                 {
@@ -1180,7 +1273,7 @@ namespace EvolveOS_ShellEnhancer.Views
                             var newOrder = new List<string>();
                             foreach (var element in PinnedAppsPanel.Children)
                             {
-                                if (element is Border b && b.Tag is string savedLnk)
+                                if (element is Border b && b.Tag is string savedLnk && !savedLnk.StartsWith("FOLDER:"))
                                 {
                                     newOrder.Add(System.IO.Path.GetFileName(savedLnk));
                                 }
@@ -1195,7 +1288,6 @@ namespace EvolveOS_ShellEnhancer.Views
                         try { appCard.ReleasePointerCaptures(); } catch { }
 
                         _activeDraggedCard = null;
-
                         DispatcherQueue.TryEnqueue(() => _isTrackingDrag = false);
                     }
                 };
@@ -1222,9 +1314,93 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
             };
 
-            if (appItem.IconSource == null)
+            if (appItem.IconSource == null && !isDirectory)
             {
                 _ = LoadIconSafelyAsync(appItem);
+            }
+        }
+
+        private void ShowFolderSubmenu(UIElement target, string path)
+        {
+            MenuFlyout flyout = new MenuFlyout();
+
+            Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
+            flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(220, 20, 20, 20))));
+            flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+            flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
+            flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+            flyout.MenuFlyoutPresenterStyle = flyoutStyle;
+
+            bool useSubmenus = SettingsEngine.Taskbar_ShowFoldersAsSubmenus;
+            BuildMenuHierarchy(flyout.Items, path, useSubmenus, 0);
+
+            flyout.ShowAt(target, new FlyoutShowOptions
+            {
+                Placement = FlyoutPlacementMode.TopEdgeAlignedLeft
+            });
+        }
+
+        private void BuildMenuHierarchy(IList<MenuFlyoutItemBase> parentItems, string currentPath, bool useSubmenus, int depth)
+        {
+            try
+            {
+                var dirs = Directory.GetDirectories(currentPath);
+                var files = Directory.GetFiles(currentPath);
+
+                if (dirs.Length == 0 && files.Length == 0)
+                {
+                    parentItems.Add(new MenuFlyoutItem { Text = "Empty Folder", IsEnabled = false });
+                    return;
+                }
+
+                foreach (var d in dirs)
+                {
+                    string folderName = System.IO.Path.GetFileName(d);
+                    if (string.IsNullOrEmpty(folderName)) folderName = d;
+
+                    if (useSubmenus && depth < 5)
+                    {
+                        var subItem = new MenuFlyoutSubItem
+                        {
+                            Text = folderName,
+                            Icon = new FontIcon { Glyph = "\xE8B7", FontFamily = new FontFamily("Segoe Fluent Icons"), Foreground = new SolidColorBrush(Microsoft.UI.Colors.Gold) }
+                        };
+
+                        BuildMenuHierarchy(subItem.Items, d, useSubmenus, depth + 1);
+                        parentItems.Add(subItem);
+                    }
+                    else
+                    {
+                        var item = new MenuFlyoutItem
+                        {
+                            Text = folderName,
+                            Icon = new FontIcon { Glyph = "\xE8B7", FontFamily = new FontFamily("Segoe Fluent Icons"), Foreground = new SolidColorBrush(Microsoft.UI.Colors.Gold) }
+                        };
+                        item.Click += (s, e) => Process.Start(new ProcessStartInfo("explorer.exe", $"\"{d}\"") { UseShellExecute = true });
+                        parentItems.Add(item);
+                    }
+                }
+
+                if (dirs.Length > 0 && files.Length > 0)
+                {
+                    parentItems.Add(new MenuFlyoutSeparator());
+                }
+
+                foreach (var f in files)
+                {
+                    string fileName = System.IO.Path.GetFileName(f);
+                    var item = new MenuFlyoutItem
+                    {
+                        Text = fileName,
+                        Icon = new FontIcon { Glyph = "\xE7C3", FontFamily = new FontFamily("Segoe Fluent Icons") }
+                    };
+                    item.Click += (s, e) => Process.Start(new ProcessStartInfo(f) { UseShellExecute = true });
+                    parentItems.Add(item);
+                }
+            }
+            catch
+            {
+                parentItems.Add(new MenuFlyoutItem { Text = "Access Denied", IsEnabled = false });
             }
         }
 

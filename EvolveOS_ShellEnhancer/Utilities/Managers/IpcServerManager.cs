@@ -8,7 +8,7 @@ using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EvolveOS_ShellEnhancer.Utilities
+namespace EvolveOS_ShellEnhancer.Utilities.Managers
 {
     public static class IpcServerManager
     {
