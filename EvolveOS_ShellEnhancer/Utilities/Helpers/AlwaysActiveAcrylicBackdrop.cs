@@ -17,8 +17,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         {
             base.OnTargetConnected(connectedTarget, xamlRoot);
 
-            _acrylicController = new DesktopAcrylicController();
+            if (_acrylicController != null) return;
 
+            _acrylicController = new DesktopAcrylicController();
             _configuration = new SystemBackdropConfiguration
             {
                 IsInputActive = true,
@@ -27,6 +28,14 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
             _acrylicController.AddSystemBackdropTarget(connectedTarget);
             _acrylicController.SetSystemBackdropConfiguration(_configuration);
+        }
+
+        protected override void OnDefaultSystemBackdropConfigurationChanged(ICompositionSupportsSystemBackdrop target, XamlRoot xamlRoot)
+        {
+            if (_configuration != null)
+            {
+                _configuration.IsInputActive = true;
+            }
         }
 
         protected override void OnTargetDisconnected(ICompositionSupportsSystemBackdrop disconnectedTarget)
@@ -38,6 +47,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                 _acrylicController.RemoveSystemBackdropTarget(disconnectedTarget);
                 _acrylicController.Dispose();
                 _acrylicController = null;
+                _configuration = null;
             }
         }
     }
