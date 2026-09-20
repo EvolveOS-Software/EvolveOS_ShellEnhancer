@@ -58,11 +58,13 @@ namespace EvolveOS_ShellEnhancer.Views
         public static bool ShowPowerSleep { get; set; } = true;
         public static bool ShowPowerRestartBios { get; set; } = false;
         public static bool ShowPowerLogOff { get; set; } = false;
+        public static bool ShowRecentDocs { get; set; } = false;
 
-        public ObservableCollection<AppItem> PinnedAppsCollection { get; } = new();
+        public ObservableCollection<AppCategory> PinnedCategories { get; } = new();
+        public ObservableCollection<AppItem> RecentDocsCollection { get; } = new();
         public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
-
         public ObservableCollection<AppItem> SearchResultsCollection { get; } = new();
+
         private string _currentSearchFilter = "Apps";
         private bool _isShowingAllApps = false;
         private AppItem? _currentSearchItem;
@@ -84,10 +86,6 @@ namespace EvolveOS_ShellEnhancer.Views
         public CustomStartMenuWindow()
         {
             this.InitializeComponent();
-
-            StandardPinnedAppsGrid.ItemsSource = PinnedAppsCollection;
-            ProductivityAppsGrid.ItemsSource = PinnedAppsCollection;
-            SecondaryAppsGrid.ItemsSource = PinnedAppsCollection;
 
             _hWnd = WindowNative.GetWindowHandle(this);
             WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
@@ -127,7 +125,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 _appRefreshDebounceTimer.Tick += (s, e) =>
                 {
                     _appRefreshDebounceTimer.Stop();
-                    _isDataLoaded = false; // Invalidate cache
+                    _isDataLoaded = false;
 
                     LoadAppsData();
                 };
@@ -265,34 +263,60 @@ namespace EvolveOS_ShellEnhancer.Views
                     AllAppsCollection.Clear();
                     foreach (var app in fetchedAllApps) AllAppsCollection.Add(app);
 
-                    PinnedAppsCollection.Clear();
+                    PinnedCategories.Clear();
 
                     string savedPins = SettingsEngine.StartMenuPinnedApps;
                     if (!string.IsNullOrWhiteSpace(savedPins))
                     {
-                        var pinNames = savedPins.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var name in pinNames)
+                        if (savedPins.Contains("|"))
                         {
-                            var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
-                            if (match != null) PinnedAppsCollection.Add(match);
+                            var categories = savedPins.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var catStr in categories)
+                            {
+                                var parts = catStr.Split('|');
+                                if (parts.Length == 2)
+                                {
+                                    var cat = new AppCategory { Name = parts[0] };
+                                    var pinNames = parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
+                                    foreach (var name in pinNames)
+                                    {
+                                        var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
+                                        if (match != null) cat.Apps.Add(match);
+                                    }
+                                    PinnedCategories.Add(cat);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var defaultCat = new AppCategory { Name = "Pinned" };
+                            var pinNames = savedPins.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var name in pinNames)
+                            {
+                                var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
+                                if (match != null) defaultCat.Apps.Add(match);
+                            }
+                            PinnedCategories.Add(defaultCat);
+                            SaveStartMenuPins();
                         }
                     }
                     else
                     {
+                        var defaultCat = new AppCategory { Name = "Pinned" };
                         var preferredPins = new[] { "Edge", "Settings", "File Explorer", "Store", "Photos", "Camera", "Calculator", "Clock", "Terminal", "Spotify", "Discord", "Word", "Excel" };
-                        var defaultPinned = fetchedAllApps.Where(a => preferredPins.Any(p => a.Name != null && a.Name.Contains(p, StringComparison.OrdinalIgnoreCase))).ToList();
+                        var defaultPinned = fetchedAllApps.Where(a => preferredPins.Any(p => a.Name != null && a.Name.Contains(p, StringComparison.OrdinalIgnoreCase))).Take(12).ToList();
 
-                        foreach (var app in fetchedAllApps)
-                        {
-                            if (defaultPinned.Count >= 12) break;
-                            if (!defaultPinned.Contains(app)) defaultPinned.Add(app);
-                        }
-
-                        foreach (var app in defaultPinned.Take(12)) PinnedAppsCollection.Add(app);
+                        foreach (var app in defaultPinned) defaultCat.Apps.Add(app);
+                        PinnedCategories.Add(defaultCat);
                     }
 
-                    _ = ExtractIconsAsync(PinnedAppsCollection.ToList());
-                    _ = ExtractIconsAsync(AllAppsCollection.Except(PinnedAppsCollection).ToList());
+                    _ = ExtractIconsAsync(PinnedCategories.SelectMany(c => c.Apps).ToList());
+                    _ = ExtractIconsAsync(AllAppsCollection);
+
+                    if (ProductivityAppsGrid != null && PinnedCategories.Count > 0)
+                        ProductivityAppsGrid.ItemsSource = PinnedCategories[0].Apps;
+                    if (SecondaryAppsGrid != null && PinnedCategories.Count > 0)
+                        SecondaryAppsGrid.ItemsSource = PinnedCategories[0].Apps;
                 }
             }
             catch (Exception ex)
@@ -321,6 +345,45 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
                 }
             }
+        }
+
+        public void LoadRecentDocuments()
+        {
+            RecentDocsCollection.Clear();
+
+            if (RecentDocsPanel == null) return;
+
+            if (!ShowRecentDocs)
+            {
+                RecentDocsPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            RecentDocsPanel.Visibility = Visibility.Visible;
+            try
+            {
+                string recentPath = Environment.GetFolderPath(Environment.SpecialFolder.Recent);
+                if (Directory.Exists(recentPath))
+                {
+                    var recentFiles = new DirectoryInfo(recentPath).GetFiles("*.lnk")
+                        .OrderByDescending(f => f.LastWriteTime)
+                        .Take(10);
+
+                    foreach (var file in recentFiles)
+                    {
+                        RecentDocsCollection.Add(new AppItem
+                        {
+                            Name = Path.GetFileNameWithoutExtension(file.Name),
+                            ExecutablePath = file.FullName,
+                            FallbackGlyph = "\xE8A5",
+                            IsUwp = false
+                        });
+                    }
+
+                    _ = ExtractIconsAsync(RecentDocsCollection.ToList());
+                }
+            }
+            catch (Exception ex) { Debug.WriteLine($"Recent Docs Error: {ex.Message}"); }
         }
         #endregion
 
@@ -387,6 +450,7 @@ namespace EvolveOS_ShellEnhancer.Views
             var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
 
             UpdatePowerMenuVisibility();
+            LoadRecentDocuments();
 
             int windowWidth = 750;
             int windowHeight = 650;
@@ -690,15 +754,55 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (_isShowingAllApps)
                 {
                     btn.Content = LocalizationService.Instance.GetString("StartMenu_BackToPinned");
-                    StandardPinnedAppsGrid.ItemsSource = AllAppsCollection;
-                    ProductivityAppsGrid.ItemsSource = AllAppsCollection;
+
+                    if (PinnedCategoriesControl != null) PinnedCategoriesControl.Visibility = Visibility.Collapsed;
+                    if (SearchAndAllAppsGrid != null)
+                    {
+                        SearchAndAllAppsGrid.Visibility = Visibility.Visible;
+                        SearchAndAllAppsGrid.ItemsSource = AllAppsCollection;
+                    }
+
+                    if (ProductivityAppsGrid != null) ProductivityAppsGrid.ItemsSource = AllAppsCollection;
                 }
                 else
                 {
                     btn.Content = LocalizationService.Instance.GetString("StartMenu_AllApps");
-                    StandardPinnedAppsGrid.ItemsSource = PinnedAppsCollection;
-                    ProductivityAppsGrid.ItemsSource = PinnedAppsCollection;
+
+                    if (PinnedCategoriesControl != null) PinnedCategoriesControl.Visibility = Visibility.Visible;
+                    if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.Visibility = Visibility.Collapsed;
+
+                    if (ProductivityAppsGrid != null && PinnedCategories.Count > 0)
+                        ProductivityAppsGrid.ItemsSource = PinnedCategories[0].Apps;
                 }
+            }
+        }
+
+        private void AddCategory_Click(object sender, RoutedEventArgs e)
+        {
+            PinnedCategories.Add(new AppCategory { Name = "New Section" });
+            SaveStartMenuPins();
+        }
+
+        private void DeleteCategory_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem btn && btn.Tag is AppCategory cat)
+            {
+                PinnedCategories.Remove(cat);
+                SaveStartMenuPins();
+            }
+        }
+
+        private void CategoryName_LostFocus(object sender, RoutedEventArgs e)
+        {
+            SaveStartMenuPins();
+        }
+
+        private void CategoryName_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                this.Content.Focus(FocusState.Programmatic);
+                e.Handled = true;
             }
         }
 
@@ -708,6 +812,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void AppCard_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
+            e.Handled = true;
+
             if (sender is FrameworkElement element && element.DataContext is AppItem app)
             {
                 if (app.ExecutablePath != null && (app.ExecutablePath.StartsWith("WEB_SEARCH:") || app.ExecutablePath.StartsWith("FILE_SEARCH:")))
@@ -715,7 +821,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 MenuFlyout flyout = new MenuFlyout();
 
-                bool isPinnedToStart = PinnedAppsCollection.Contains(app);
+                bool isPinnedToStart = PinnedCategories.Any(c => c.Apps.Contains(app));
                 var pinStartItem = new MenuFlyoutItem
                 {
                     Text = isPinnedToStart
@@ -726,9 +832,14 @@ namespace EvolveOS_ShellEnhancer.Views
                 pinStartItem.Click += (s, args) =>
                 {
                     if (isPinnedToStart)
-                        PinnedAppsCollection.Remove(app);
+                    {
+                        foreach (var cat in PinnedCategories) cat.Apps.Remove(app);
+                    }
                     else
-                        PinnedAppsCollection.Add(app);
+                    {
+                        if (PinnedCategories.Count == 0) PinnedCategories.Add(new AppCategory { Name = "Pinned" });
+                        PinnedCategories.First().Apps.Add(app);
+                    }
 
                     SaveStartMenuPins();
                 };
@@ -787,14 +898,43 @@ namespace EvolveOS_ShellEnhancer.Views
                 flyout.MenuFlyoutPresenterStyle = flyoutStyle;
 
                 flyout.ShowAt(element, e.GetPosition(element));
+            }
+        }
+
+        private void ScrollViewer_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            if (e.Handled) return;
+
+            if (sender is FrameworkElement element)
+            {
+                MenuFlyout flyout = new MenuFlyout();
+                var addItem = new MenuFlyoutItem { Text = "Add Section" };
+                addItem.Icon = new FontIcon { Glyph = "\xE710" };
+                addItem.Click += AddCategory_Click;
+                flyout.Items.Add(addItem);
+
+                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
+                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
+                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255))));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
+
+                flyout.ShowAt(element, e.GetPosition(element));
                 e.Handled = true;
             }
         }
 
         private void SaveStartMenuPins()
         {
-            var names = PinnedAppsCollection.Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n));
-            SettingsEngine.StartMenuPinnedApps = string.Join(",", names);
+            var categoryStrings = new List<string>();
+            foreach (var cat in PinnedCategories)
+            {
+                var appNames = cat.Apps.Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n));
+                categoryStrings.Add($"{cat.Name}|{string.Join(",", appNames)}");
+            }
+            SettingsEngine.StartMenuPinnedApps = string.Join(";", categoryStrings);
         }
 
         private string GetTaskbarFolderPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
@@ -878,23 +1018,31 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void PerformSearch(string query)
         {
-            if (StandardPinnedAppsGrid == null || ProductivityAppsGrid == null || SecondaryAppsGrid == null) return;
-
             _searchCts?.Cancel();
             _searchCts = new CancellationTokenSource();
             var token = _searchCts.Token;
 
             if (string.IsNullOrWhiteSpace(query))
             {
-                var activeCollection = _isShowingAllApps ? AllAppsCollection : PinnedAppsCollection;
-                StandardPinnedAppsGrid.ItemsSource = activeCollection;
-                ProductivityAppsGrid.ItemsSource = activeCollection;
-                SecondaryAppsGrid.ItemsSource = activeCollection;
+                if (_isShowingAllApps)
+                {
+                    if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.ItemsSource = AllAppsCollection;
+                    if (ProductivityAppsGrid != null) ProductivityAppsGrid.ItemsSource = AllAppsCollection;
+                    if (SecondaryAppsGrid != null) SecondaryAppsGrid.ItemsSource = AllAppsCollection;
+                }
+                else
+                {
+                    if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.Visibility = Visibility.Collapsed;
+                    if (PinnedCategoriesControl != null) PinnedCategoriesControl.Visibility = Visibility.Visible;
 
-                DefaultRightPane1.Visibility = Visibility.Visible;
-                DefaultRightPane2.Visibility = Visibility.Visible;
-                SearchRightPane1.Visibility = Visibility.Collapsed;
-                SearchRightPane2.Visibility = Visibility.Collapsed;
+                    if (ProductivityAppsGrid != null && PinnedCategories.Count > 0) ProductivityAppsGrid.ItemsSource = PinnedCategories[0].Apps;
+                    if (SecondaryAppsGrid != null && PinnedCategories.Count > 0) SecondaryAppsGrid.ItemsSource = PinnedCategories[0].Apps;
+                }
+
+                if (DefaultRightPane1 != null) DefaultRightPane1.Visibility = Visibility.Visible;
+                if (DefaultRightPane2 != null) DefaultRightPane2.Visibility = Visibility.Visible;
+                if (SearchRightPane1 != null) SearchRightPane1.Visibility = Visibility.Collapsed;
+                if (SearchRightPane2 != null) SearchRightPane2.Visibility = Visibility.Collapsed;
                 return;
             }
 
@@ -961,9 +1109,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
                                 if (SearchResultsCollection.Count == 2)
                                 {
-                                    StandardPinnedAppsGrid.SelectedIndex = 0;
-                                    ProductivityAppsGrid.SelectedIndex = 0;
-                                    SecondaryAppsGrid.SelectedIndex = 0;
+                                    if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.SelectedIndex = 0;
+                                    if (ProductivityAppsGrid != null) ProductivityAppsGrid.SelectedIndex = 0;
+                                    if (SecondaryAppsGrid != null) SecondaryAppsGrid.SelectedIndex = 0;
                                     UpdateSearchDetailsPane(fileItem);
                                 }
                             });
@@ -981,40 +1129,46 @@ namespace EvolveOS_ShellEnhancer.Views
                 });
             }
 
-            StandardPinnedAppsGrid.ItemsSource = SearchResultsCollection;
-            ProductivityAppsGrid.ItemsSource = SearchResultsCollection;
-            SecondaryAppsGrid.ItemsSource = SearchResultsCollection;
+            if (PinnedCategoriesControl != null) PinnedCategoriesControl.Visibility = Visibility.Collapsed;
+            if (SearchAndAllAppsGrid != null)
+            {
+                SearchAndAllAppsGrid.Visibility = Visibility.Visible;
+                SearchAndAllAppsGrid.ItemsSource = SearchResultsCollection;
+            }
 
-            DefaultRightPane1.Visibility = Visibility.Collapsed;
-            DefaultRightPane2.Visibility = Visibility.Collapsed;
-            SearchRightPane1.Visibility = Visibility.Visible;
-            SearchRightPane2.Visibility = Visibility.Visible;
+            if (ProductivityAppsGrid != null) ProductivityAppsGrid.ItemsSource = SearchResultsCollection;
+            if (SecondaryAppsGrid != null) SecondaryAppsGrid.ItemsSource = SearchResultsCollection;
+
+            if (DefaultRightPane1 != null) DefaultRightPane1.Visibility = Visibility.Collapsed;
+            if (DefaultRightPane2 != null) DefaultRightPane2.Visibility = Visibility.Collapsed;
+            if (SearchRightPane1 != null) SearchRightPane1.Visibility = Visibility.Visible;
+            if (SearchRightPane2 != null) SearchRightPane2.Visibility = Visibility.Visible;
 
             if (SearchResultsCollection.Count > 0)
             {
-                StandardPinnedAppsGrid.SelectedIndex = 0;
-                ProductivityAppsGrid.SelectedIndex = 0;
-                SecondaryAppsGrid.SelectedIndex = 0;
+                if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.SelectedIndex = 0;
+                if (ProductivityAppsGrid != null) ProductivityAppsGrid.SelectedIndex = 0;
+                if (SecondaryAppsGrid != null) SecondaryAppsGrid.SelectedIndex = 0;
                 UpdateSearchDetailsPane(SearchResultsCollection.First());
             }
             else
             {
                 _currentSearchItem = null;
                 string noResultsTxt = LocalizationService.Instance.GetString("StartMenu_SearchNoResults");
-                SearchDetailsName1.Text = noResultsTxt;
-                SearchDetailsName2.Text = noResultsTxt;
-                SearchDetailsIcon1.Source = null;
-                SearchDetailsIcon2.Source = null;
-                AdminBtn1.Visibility = Visibility.Collapsed;
-                LocationBtn1.Visibility = Visibility.Collapsed;
-                AdminBtn2.Visibility = Visibility.Collapsed;
-                LocationBtn2.Visibility = Visibility.Collapsed;
+                if (SearchDetailsName1 != null) SearchDetailsName1.Text = noResultsTxt;
+                if (SearchDetailsName2 != null) SearchDetailsName2.Text = noResultsTxt;
+                if (SearchDetailsIcon1 != null) SearchDetailsIcon1.Source = null;
+                if (SearchDetailsIcon2 != null) SearchDetailsIcon2.Source = null;
+                if (AdminBtn1 != null) AdminBtn1.Visibility = Visibility.Collapsed;
+                if (LocationBtn1 != null) LocationBtn1.Visibility = Visibility.Collapsed;
+                if (AdminBtn2 != null) AdminBtn2.Visibility = Visibility.Collapsed;
+                if (LocationBtn2 != null) LocationBtn2.Visibility = Visibility.Collapsed;
             }
         }
 
         private void AppGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.FirstOrDefault() is AppItem item && SearchRightPane1.Visibility == Visibility.Visible)
+            if (e.AddedItems.FirstOrDefault() is AppItem item && SearchRightPane1 != null && SearchRightPane1.Visibility == Visibility.Visible)
             {
                 UpdateSearchDetailsPane(item);
             }
@@ -1023,19 +1177,19 @@ namespace EvolveOS_ShellEnhancer.Views
         private void UpdateSearchDetailsPane(AppItem item)
         {
             _currentSearchItem = item;
-            SearchDetailsName1.Text = item.Name;
-            SearchDetailsName2.Text = item.Name;
-            SearchDetailsIcon1.Source = item.IconSource;
-            SearchDetailsIcon2.Source = item.IconSource;
+            if (SearchDetailsName1 != null) SearchDetailsName1.Text = item.Name;
+            if (SearchDetailsName2 != null) SearchDetailsName2.Text = item.Name;
+            if (SearchDetailsIcon1 != null) SearchDetailsIcon1.Source = item.IconSource;
+            if (SearchDetailsIcon2 != null) SearchDetailsIcon2.Source = item.IconSource;
 
             bool isSpecial = item.ExecutablePath?.StartsWith("WEB_SEARCH:") == true || item.ExecutablePath?.StartsWith("FILE_SEARCH:") == true;
             bool isUwpApp = item.IsUwp;
 
-            AdminBtn1.Visibility = (!isUwpApp && !isSpecial) ? Visibility.Visible : Visibility.Collapsed;
-            LocationBtn1.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
+            if (AdminBtn1 != null) AdminBtn1.Visibility = (!isUwpApp && !isSpecial) ? Visibility.Visible : Visibility.Collapsed;
+            if (LocationBtn1 != null) LocationBtn1.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
 
-            AdminBtn2.Visibility = (!isUwpApp && !isSpecial) ? Visibility.Visible : Visibility.Collapsed;
-            LocationBtn2.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
+            if (AdminBtn2 != null) AdminBtn2.Visibility = (!isUwpApp && !isSpecial) ? Visibility.Visible : Visibility.Collapsed;
+            if (LocationBtn2 != null) LocationBtn2.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void AppGrid_ItemClick(object sender, ItemClickEventArgs e)

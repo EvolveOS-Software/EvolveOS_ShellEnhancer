@@ -384,6 +384,13 @@ namespace EvolveOS_ShellEnhancer
                         CustomStartMenuWindow.ShowPowerSleep = SettingsEngine.Shell_StartMenuPowerSleep;
                         break;
 
+                    case "StartMenu_RecentDocs":
+                        SettingsEngine.Shell_StartMenuRecentDocs = bool.Parse(value);
+                        CustomStartMenuWindow.ShowRecentDocs = SettingsEngine.Shell_StartMenuRecentDocs;
+
+                        _startMenuWindow?.LoadRecentDocuments();
+                        break;
+
                     case "Taskbar_Enable":
                         _isTaskbarEnabled = bool.Parse(value);
                         if (_isTaskbarEnabled)

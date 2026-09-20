@@ -63,7 +63,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
 
             ["Shell_StartMenuPowerSleep"] = true,
             ["Shell_StartMenuPowerRestartBios"] = false,
-            ["Shell_StartMenuPowerLogOff"] = false
+            ["Shell_StartMenuPowerLogOff"] = false,
+            ["Shell_StartMenuRecentDocs"] = false
             #endregion
         };
 
@@ -102,6 +103,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static bool Shell_StartMenuPowerSleep { get => (bool)_cachedSettings["Shell_StartMenuPowerSleep"]; set => ChangingParameters("Shell_StartMenuPowerSleep", value); }
         internal static bool Shell_StartMenuPowerRestartBios { get => (bool)_cachedSettings["Shell_StartMenuPowerRestartBios"]; set => ChangingParameters("Shell_StartMenuPowerRestartBios", value); }
         internal static bool Shell_StartMenuPowerLogOff { get => (bool)_cachedSettings["Shell_StartMenuPowerLogOff"]; set => ChangingParameters("Shell_StartMenuPowerLogOff", value); }
+        internal static bool Shell_StartMenuRecentDocs { get => (bool)_cachedSettings["Shell_StartMenuRecentDocs"]; set => ChangingParameters("Shell_StartMenuRecentDocs", value); }
         #endregion
 
         #region Registry Engine
