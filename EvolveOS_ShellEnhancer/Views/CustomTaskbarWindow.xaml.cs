@@ -250,7 +250,14 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             this.InitializeComponent();
 
-            _currentStyle = SettingsEngine.Taskbar_Style ?? "Standard";
+            _currentStyle = SettingsEngine.Shell_TaskbarStyle ?? "Standard";
+
+            _currentPosition = SettingsEngine.Shell_TaskbarPosition ?? "Bottom";
+            PositionAnimationStyle = SettingsEngine.Shell_TaskbarAnimation ?? "Spring";
+            HoverAnimationStyle = SettingsEngine.Shell_TaskbarHoverAnimation ?? "Standard";
+            ShowHoverBackground = SettingsEngine.Shell_TaskbarHoverBackground;
+            MonitorAwareApps = SettingsEngine.Shell_TaskbarMonitorAware;
+            UnpinnedDisplayMode = SettingsEngine.Shell_TaskbarUnpinnedMode ?? "Inline";
 
             _hWnd = WindowNative.GetWindowHandle(this);
             Microsoft.UI.WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
@@ -314,8 +321,12 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (this.Content is FrameworkElement rootElement)
             {
-                rootElement.Loaded += (s, e) =>
+                rootElement.Loaded += async (s, e) =>
                 {
+                    await Task.Delay(150);
+                    ShowDock();
+
+                    await Task.Delay(300);
                     ShowDock();
                 };
             }
@@ -1694,6 +1705,31 @@ namespace EvolveOS_ShellEnhancer.Views
 
                     SHAppBarMessage(ABM_SETPOS, ref abd);
                 }
+
+                if (_currentStyle == "Floating")
+                {
+                    if (TaskbarCornerRadius <= 4)
+                    {
+                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
+                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(TaskbarCornerRadius);
+                    }
+                    else
+                    {
+                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUND);
+                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(TaskbarCornerRadius);
+                    }
+                }
+                else
+                {
+                    Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_DONOTROUND);
+                    if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(0);
+                }
+
+                _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
+                _appWindow.Show();
+
+                SetWindowPos(_hWnd, new IntPtr(-1), x, y, w, h, 0x0040);
+                TaskbarOverlayManager.EnsureTopmost(_hWnd);
 
                 string savedAlignment = TaskbarManager.CurrentAlignment;
                 SetAlignment(savedAlignment, animate: false);

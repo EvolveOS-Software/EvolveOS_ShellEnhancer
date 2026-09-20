@@ -40,31 +40,41 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             #region Shell Settings
             ["Shell_MasterEnabled"] = false,
             ["Shell_TaskbarEnabled"] = false,
-            ["Taskbar_Style"] = "Standard",
+            ["Shell_TaskbarStyle"] = "Standard",
             ["Shell_TaskbarLength"] = 100,
             ["Shell_TaskbarCornerRadius"] = 8,
-            ["Taskbar_PreviewButtons"] = true,
-            ["Taskbar_PreviewAnimation"] = true,
-            ["Taskbar_ClockSeconds"] = false,
-            ["Taskbar_ShowUnpinned"] = true,
+            ["Shell_TaskbarPreviewButtons"] = true,
+            ["Shell_TaskbarPreviewAnimation"] = true,
+            ["Shell_TaskbarClockSeconds"] = false,
+            ["Shell_TaskbarShowUnpinned"] = true,
             ["Taskbar_ShowFoldersAsSubmenus"] = true,
             ["Shell_Language"] = "en-us",
             ["Shell_TaskbarAlignment"] = "Center",
             ["Shell_TaskbarPosition"] = "Bottom",
             ["Shell_StartMenuEnabled"] = false,
             ["Shell_StartMenuStyle"] = "Standard",
+            ["Shell_StartMenuAnimation"] = true,
+            ["Shell_StartMenuAnimStyle"] = "Standard",
+            ["Shell_StartMenuAnimSpeed"] = 1.0,
             ["Shell_AppFont"] = "Segoe UI",
             ["Shell_AppFontSize"] = 14.0,
             ["Shell_HighPriority"] = false,
             ["Shell_TaskbarSize"] = 48,
             ["Shell_TaskbarIconSize"] = 24,
             ["Shell_TaskbarPreviewDelay"] = 0.5,
+            ["Shell_TaskbarPreviewAnimStyle"] = "Standard",
+            ["Shell_TaskbarPreviewAnimSpeed"] = 1.0,
             ["Shell_StartMenuProfileClick"] = true,
 
             ["Shell_StartMenuPowerSleep"] = true,
             ["Shell_StartMenuPowerRestartBios"] = false,
             ["Shell_StartMenuPowerLogOff"] = false,
-            ["Shell_StartMenuRecentDocs"] = false
+            ["Shell_StartMenuRecentDocs"] = false,
+            ["Shell_TaskbarAnimation"] = "Spring",
+            ["Shell_TaskbarHoverAnimation"] = "Standard",
+            ["Shell_TaskbarHoverBackground"] = true,
+            ["Shell_TaskbarMonitorAware"] = false,
+            ["Shell_TaskbarUnpinnedMode"] = "Inline"
             #endregion
         };
 
@@ -80,30 +90,40 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #region Shell Settings
         internal static bool Shell_MasterEnabled { get => (bool)_cachedSettings["Shell_MasterEnabled"]; set => ChangingParameters("Shell_MasterEnabled", value); }
         internal static bool Shell_TaskbarEnabled { get => (bool)_cachedSettings["Shell_TaskbarEnabled"]; set => ChangingParameters("Shell_TaskbarEnabled", value); }
-        internal static string Taskbar_Style { get => (string)_cachedSettings["Taskbar_Style"]; set => ChangingParameters("Taskbar_Style", value); }
+        internal static string Shell_TaskbarStyle { get => (string)_cachedSettings["Shell_TaskbarStyle"]; set => ChangingParameters("Shell_TaskbarStyle", value); }
         internal static int Shell_TaskbarLength { get => (int)_cachedSettings["Shell_TaskbarLength"]; set => ChangingParameters("Shell_TaskbarLength", value); }
         internal static int Shell_TaskbarCornerRadius { get => (int)_cachedSettings["Shell_TaskbarCornerRadius"]; set => ChangingParameters("Shell_TaskbarCornerRadius", value); }
-        internal static bool Taskbar_PreviewButtons { get => (bool)_cachedSettings["Taskbar_PreviewButtons"]; set => ChangingParameters("Taskbar_PreviewButtons", value); }
-        internal static bool Taskbar_PreviewAnimation { get => (bool)_cachedSettings["Taskbar_PreviewAnimation"]; set => ChangingParameters("Taskbar_PreviewAnimation", value); }
-        internal static bool Taskbar_ClockSeconds { get => (bool)_cachedSettings["Taskbar_ClockSeconds"]; set => ChangingParameters("Taskbar_ClockSeconds", value); }
-        internal static bool Taskbar_ShowUnpinned { get => (bool)_cachedSettings["Taskbar_ShowUnpinned"]; set => ChangingParameters("Taskbar_ShowUnpinned", value); }
+        internal static bool Shell_TaskbarPreviewButtons { get => (bool)_cachedSettings["Shell_TaskbarPreviewButtons"]; set => ChangingParameters("Shell_TaskbarPreviewButtons", value); }
+        internal static bool Shell_TaskbarPreviewAnimation { get => (bool)_cachedSettings["Shell_TaskbarPreviewAnimation"]; set => ChangingParameters("Shell_TaskbarPreviewAnimation", value); }
+        internal static bool Shell_TaskbarClockSeconds { get => (bool)_cachedSettings["Shell_TaskbarClockSeconds"]; set => ChangingParameters("Shell_TaskbarClockSeconds", value); }
+        internal static bool Shell_TaskbarShowUnpinned { get => (bool)_cachedSettings["Shell_TaskbarShowUnpinned"]; set => ChangingParameters("Shell_TaskbarShowUnpinned", value); }
         internal static bool Taskbar_ShowFoldersAsSubmenus { get => (bool)_cachedSettings["Taskbar_ShowFoldersAsSubmenus"]; set => ChangingParameters("Taskbar_ShowFoldersAsSubmenus", value); }
         internal static string Shell_Language { get => (string)_cachedSettings["Shell_Language"]; set => ChangingParameters("Shell_Language", value); }
         internal static string Shell_TaskbarAlignment { get => (string)_cachedSettings["Shell_TaskbarAlignment"]; set => ChangingParameters("Shell_TaskbarAlignment", value); }
         internal static string Shell_TaskbarPosition { get => (string)_cachedSettings["Shell_TaskbarPosition"]; set => ChangingParameters("Shell_TaskbarPosition", value); }
         internal static bool Shell_StartMenuEnabled { get => (bool)_cachedSettings["Shell_StartMenuEnabled"]; set => ChangingParameters("Shell_StartMenuEnabled", value); }
         internal static string Shell_StartMenuStyle { get => (string)_cachedSettings["Shell_StartMenuStyle"]; set => ChangingParameters("Shell_StartMenuStyle", value); }
+        internal static bool Shell_StartMenuAnimation { get => (bool)_cachedSettings["Shell_StartMenuAnimation"]; set => ChangingParameters("Shell_StartMenuAnimation", value); }
+        internal static string Shell_StartMenuAnimStyle { get => (string)_cachedSettings["Shell_StartMenuAnimStyle"]; set => ChangingParameters("Shell_StartMenuAnimStyle", value); }
+        internal static double Shell_StartMenuAnimSpeed { get => Convert.ToDouble(_cachedSettings["Shell_StartMenuAnimSpeed"]); set => ChangingParameters("Shell_StartMenuAnimSpeed", value); }
         internal static string Shell_AppFont { get => (string)_cachedSettings["Shell_AppFont"]; set => ChangingParameters("Shell_AppFont", value); }
         internal static double Shell_AppFontSize { get => Convert.ToDouble(_cachedSettings["Shell_AppFontSize"]); set => ChangingParameters("Shell_AppFontSize", value); }
         internal static bool Shell_HighPriority { get => (bool)_cachedSettings["Shell_HighPriority"]; set => ChangingParameters("Shell_HighPriority", value); }
         internal static int Shell_TaskbarSize { get => (int)_cachedSettings["Shell_TaskbarSize"]; set => ChangingParameters("Shell_TaskbarSize", value); }
         internal static int Shell_TaskbarIconSize { get => (int)_cachedSettings["Shell_TaskbarIconSize"]; set => ChangingParameters("Shell_TaskbarIconSize", value); }
         internal static double Shell_TaskbarPreviewDelay { get => Convert.ToDouble(_cachedSettings["Shell_TaskbarPreviewDelay"]); set => ChangingParameters("Shell_TaskbarPreviewDelay", value); }
+        internal static string Shell_TaskbarPreviewAnimStyle { get => (string)_cachedSettings["Shell_TaskbarPreviewAnimStyle"]; set => ChangingParameters("Shell_TaskbarPreviewAnimStyle", value); }
+        internal static double Shell_TaskbarPreviewAnimSpeed { get => Convert.ToDouble(_cachedSettings["Shell_TaskbarPreviewAnimSpeed"]); set => ChangingParameters("Shell_TaskbarPreviewAnimSpeed", value); }
         internal static bool Shell_StartMenuProfileClick { get => (bool)_cachedSettings["Shell_StartMenuProfileClick"]; set => ChangingParameters("Shell_StartMenuProfileClick", value); }
         internal static bool Shell_StartMenuPowerSleep { get => (bool)_cachedSettings["Shell_StartMenuPowerSleep"]; set => ChangingParameters("Shell_StartMenuPowerSleep", value); }
         internal static bool Shell_StartMenuPowerRestartBios { get => (bool)_cachedSettings["Shell_StartMenuPowerRestartBios"]; set => ChangingParameters("Shell_StartMenuPowerRestartBios", value); }
         internal static bool Shell_StartMenuPowerLogOff { get => (bool)_cachedSettings["Shell_StartMenuPowerLogOff"]; set => ChangingParameters("Shell_StartMenuPowerLogOff", value); }
         internal static bool Shell_StartMenuRecentDocs { get => (bool)_cachedSettings["Shell_StartMenuRecentDocs"]; set => ChangingParameters("Shell_StartMenuRecentDocs", value); }
+        internal static string Shell_TaskbarAnimation { get => (string)_cachedSettings["Shell_TaskbarAnimation"]; set => ChangingParameters("Shell_TaskbarAnimation", value); }
+        internal static string Shell_TaskbarHoverAnimation { get => (string)_cachedSettings["Shell_TaskbarHoverAnimation"]; set => ChangingParameters("Shell_TaskbarHoverAnimation", value); }
+        internal static bool Shell_TaskbarHoverBackground { get => (bool)_cachedSettings["Shell_TaskbarHoverBackground"]; set => ChangingParameters("Shell_TaskbarHoverBackground", value); }
+        internal static bool Shell_TaskbarMonitorAware { get => (bool)_cachedSettings["Shell_TaskbarMonitorAware"]; set => ChangingParameters("Shell_TaskbarMonitorAware", value); }
+        internal static string Shell_TaskbarUnpinnedMode { get => (string)_cachedSettings["Shell_TaskbarUnpinnedMode"]; set => ChangingParameters("Shell_TaskbarUnpinnedMode", value); }
         #endregion
 
         #region Registry Engine
