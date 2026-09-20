@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Managers
 {
@@ -30,9 +31,34 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #region Fields & Defaults
         private static readonly Dictionary<string, object> _defaultSettings = new Dictionary<string, object>
         {
+            #region Properties
             ["TaskbarPinnedAppsOrder"] = string.Empty,
             ["StartMenuPinnedApps"] = string.Empty,
-            ["Taskbar_FilteredFolders"] = string.Empty
+            ["Taskbar_FilteredFolders"] = string.Empty,
+            #endregion
+
+            #region Shell Settings
+            ["Shell_MasterEnabled"] = false,
+            ["Taskbar_Style"] = "Standard",
+            ["Shell_TaskbarLength"] = 100,
+            ["Shell_TaskbarCornerRadius"] = 8,
+            ["Taskbar_PreviewButtons"] = true,
+            ["Taskbar_PreviewAnimation"] = true,
+            ["Taskbar_ClockSeconds"] = false,
+            ["Taskbar_ShowUnpinned"] = true,
+            ["Taskbar_ShowFoldersAsSubmenus"] = true,
+            ["Shell_Language"] = "en-us",
+            ["Shell_TaskbarAlignment"] = "Center",
+            ["Shell_TaskbarPosition"] = "Bottom",
+            ["Shell_StartMenuEnabled"] = false,
+            ["Shell_StartMenuStyle"] = "Standard",
+            ["Shell_AppFont"] = "Segoe UI",
+            ["Shell_AppFontSize"] = 14.0,
+            ["Shell_HighPriority"] = false,
+            ["Shell_TaskbarSize"] = 48,
+            ["Shell_TaskbarIconSize"] = 24,
+            ["Shell_TaskbarPreviewDelay"] = 0.5
+            #endregion
         };
 
         private static readonly Dictionary<string, object> _cachedSettings = new Dictionary<string, object>(_defaultSettings);
@@ -45,443 +71,47 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #endregion
 
         #region Shell Settings
-        internal static bool Shell_MasterEnabled
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Shell_MasterEnabled") is object val)
-                    {
-                        if (val is int intVal) return intVal == 1;
-                        if (val is string strVal && bool.TryParse(strVal, out bool boolVal)) return boolVal;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_MasterEnabled Error: {ex.Message}");
-                }
-                return false;
-            }
-            set
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.CreateSubKey(@"Software\EvolveOS_Optimizer", true);
-                    key?.SetValue("Shell_MasterEnabled", value ? 1 : 0, RegistryValueKind.DWord);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Write Shell_MasterEnabled Error: {ex.Message}");
-                }
-            }
-        }
-
-        internal static string Taskbar_Style
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Taskbar_Style") is string val && !string.IsNullOrEmpty(val))
-                    {
-                        return val;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Taskbar_Style Error: {ex.Message}");
-                }
-                return "Standard";
-            }
-            set
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.CreateSubKey(@"Software\EvolveOS_Optimizer", true);
-                    key?.SetValue("Taskbar_Style", value);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Write Taskbar_Style Error: {ex.Message}");
-                }
-            }
-        }
-
-        internal static int Shell_TaskbarLength
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    var val = key?.GetValue("Shell_TaskbarLength");
-                    if (val != null && int.TryParse(val.ToString(), out int size))
-                    {
-                        return size;
-                    }
-                }
-                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Shell_TaskbarLength Error: {ex.Message}"); }
-                return 100;
-            }
-        }
-
-        internal static int Shell_TaskbarCornerRadius
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    var val = key?.GetValue("Shell_TaskbarCornerRadius");
-                    if (val != null && int.TryParse(val.ToString(), out int size))
-                    {
-                        return size;
-                    }
-                }
-                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Shell_TaskbarCornerRadius Error: {ex.Message}"); }
-                return 8;
-            }
-        }
-
-        internal static bool Taskbar_PreviewButtons
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Taskbar_PreviewButtons") is string val && bool.TryParse(val, out bool result))
-                        return result;
-                }
-                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Taskbar_PreviewButtons Error: {ex.Message}"); }
-                return true;
-            }
-        }
-
-        internal static bool Taskbar_PreviewAnimation
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Taskbar_PreviewAnimation") is string val && bool.TryParse(val, out bool result))
-                        return result;
-                }
-                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Taskbar_PreviewAnimation Error: {ex.Message}"); }
-                return true;
-            }
-        }
-
-        internal static bool Taskbar_ClockSeconds
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Taskbar_ClockSeconds") is string val && bool.TryParse(val, out bool result))
-                        return result;
-                }
-                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Taskbar_ClockSeconds Error: {ex.Message}"); }
-                return false;
-            }
-        }
-
-        internal static bool Taskbar_ShowUnpinned
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Taskbar_ShowUnpinned") is string val && bool.TryParse(val, out bool result))
-                        return result;
-                }
-                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Taskbar_ShowUnpinned Error: {ex.Message}"); }
-                return true;
-            }
-        }
-
-        internal static bool Taskbar_ShowFoldersAsSubmenus
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Taskbar_ShowFoldersAsSubmenus") is string val && bool.TryParse(val, out bool result))
-                    {
-                        return result;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Taskbar_ShowFoldersAsSubmenus Error: {ex.Message}");
-                }
-                return true;
-            }
-            set
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.CreateSubKey(@"Software\EvolveOS_Optimizer");
-                    key?.SetValue("Taskbar_ShowFoldersAsSubmenus", value.ToString());
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Write Taskbar_ShowFoldersAsSubmenus Error: {ex.Message}");
-                }
-            }
-        }
-
-        internal static string Shell_Language
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Shell_Language") is string val && !string.IsNullOrEmpty(val))
-                    {
-                        return val;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_Language Error: {ex.Message}");
-                }
-                return "en-us";
-            }
-        }
-
-        internal static string Shell_TaskbarAlignment
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Shell_TaskbarAlignment") is string val && !string.IsNullOrEmpty(val))
-                    {
-                        return val;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read TaskbarAlignment Error: {ex.Message}");
-                }
-                return "Center";
-            }
-        }
-
-        internal static string Shell_TaskbarPosition
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Shell_TaskbarPosition") is string val && !string.IsNullOrEmpty(val))
-                    {
-                        return val;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read TaskbarPosition Error: {ex.Message}");
-                }
-                return "Bottom";
-            }
-        }
-
-        internal static bool Shell_StartMenuEnabled
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    var val = key?.GetValue("Shell_StartMenuEnabled");
-
-                    if (val != null)
-                    {
-                        if (val is string strVal && bool.TryParse(strVal, out bool parsedBool))
-                        {
-                            return parsedBool;
-                        }
-
-                        if (val is int intVal)
-                        {
-                            return intVal == 1;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_StartMenuEnabled Error: {ex.Message}");
-                }
-                return false;
-            }
-        }
-
-        internal static string Shell_StartMenuStyle
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Shell_StartMenuStyle") is string val && !string.IsNullOrEmpty(val))
-                    {
-                        return val;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_StartMenuStyle Error: {ex.Message}");
-                }
-                return "SplitStandard";
-            }
-        }
-
-        internal static string Shell_AppFont
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Shell_AppFont") is string val && !string.IsNullOrEmpty(val))
-                    {
-                        return val;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_AppFont Error: {ex.Message}");
-                }
-                return "Segoe UI";
-            }
-        }
-
-        internal static double Shell_AppFontSize
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    if (key?.GetValue("Shell_AppFontSize") != null)
-                    {
-                        return Convert.ToDouble(key.GetValue("Shell_AppFontSize"));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_AppFontSize Error: {ex.Message}");
-                }
-                return 14.0;
-            }
-        }
-
-        internal static bool Shell_HighPriority
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    var val = key?.GetValue("Shell_HighPriority");
-                    if (val != null)
-                    {
-                        if (bool.TryParse(val.ToString(), out bool result)) return result;
-                        if (int.TryParse(val.ToString(), out int intVal)) return intVal != 0;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_HighPriority Error: {ex.Message}");
-                }
-                return false;
-            }
-        }
-
-        internal static int Shell_TaskbarSize
-        {
-            get
-            {
-                try
-                {
-                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    var val = key?.GetValue("Shell_TaskbarSize");
-                    if (val != null && int.TryParse(val.ToString(), out int size))
-                    {
-                        return size;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_TaskbarSize Error: {ex.Message}");
-                }
-                return 48;
-            }
-        }
-
-        internal static int Shell_TaskbarIconSize
-        {
-            get
-            {
-                try
-                {
-                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    var val = key?.GetValue("Shell_TaskbarIconSize");
-                    if (val != null && int.TryParse(val.ToString(), out int size))
-                    {
-                        return size;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_TaskbarIconSize Error: {ex.Message}");
-                }
-                return 24;
-            }
-        }
-
-        internal static double Shell_TaskbarPreviewDelay
-        {
-            get
-            {
-                try
-                {
-                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
-                    var val = key?.GetValue("Shell_TaskbarPreviewDelay");
-                    if (val != null && double.TryParse(val.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double delay))
-                    {
-                        return delay;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Settings] Read Shell_TaskbarPreviewDelay Error: {ex.Message}");
-                }
-                return 0.5;
-            }
-        }
+        internal static bool Shell_MasterEnabled { get => (bool)_cachedSettings["Shell_MasterEnabled"]; set => ChangingParameters("Shell_MasterEnabled", value); }
+        internal static string Taskbar_Style { get => (string)_cachedSettings["Taskbar_Style"]; set => ChangingParameters("Taskbar_Style", value); }
+        internal static int Shell_TaskbarLength { get => (int)_cachedSettings["Shell_TaskbarLength"]; set => ChangingParameters("Shell_TaskbarLength", value); }
+        internal static int Shell_TaskbarCornerRadius { get => (int)_cachedSettings["Shell_TaskbarCornerRadius"]; set => ChangingParameters("Shell_TaskbarCornerRadius", value); }
+        internal static bool Taskbar_PreviewButtons { get => (bool)_cachedSettings["Taskbar_PreviewButtons"]; set => ChangingParameters("Taskbar_PreviewButtons", value); }
+        internal static bool Taskbar_PreviewAnimation { get => (bool)_cachedSettings["Taskbar_PreviewAnimation"]; set => ChangingParameters("Taskbar_PreviewAnimation", value); }
+        internal static bool Taskbar_ClockSeconds { get => (bool)_cachedSettings["Taskbar_ClockSeconds"]; set => ChangingParameters("Taskbar_ClockSeconds", value); }
+        internal static bool Taskbar_ShowUnpinned { get => (bool)_cachedSettings["Taskbar_ShowUnpinned"]; set => ChangingParameters("Taskbar_ShowUnpinned", value); }
+        internal static bool Taskbar_ShowFoldersAsSubmenus { get => (bool)_cachedSettings["Taskbar_ShowFoldersAsSubmenus"]; set => ChangingParameters("Taskbar_ShowFoldersAsSubmenus", value); }
+        internal static string Shell_Language { get => (string)_cachedSettings["Shell_Language"]; set => ChangingParameters("Shell_Language", value); }
+        internal static string Shell_TaskbarAlignment { get => (string)_cachedSettings["Shell_TaskbarAlignment"]; set => ChangingParameters("Shell_TaskbarAlignment", value); }
+        internal static string Shell_TaskbarPosition { get => (string)_cachedSettings["Shell_TaskbarPosition"]; set => ChangingParameters("Shell_TaskbarPosition", value); }
+        internal static bool Shell_StartMenuEnabled { get => (bool)_cachedSettings["Shell_StartMenuEnabled"]; set => ChangingParameters("Shell_StartMenuEnabled", value); }
+        internal static string Shell_StartMenuStyle { get => (string)_cachedSettings["Shell_StartMenuStyle"]; set => ChangingParameters("Shell_StartMenuStyle", value); }
+        internal static string Shell_AppFont { get => (string)_cachedSettings["Shell_AppFont"]; set => ChangingParameters("Shell_AppFont", value); }
+        internal static double Shell_AppFontSize { get => Convert.ToDouble(_cachedSettings["Shell_AppFontSize"]); set => ChangingParameters("Shell_AppFontSize", value); }
+        internal static bool Shell_HighPriority { get => (bool)_cachedSettings["Shell_HighPriority"]; set => ChangingParameters("Shell_HighPriority", value); }
+        internal static int Shell_TaskbarSize { get => (int)_cachedSettings["Shell_TaskbarSize"]; set => ChangingParameters("Shell_TaskbarSize", value); }
+        internal static int Shell_TaskbarIconSize { get => (int)_cachedSettings["Shell_TaskbarIconSize"]; set => ChangingParameters("Shell_TaskbarIconSize", value); }
+        internal static double Shell_TaskbarPreviewDelay { get => Convert.ToDouble(_cachedSettings["Shell_TaskbarPreviewDelay"]); set => ChangingParameters("Shell_TaskbarPreviewDelay", value); }
         #endregion
 
         #region Registry Engine
+        private static string GetRegistryPath(string key)
+        {
+            if (key == "TaskbarPinnedAppsOrder" || key == "StartMenuPinnedApps" || key == "Taskbar_FilteredFolders")
+            {
+                return RegistryPath.SubKey;
+            }
+
+            return @"Software\EvolveOS_Optimizer";
+        }
+
         private static void ChangingParameters(string key, object value)
         {
             _cachedSettings[key] = value;
 
             try
             {
-                using (RegistryKey? regKey = Registry.CurrentUser.CreateSubKey(RegistryPath.SubKey, true))
+                string targetPath = GetRegistryPath(key);
+                using (RegistryKey? regKey = Registry.CurrentUser.CreateSubKey(targetPath, true))
                 {
                     if (regKey != null)
                     {
@@ -489,11 +119,13 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                             regKey.SetValue(key, b ? 1 : 0, RegistryValueKind.DWord);
                         else if (value is int i)
                             regKey.SetValue(key, i, RegistryValueKind.DWord);
+                        else if (value is double d)
+                            regKey.SetValue(key, d.ToString(CultureInfo.InvariantCulture), RegistryValueKind.String);
                         else
                             regKey.SetValue(key, value.ToString() ?? "", RegistryValueKind.String);
 
                         regKey.Flush();
-                        Debug.WriteLine($"[Settings] SAVED TO: HKCU\\{RegistryPath.SubKey}\\{key} = {value}");
+                        Debug.WriteLine($"[Settings] SAVED TO: HKCU\\{targetPath}\\{key} = {value}");
                     }
                 }
             }
@@ -507,20 +139,54 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         {
             try
             {
-                using (RegistryKey? rootKey = Registry.CurrentUser.OpenSubKey(RegistryPath.SubKey, false))
+                using RegistryKey? optimizerKey = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                using RegistryKey? enhancerKey = Registry.CurrentUser.OpenSubKey(RegistryPath.SubKey, false);
+
+                foreach (var kv in _defaultSettings)
                 {
-                    foreach (var kv in _defaultSettings)
+                    try
                     {
-                        if (rootKey != null && rootKey.GetValue(kv.Key) != null)
+                        RegistryKey? targetKey = (kv.Key == "TaskbarPinnedAppsOrder" || kv.Key == "StartMenuPinnedApps" || kv.Key == "Taskbar_FilteredFolders")
+                            ? enhancerKey
+                            : optimizerKey;
+
+                        if (targetKey != null)
                         {
-                            object rawVal = rootKey.GetValue(kv.Key)!;
-                            _cachedSettings[kv.Key] = kv.Value switch
+                            object? rawVal = targetKey.GetValue(kv.Key);
+                            if (rawVal != null)
                             {
-                                bool => Convert.ToInt32(rawVal) != 0,
-                                int => Convert.ToInt32(rawVal),
-                                _ => rawVal.ToString() ?? kv.Value.ToString()!
-                            };
+                                string strVal = rawVal.ToString() ?? "";
+
+                                if (kv.Value is bool)
+                                {
+                                    if (int.TryParse(strVal, out int intBool))
+                                        _cachedSettings[kv.Key] = intBool != 0;
+                                    else if (bool.TryParse(strVal, out bool bVal))
+                                        _cachedSettings[kv.Key] = bVal;
+                                    else
+                                        _cachedSettings[kv.Key] = (strVal == "1");
+                                }
+                                else if (kv.Value is int)
+                                {
+                                    if (int.TryParse(strVal, out int iVal))
+                                        _cachedSettings[kv.Key] = iVal;
+                                }
+                                else if (kv.Value is double)
+                                {
+                                    string safeDouble = strVal.Replace(',', '.');
+                                    if (double.TryParse(safeDouble, NumberStyles.Any, CultureInfo.InvariantCulture, out double dVal))
+                                        _cachedSettings[kv.Key] = dVal;
+                                }
+                                else
+                                {
+                                    _cachedSettings[kv.Key] = strVal;
+                                }
+                            }
                         }
+                    }
+                    catch (Exception itemEx)
+                    {
+                        Debug.WriteLine($"[Settings] Failed to load {kv.Key}: {itemEx.Message}");
                     }
                 }
             }
