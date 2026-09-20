@@ -1,4 +1,4 @@
-// Copyright (c) 2026 EvolveOS Software
+﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
 using EvolveOS_ShellEnhancer.Utilities.Animations;
@@ -126,7 +126,6 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     _appRefreshDebounceTimer.Stop();
                     _isDataLoaded = false;
-
                     LoadAppsData();
                 };
 
@@ -590,7 +589,17 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void MenuContainer_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
+            if (e.OriginalSource is Image || e.OriginalSource is TextBlock || e.OriginalSource is FontIcon)
+            {
+                return;
+            }
+
             e.Handled = true;
+        }
+
+        private void DismissLayer_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            HideMenu();
         }
 
         private void PowerShutdown_Click(object sender, RoutedEventArgs e)
@@ -809,6 +818,30 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region Context Menu Handlers (Pinning / Actions)
+        private void ScrollViewer_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            if (e.Handled) return;
+
+            if (sender is FrameworkElement element)
+            {
+                MenuFlyout flyout = new MenuFlyout();
+                var addItem = new MenuFlyoutItem { Text = "Add Section" };
+                addItem.Icon = new FontIcon { Glyph = "\xE710" };
+                addItem.Click += AddCategory_Click;
+                flyout.Items.Add(addItem);
+
+                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
+                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
+                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255))));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
+
+                flyout.ShowAt(element, e.GetPosition(element));
+                e.Handled = true;
+            }
+        }
 
         private void AppCard_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
@@ -901,31 +934,6 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        private void ScrollViewer_RightTapped(object sender, RightTappedRoutedEventArgs e)
-        {
-            if (e.Handled) return;
-
-            if (sender is FrameworkElement element)
-            {
-                MenuFlyout flyout = new MenuFlyout();
-                var addItem = new MenuFlyoutItem { Text = "Add Section" };
-                addItem.Icon = new FontIcon { Glyph = "\xE710" };
-                addItem.Click += AddCategory_Click;
-                flyout.Items.Add(addItem);
-
-                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
-                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
-                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
-                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255))));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
-
-                flyout.ShowAt(element, e.GetPosition(element));
-                e.Handled = true;
-            }
-        }
-
         private void SaveStartMenuPins()
         {
             var categoryStrings = new List<string>();
@@ -990,6 +998,295 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 Debug.WriteLine("Taskbar pin toggle failed: " + ex.Message);
             }
+        }
+        #endregion
+
+        #region Custom Pointer-Based Drag and Drop Engine
+        private AppItem? _draggedAppItem;
+        private AppCategory? _sourceCategory;
+        private GridView? _sourceGrid;
+
+        private readonly AppItem _placeholderItem = new AppItem { Name = "", FallbackGlyph = "" };
+
+        private FrameworkElement? _dragGhost;
+        private Windows.Foundation.Point _dragStartPoint;
+        private bool _isAppDragging = false;
+
+        private void AppCard_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement card && !_isAppDragging)
+            {
+                var app = card.Tag as AppItem ?? card.DataContext as AppItem;
+                if (app != null && app != _placeholderItem)
+                {
+                    FactoryAnimation.AnimateCardScale(card, 1.05);
+                }
+            }
+        }
+
+        private void AppCard_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement card)
+            {
+                var app = card.Tag as AppItem ?? card.DataContext as AppItem;
+                if (app != null && app != _placeholderItem)
+                {
+                    FactoryAnimation.AnimateCardScale(card, 1.0);
+                }
+            }
+        }
+
+        private void AppCard_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element)
+            {
+                var app = element.Tag as AppItem ?? element.DataContext as AppItem;
+                if (app == null || app == _placeholderItem) return;
+
+                _sourceGrid = FindVisualParent<GridView>(element);
+
+                if (_sourceGrid == null || _sourceGrid == SearchAndAllAppsGrid || _sourceGrid.Name == "RecentDocsGrid")
+                    return;
+
+                _draggedAppItem = app;
+                _sourceCategory = _sourceGrid.DataContext as AppCategory;
+
+                if (_sourceCategory == null)
+                    _sourceCategory = PinnedCategories.FirstOrDefault(c => c.Apps.Contains(app));
+
+                _dragStartPoint = e.GetCurrentPoint(MenuContainer).Position;
+                _isAppDragging = false;
+
+                MenuContainer.CapturePointer(e.Pointer);
+                e.Handled = true;
+            }
+        }
+
+        private void MenuContainer_PointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            if (_draggedAppItem == null || _sourceCategory == null) return;
+
+            var pt = e.GetCurrentPoint(MenuContainer).Position;
+
+            if (!_isAppDragging)
+            {
+                if (Math.Abs(pt.X - _dragStartPoint.X) > 4 || Math.Abs(pt.Y - _dragStartPoint.Y) > 4)
+                {
+                    _isAppDragging = true;
+                    CreateDragGhost();
+
+                    int idx = _sourceCategory.Apps.IndexOf(_draggedAppItem);
+                    if (idx != -1)
+                    {
+                        _sourceCategory.Apps[idx] = _placeholderItem;
+                    }
+                }
+            }
+
+            if (_isAppDragging && _dragGhost != null)
+            {
+                Canvas.SetLeft(_dragGhost, pt.X - 40);
+                Canvas.SetTop(_dragGhost, pt.Y - 48);
+
+                var (targetGrid, targetCategory, targetIndex) = GetHoveredDropTarget(pt);
+
+                if (targetGrid != null && targetCategory != null)
+                {
+                    var currentCategory = PinnedCategories.FirstOrDefault(c => c.Apps.Contains(_placeholderItem)) ?? _sourceCategory;
+                    int currentIndex = currentCategory.Apps.IndexOf(_placeholderItem);
+
+                    if (currentCategory != targetCategory || currentIndex != targetIndex)
+                    {
+                        currentCategory.Apps.Remove(_placeholderItem);
+
+                        if (targetIndex > targetCategory.Apps.Count)
+                            targetIndex = targetCategory.Apps.Count;
+
+                        if (targetIndex < 0)
+                            targetIndex = 0;
+
+                        targetCategory.Apps.Insert(targetIndex, _placeholderItem);
+                    }
+                }
+            }
+        }
+
+        private void MenuContainer_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            if (_draggedAppItem != null)
+            {
+                MenuContainer.ReleasePointerCapture(e.Pointer);
+
+                if (_isAppDragging)
+                {
+                    if (_dragGhost != null)
+                    {
+                        DragCanvas.Children.Remove(_dragGhost);
+                        _dragGhost = null;
+                    }
+
+                    var finalCategory = PinnedCategories.FirstOrDefault(c => c.Apps.Contains(_placeholderItem));
+                    if (finalCategory != null)
+                    {
+                        int idx = finalCategory.Apps.IndexOf(_placeholderItem);
+                        finalCategory.Apps[idx] = _draggedAppItem;
+                    }
+                    else
+                    {
+                        _sourceCategory?.Apps.Add(_draggedAppItem);
+                    }
+
+                    SaveStartMenuPins();
+                }
+                else
+                {
+                    LaunchApp(_draggedAppItem, false);
+                }
+
+                _draggedAppItem = null;
+                _sourceCategory = null;
+                _sourceGrid = null;
+                _isAppDragging = false;
+            }
+        }
+
+        private (GridView? grid, AppCategory? category, int index) GetHoveredDropTarget(Windows.Foundation.Point pointerPos)
+        {
+            foreach (var grid in GetAllCategoryGrids())
+            {
+                var transform = grid.TransformToVisual(MenuContainer);
+                var bounds = transform.TransformBounds(new Windows.Foundation.Rect(0, 0, grid.ActualWidth, grid.ActualHeight));
+
+                bounds.X -= 10; bounds.Y -= 10; bounds.Width += 20; bounds.Height += 40;
+
+                if (bounds.Contains(pointerPos))
+                {
+                    int index = grid.Items.Count;
+                    double closestDist = double.MaxValue;
+
+                    for (int i = 0; i < grid.Items.Count; i++)
+                    {
+                        var item = grid.Items[i] as AppItem;
+                        if (item == _placeholderItem) continue;
+
+                        if (grid.ContainerFromIndex(i) is FrameworkElement itemContainer)
+                        {
+                            var itemTransform = itemContainer.TransformToVisual(MenuContainer);
+                            var itemBounds = itemTransform.TransformBounds(new Windows.Foundation.Rect(0, 0, itemContainer.ActualWidth, itemContainer.ActualHeight));
+
+                            var centerX = itemBounds.X + (itemBounds.Width / 2);
+                            var centerY = itemBounds.Y + (itemBounds.Height / 2);
+
+                            double dist = Math.Pow(pointerPos.X - centerX, 2) + Math.Pow(pointerPos.Y - centerY, 2);
+                            if (dist < closestDist)
+                            {
+                                closestDist = dist;
+                                index = pointerPos.X < centerX ? i : i + 1;
+                            }
+                        }
+                    }
+
+                    var cat = grid.DataContext as AppCategory;
+                    if (cat == null)
+                    {
+                        if (grid.Name == "ProductivityAppsGrid" && PinnedCategories.Count > 0) cat = PinnedCategories[0];
+                        else if (grid.Name == "SecondaryAppsGrid" && PinnedCategories.Count > 1) cat = PinnedCategories[1];
+                    }
+
+                    return (grid, cat, index);
+                }
+            }
+            return (null, null, -1);
+        }
+
+        private void CreateDragGhost()
+        {
+            if (_draggedAppItem == null) return;
+
+            var panel = new StackPanel
+            {
+                Width = 80,
+                Height = 96,
+                Spacing = 4,
+                Padding = new Thickness(4, 8, 4, 8),
+                CornerRadius = new CornerRadius(8),
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(120, 200, 200, 200)) // Tinted visual ghost
+            };
+
+            // Account for Enum check
+            if (_draggedAppItem.HasIcon == Visibility.Visible)
+            {
+                panel.Children.Add(new Image
+                {
+                    Source = _draggedAppItem.IconSource,
+                    Width = 32,
+                    Height = 32,
+                    Stretch = Stretch.Uniform,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                });
+            }
+            else
+            {
+                panel.Children.Add(new FontIcon
+                {
+                    Glyph = _draggedAppItem.FallbackGlyph,
+                    FontSize = 32,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                });
+            }
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = _draggedAppItem.Name,
+                FontSize = 12,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                MaxLines = 2
+            });
+
+            _dragGhost = panel;
+            DragCanvas.Children.Add(_dragGhost);
+        }
+
+        private IEnumerable<GridView> GetAllCategoryGrids()
+        {
+            if (ProductivityAppsGrid != null) yield return ProductivityAppsGrid;
+            if (SecondaryAppsGrid != null) yield return SecondaryAppsGrid;
+
+            if (PinnedCategoriesControl != null)
+            {
+                for (int i = 0; i < PinnedCategoriesControl.Items.Count; i++)
+                {
+                    if (PinnedCategoriesControl.ContainerFromIndex(i) as FrameworkElement is FrameworkElement container)
+                    {
+                        var gv = FindVisualChild<GridView>(container);
+                        if (gv != null) yield return gv;
+                    }
+                }
+            }
+        }
+
+        private T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) return t;
+                var result = FindVisualChild<T>(child);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
+        private T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
+        {
+            if (child == null) return null;
+            var parent = VisualTreeHelper.GetParent(child);
+            if (parent == null) return null;
+            if (parent is T t) return t;
+            return FindVisualParent<T>(parent);
         }
         #endregion
 

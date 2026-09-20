@@ -513,6 +513,51 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             sbIn.Begin();
         }
 
+        internal static void AnimateCardScale(FrameworkElement element, double targetScale)
+        {
+            FrameworkElement targetElement = element;
+
+            if (element is Border border && border.Child is FrameworkElement child)
+            {
+                targetElement = child;
+            }
+            else if (element is ContentControl contentControl && contentControl.Content is FrameworkElement content)
+            {
+                targetElement = content;
+            }
+
+            targetElement.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
+
+            if (targetElement.RenderTransform is not CompositeTransform transform)
+            {
+                transform = new CompositeTransform();
+                targetElement.RenderTransform = transform;
+            }
+
+            var storyboard = new Storyboard();
+
+            var animX = new DoubleAnimation
+            {
+                To = targetScale,
+                Duration = new Duration(TimeSpan.FromMilliseconds(150))
+            };
+            var animY = new DoubleAnimation
+            {
+                To = targetScale,
+                Duration = new Duration(TimeSpan.FromMilliseconds(150))
+            };
+
+            Storyboard.SetTarget(animX, transform);
+            Storyboard.SetTargetProperty(animX, "ScaleX");
+
+            Storyboard.SetTarget(animY, transform);
+            Storyboard.SetTargetProperty(animY, "ScaleY");
+
+            storyboard.Children.Add(animX);
+            storyboard.Children.Add(animY);
+            storyboard.Begin();
+        }
+
         #endregion
     }
 }
