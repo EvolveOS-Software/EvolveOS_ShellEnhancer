@@ -379,6 +379,22 @@ namespace EvolveOS_ShellEnhancer
                         }
                         break;
 
+                    case "Taskbar_Length":
+                        if (int.TryParse(value, out int length))
+                        {
+                            CustomTaskbarWindow.TaskbarLength = length;
+                            TaskbarManager.ResizeAll();
+                        }
+                        break;
+
+                    case "Taskbar_CornerRadius":
+                        if (int.TryParse(value, out int radius))
+                        {
+                            CustomTaskbarWindow.TaskbarCornerRadius = radius;
+                            TaskbarManager.ReloadAll();
+                        }
+                        break;
+
                     case "Taskbar_IconSize":
                         if (int.TryParse(value, out int iSize))
                         {

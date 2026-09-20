@@ -96,6 +96,12 @@ namespace EvolveOS_ShellEnhancer.Views
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
 
+        [DllImport("gdi32.dll")]
+        private static extern IntPtr CreateRoundRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidthEllipse, int nHeightEllipse);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
+
         private const uint WM_SETTINGCHANGE = 0x001A;
         private const uint SMTO_ABORTIFHUNG = 0x0002;
         private static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
@@ -185,6 +191,24 @@ namespace EvolveOS_ShellEnhancer.Views
         public static int TaskbarSize { get; set; } = 48;
         public static int TaskbarIconSize { get; set; } = 24;
 
+        private static int _taskbarLength = 100;
+        public static int TaskbarLength
+        {
+            get => _taskbarLength;
+            set => _taskbarLength = Math.Clamp(value, 50, 100);
+        }
+
+        private static int _taskbarCornerRadius = 8;
+        public static int TaskbarCornerRadius
+        {
+            get => _taskbarCornerRadius;
+            set => _taskbarCornerRadius = Math.Clamp(value, 0, 8);
+        }
+
+        private DispatcherTimer _resizeDebounceTimer = new DispatcherTimer();
+        private int _lastW = 0;
+        private int _lastH = 0;
+
         private static double _previewDelay = 0.5;
         public static double PreviewDelay
         {
@@ -260,6 +284,16 @@ namespace EvolveOS_ShellEnhancer.Views
                 _pendingPreviewAction?.Invoke();
             };
 
+            _resizeDebounceTimer.Interval = TimeSpan.FromMilliseconds(150);
+            _resizeDebounceTimer.Tick += (s, e) =>
+            {
+                _resizeDebounceTimer.Stop();
+
+                ShowDock();
+
+                FadeContent(1.0, 450);
+            };
+
             _clockTimer = new DispatcherTimer();
             _clockTimer.Interval = TimeSpan.FromSeconds(1);
             _clockTimer.Tick += ClockTimer_Tick;
@@ -281,7 +315,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 rootElement.Loaded += (s, e) =>
                 {
-                    SetAlignment(TaskbarManager.CurrentAlignment);
+                    SetAlignment(TaskbarManager.CurrentAlignment, animate: false);
                 };
             }
 
@@ -1447,40 +1481,71 @@ namespace EvolveOS_ShellEnhancer.Views
 
         #region Dock Visibility
 
+        private void FadeContent(double targetOpacity, int durationMs)
+        {
+            if (durationMs <= 0)
+            {
+                if (LeftPanel != null) LeftPanel.Opacity = targetOpacity;
+                if (CenterPanel != null) CenterPanel.Opacity = targetOpacity;
+                if (RightPanel != null) RightPanel.Opacity = targetOpacity;
+                return;
+            }
+
+            if (LeftPanel != null) FadeElement(LeftPanel, targetOpacity, durationMs);
+            if (CenterPanel != null) FadeElement(CenterPanel, targetOpacity, durationMs);
+            if (RightPanel != null) FadeElement(RightPanel, targetOpacity, durationMs);
+        }
+
+        private void FadeElement(UIElement element, double targetOpacity, int durationMs)
+        {
+            if (element == null) return;
+            var storyboard = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
+            var animation = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimation
+            {
+                To = targetOpacity,
+                Duration = new Duration(TimeSpan.FromMilliseconds(durationMs)),
+                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseInOut }
+            };
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animation, element);
+            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(animation, "Opacity");
+            storyboard.Children.Add(animation);
+            storyboard.Begin();
+        }
+
         public void ShowDock()
         {
             try
             {
-                Win32Helper.HideNativeTaskbar();
-
-                try
+                if (!_isAppBarRegistered)
                 {
-                    using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
+                    Win32Helper.HideNativeTaskbar();
+
+                    try
                     {
-                        if (key != null)
+                        using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
                         {
-                            object? val = key.GetValue("MMTaskbarEnabled");
-                            if (val == null || (int)val != 0)
+                            if (key != null)
                             {
-                                key.SetValue("MMTaskbarEnabled", 0, RegistryValueKind.DWord);
-                                SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings", SMTO_ABORTIFHUNG, 1000, out _);
+                                object? val = key.GetValue("MMTaskbarEnabled");
+                                if (val == null || (int)val != 0)
+                                {
+                                    key.SetValue("MMTaskbarEnabled", 0, RegistryValueKind.DWord);
+                                    SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings", SMTO_ABORTIFHUNG, 100, out _);
+                                }
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Registry override failed: {ex.Message}");
-                }
+                    catch (Exception ex) { Debug.WriteLine($"Registry override failed: {ex.Message}"); }
 
-                IntPtr nativeTray = FindWindow("Shell_TrayWnd", null);
-                if (nativeTray != IntPtr.Zero)
-                {
-                    APPBARDATA abdNative = new APPBARDATA();
-                    abdNative.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
-                    abdNative.hWnd = nativeTray;
-                    abdNative.lParam = 3;
-                    SHAppBarMessage(0x000A, ref abdNative);
+                    IntPtr nativeTray = FindWindow("Shell_TrayWnd", null);
+                    if (nativeTray != IntPtr.Zero)
+                    {
+                        APPBARDATA abdNative = new APPBARDATA();
+                        abdNative.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                        abdNative.hWnd = nativeTray;
+                        abdNative.lParam = 3;
+                        SHAppBarMessage(0x000A, ref abdNative);
+                    }
                 }
 
                 int screenX = MonitorArea!.OuterBounds.X;
@@ -1503,114 +1568,130 @@ namespace EvolveOS_ShellEnhancer.Views
                     case "Bottom": default: edge = ABE_BOTTOM; break;
                 }
 
+                int minLengthPx = 300;
+                int percentage = TaskbarLength <= 0 ? 100 : TaskbarLength;
+
+                int targetWidth = (int)((screenWidth - (margin * 2)) * (percentage / 100.0f));
+                int finalWidth = Math.Clamp(targetWidth, minLengthPx, screenWidth - (margin * 2));
+                int offsetX = (screenWidth - finalWidth) / 2;
+
+                int targetHeight = (int)((screenHeight - (margin * 2)) * (percentage / 100.0f));
+                int finalHeight = Math.Clamp(targetHeight, minLengthPx, screenHeight - (margin * 2));
+                int offsetY = (screenHeight - finalHeight) / 2;
+
                 switch (edge)
                 {
                     case ABE_TOP:
-                        w = screenWidth - (margin * 2); h = taskbarSize;
-                        x = screenX + margin; y = screenY + margin;
+                        w = finalWidth; h = taskbarSize;
+                        x = screenX + offsetX; y = screenY + margin;
                         break;
                     case ABE_LEFT:
-                        w = taskbarSize; h = screenHeight - (margin * 2);
-                        x = screenX + margin; y = screenY + margin;
+                        w = taskbarSize; h = finalHeight;
+                        x = screenX + margin; y = screenY + offsetY;
                         break;
                     case ABE_RIGHT:
-                        w = taskbarSize; h = screenHeight - (margin * 2);
-                        x = screenX + screenWidth - taskbarSize - margin; y = screenY + margin;
+                        w = taskbarSize; h = finalHeight;
+                        x = screenX + screenWidth - taskbarSize - margin; y = screenY + offsetY;
                         break;
                     case ABE_BOTTOM:
                     default:
-                        w = screenWidth - (margin * 2); h = taskbarSize;
-                        x = screenX + margin; y = screenY + screenHeight - taskbarSize - margin;
+                        w = finalWidth; h = taskbarSize;
+                        x = screenX + offsetX; y = screenY + screenHeight - taskbarSize - margin;
                         break;
                 }
 
                 if (w < 10) w = 10;
                 if (h < 10) h = 10;
 
-                if (_isAppBarRegistered)
+                bool isResizing = (_lastW != 0 && _lastH != 0) && (_lastW != w || _lastH != h);
+                if (isResizing)
                 {
-                    APPBARDATA abdRemove = new APPBARDATA();
-                    abdRemove.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
-                    abdRemove.hWnd = _hWnd;
-                    SHAppBarMessage(ABM_REMOVE, ref abdRemove);
-                    _isAppBarRegistered = false;
+                    FadeContent(0.0, 0);
+                    _resizeDebounceTimer.Stop();
+                    _resizeDebounceTimer.Start();
                 }
 
-                _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
-                _appWindow.Show();
-                SetWindowPos(_hWnd, IntPtr.Zero, x, y, w, h, 0x0040);
-
-                APPBARDATA abd = new APPBARDATA();
-                abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
-                abd.hWnd = _hWnd;
-                abd.uCallbackMessage = (uint)(0x0400 + (_appWindow.Id.Value & 0xFFFF));
-                abd.uEdge = edge;
-
-                SHAppBarMessage(ABM_NEW, ref abd);
-                _isAppBarRegistered = true;
-
-                abd.rc.Left = screenX + 1;
-                abd.rc.Top = screenY + 1;
-                abd.rc.Right = screenX + screenWidth - 1;
-                abd.rc.Bottom = screenY + screenHeight - 1;
-
-                switch (edge)
-                {
-                    case ABE_TOP: abd.rc.Bottom = abd.rc.Top + reservedSpace; break;
-                    case ABE_LEFT: abd.rc.Right = abd.rc.Left + reservedSpace; break;
-                    case ABE_RIGHT: abd.rc.Left = abd.rc.Right - reservedSpace; break;
-                    case ABE_BOTTOM: default: abd.rc.Top = abd.rc.Bottom - reservedSpace; break;
-                }
-
-                SHAppBarMessage(ABM_QUERYPOS, ref abd);
-
-                switch (edge)
-                {
-                    case ABE_TOP:
-                        abd.rc.Top = screenY;
-                        abd.rc.Bottom = screenY + reservedSpace;
-                        abd.rc.Left = screenX;
-                        abd.rc.Right = screenX + screenWidth;
-                        break;
-                    case ABE_BOTTOM:
-                        abd.rc.Top = screenY + screenHeight - reservedSpace;
-                        abd.rc.Bottom = screenY + screenHeight;
-                        abd.rc.Left = screenX;
-                        abd.rc.Right = screenX + screenWidth;
-                        break;
-                    case ABE_LEFT:
-                        abd.rc.Left = screenX;
-                        abd.rc.Right = screenX + reservedSpace;
-                        abd.rc.Top = screenY;
-                        abd.rc.Bottom = screenY + screenHeight;
-                        break;
-                    case ABE_RIGHT:
-                        abd.rc.Left = screenX + screenWidth - reservedSpace;
-                        abd.rc.Right = screenX + screenWidth;
-                        abd.rc.Top = screenY;
-                        abd.rc.Bottom = screenY + screenHeight;
-                        break;
-                }
-
-                SHAppBarMessage(ABM_SETPOS, ref abd);
+                _lastW = w;
+                _lastH = h;
 
                 if (_currentStyle == "Floating")
                 {
-                    Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
-                    TaskbarBorder.CornerRadius = new CornerRadius(4);
+                    if (TaskbarCornerRadius <= 4)
+                    {
+                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
+                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(TaskbarCornerRadius);
+                    }
+                    else
+                    {
+                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUND);
+                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(TaskbarCornerRadius);
+                    }
                 }
                 else
                 {
                     Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_DONOTROUND);
-                    TaskbarBorder.CornerRadius = new CornerRadius(0);
+                    if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(0);
                 }
 
                 _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
-                SetWindowPos(_hWnd, new IntPtr(-1), x, y, w, h, 0x0040 | 0x0010);
+                _appWindow.Show();
+                SetWindowPos(_hWnd, new IntPtr(-1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040);
                 TaskbarOverlayManager.EnsureTopmost(_hWnd);
 
+                if (!isResizing)
+                {
+                    APPBARDATA abd = new APPBARDATA();
+                    abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+                    abd.hWnd = _hWnd;
+                    abd.uCallbackMessage = (uint)(0x0400 + (_appWindow.Id.Value & 0xFFFF));
+                    abd.uEdge = edge;
+
+                    if (!_isAppBarRegistered)
+                    {
+                        SHAppBarMessage(ABM_NEW, ref abd);
+                        _isAppBarRegistered = true;
+                    }
+
+                    abd.rc.Left = screenX + 1;
+                    abd.rc.Top = screenY + 1;
+                    abd.rc.Right = screenX + screenWidth - 1;
+                    abd.rc.Bottom = screenY + screenHeight - 1;
+
+                    switch (edge)
+                    {
+                        case ABE_TOP: abd.rc.Bottom = abd.rc.Top + reservedSpace; break;
+                        case ABE_LEFT: abd.rc.Right = abd.rc.Left + reservedSpace; break;
+                        case ABE_RIGHT: abd.rc.Left = abd.rc.Right - reservedSpace; break;
+                        case ABE_BOTTOM: default: abd.rc.Top = abd.rc.Bottom - reservedSpace; break;
+                    }
+
+                    SHAppBarMessage(ABM_QUERYPOS, ref abd);
+
+                    switch (edge)
+                    {
+                        case ABE_TOP:
+                            abd.rc.Top = screenY; abd.rc.Bottom = screenY + reservedSpace;
+                            abd.rc.Left = screenX; abd.rc.Right = screenX + screenWidth;
+                            break;
+                        case ABE_BOTTOM:
+                            abd.rc.Top = screenY + screenHeight - reservedSpace; abd.rc.Bottom = screenY + screenHeight;
+                            abd.rc.Left = screenX; abd.rc.Right = screenX + screenWidth;
+                            break;
+                        case ABE_LEFT:
+                            abd.rc.Left = screenX; abd.rc.Right = screenX + reservedSpace;
+                            abd.rc.Top = screenY; abd.rc.Bottom = screenY + screenHeight;
+                            break;
+                        case ABE_RIGHT:
+                            abd.rc.Left = screenX + screenWidth - reservedSpace; abd.rc.Right = screenX + screenWidth;
+                            abd.rc.Top = screenY; abd.rc.Bottom = screenY + screenHeight;
+                            break;
+                    }
+
+                    SHAppBarMessage(ABM_SETPOS, ref abd);
+                }
+
                 string savedAlignment = TaskbarManager.CurrentAlignment;
-                SetAlignment(savedAlignment);
+                SetAlignment(savedAlignment, animate: false);
             }
             catch (Exception ex)
             {
@@ -1902,12 +1983,19 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        public void SetAlignment(string alignment)
+        public void SetAlignment(string alignment, bool animate = true)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(alignment)) alignment = "Center";
                 alignment = alignment.Trim();
+
+                Panel targetPanel = alignment.Equals("Left", StringComparison.OrdinalIgnoreCase) ? LeftPanel! : CenterPanel!;
+
+                if (BtnStart.Parent == targetPanel && PinnedAppsPanel.Parent == targetPanel)
+                {
+                    return;
+                }
 
                 bool isMoving = false;
                 bool canAnimate = false;
@@ -1922,7 +2010,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                     canAnimate = isMoving && rootElement != null && BtnStart.IsLoaded;
 
-                    if (canAnimate && rootElement != null)
+                    if (canAnimate && rootElement != null && animate)
                     {
                         btnPointBefore = BtnStart.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
                         panelPointBefore = PinnedAppsPanel.TransformToVisual(rootElement).TransformPoint(new Point(0, 0));
@@ -1963,7 +2051,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
                 }
 
-                if (canAnimate && rootElement != null)
+                if (canAnimate && animate && rootElement != null)
                 {
                     rootElement.UpdateLayout();
 
