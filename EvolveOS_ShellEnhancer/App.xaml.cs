@@ -116,6 +116,10 @@ namespace EvolveOS_ShellEnhancer
                 Debug.WriteLine($"[Self-Start] Failed to pre-load static settings: {ex.Message}");
             }
 
+            CustomStartMenuWindow.ShowPowerSleep = SettingsEngine.Shell_StartMenuPowerSleep;
+            CustomStartMenuWindow.ShowPowerRestartBios = SettingsEngine.Shell_StartMenuPowerRestartBios;
+            CustomStartMenuWindow.ShowPowerLogOff = SettingsEngine.Shell_StartMenuPowerLogOff;
+
             _startMenuWindow = new CustomStartMenuWindow();
 
             _startMenuWindow.SetStyle(SettingsEngine.Shell_StartMenuStyle);
@@ -363,6 +367,21 @@ namespace EvolveOS_ShellEnhancer
 
                     case "StartMenu_ProfileClick":
                         SettingsEngine.Shell_StartMenuProfileClick = bool.Parse(value);
+                        break;
+
+                    case "StartMenu_PowerRestartBios":
+                        SettingsEngine.Shell_StartMenuPowerRestartBios = bool.Parse(value);
+                        CustomStartMenuWindow.ShowPowerRestartBios = SettingsEngine.Shell_StartMenuPowerRestartBios;
+                        break;
+
+                    case "StartMenu_PowerLogOff":
+                        SettingsEngine.Shell_StartMenuPowerLogOff = bool.Parse(value);
+                        CustomStartMenuWindow.ShowPowerLogOff = SettingsEngine.Shell_StartMenuPowerLogOff;
+                        break;
+
+                    case "StartMenu_PowerSleep":
+                        SettingsEngine.Shell_StartMenuPowerSleep = bool.Parse(value);
+                        CustomStartMenuWindow.ShowPowerSleep = SettingsEngine.Shell_StartMenuPowerSleep;
                         break;
 
                     case "Taskbar_Enable":

@@ -62,6 +62,8 @@
     <sys:String x:Key="StartMenu_PowerSleep">Energie sparen</sys:String>
     <sys:String x:Key="StartMenu_PowerShutdown">Herunterfahren</sys:String>
     <sys:String x:Key="StartMenu_PowerRestart">Neu starten</sys:String>
+    <sys:String x:Key="StartMenu_PowerLogOff">Abmelden</sys:String>
+    <sys:String x:Key="StartMenu_PowerRestartBios">Neustart ins BIOS</sys:String>
     <sys:String x:Key="StartMenu_ActionOpen">Öffnen</sys:String>
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Als Administrator ausführen</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Dateipfad öffnen</sys:String>

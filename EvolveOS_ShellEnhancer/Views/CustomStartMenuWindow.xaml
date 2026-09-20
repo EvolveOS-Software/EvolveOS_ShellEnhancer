@@ -158,7 +158,7 @@
                                         </Button>
                                     </StackPanel>
 
-                                    <!-- Power Options -->
+                                    <!-- Power Options 1 -->
                                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
                                         <DropDownButton Background="Transparent" BorderThickness="0">
                                             <DropDownButton.Content>
@@ -166,9 +166,19 @@
                                             </DropDownButton.Content>
                                             <DropDownButton.Flyout>
                                                 <MenuFlyout>
-                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerSleep}" Click="PowerSleep_Click">
+                                                    <MenuFlyoutItem x:Name="PowerItemSleep1" Text="{helpers:ResourceString Key=StartMenu_PowerSleep}" Click="PowerSleep_Click">
                                                         <MenuFlyoutItem.Icon>
                                                             <FontIcon Glyph="&#xE708;"/>
+                                                        </MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutItem x:Name="PowerItemLogOff1" Text="{helpers:ResourceString Key=StartMenu_PowerLogOff}" Click="PowerLogOff_Click">
+                                                        <MenuFlyoutItem.Icon>
+                                                            <FontIcon Glyph="&#xE77B;"/>
+                                                        </MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutItem x:Name="PowerItemRestartBios1" Text="{helpers:ResourceString Key=StartMenu_PowerRestartBios}" Click="PowerRestartBios_Click">
+                                                        <MenuFlyoutItem.Icon>
+                                                            <FontIcon Glyph="&#xE9A1;"/>
                                                         </MenuFlyoutItem.Icon>
                                                     </MenuFlyoutItem>
                                                     <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerShutdown}" Click="PowerShutdown_Click">
@@ -392,7 +402,7 @@
                                         </Button>
                                     </StackPanel>
 
-                                    <!-- Power Options -->
+                                    <!-- Power Options 2 -->
                                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
                                         <DropDownButton Background="Transparent" BorderThickness="0">
                                             <DropDownButton.Content>
@@ -400,9 +410,19 @@
                                             </DropDownButton.Content>
                                             <DropDownButton.Flyout>
                                                 <MenuFlyout>
-                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerSleep}" Click="PowerSleep_Click">
+                                                    <MenuFlyoutItem x:Name="PowerItemSleep2" Text="{helpers:ResourceString Key=StartMenu_PowerSleep}" Click="PowerSleep_Click">
                                                         <MenuFlyoutItem.Icon>
                                                             <FontIcon Glyph="&#xE708;"/>
+                                                        </MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutItem x:Name="PowerItemLogOff2" Text="{helpers:ResourceString Key=StartMenu_PowerLogOff}" Click="PowerLogOff_Click">
+                                                        <MenuFlyoutItem.Icon>
+                                                            <FontIcon Glyph="&#xE77B;"/>
+                                                        </MenuFlyoutItem.Icon>
+                                                    </MenuFlyoutItem>
+                                                    <MenuFlyoutItem x:Name="PowerItemRestartBios2" Text="{helpers:ResourceString Key=StartMenu_PowerRestartBios}" Click="PowerRestartBios_Click">
+                                                        <MenuFlyoutItem.Icon>
+                                                            <FontIcon Glyph="&#xE9A1;"/>
                                                         </MenuFlyoutItem.Icon>
                                                     </MenuFlyoutItem>
                                                     <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_PowerShutdown}" Click="PowerShutdown_Click">

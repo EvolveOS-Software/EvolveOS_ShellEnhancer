@@ -60,6 +60,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             ["Shell_TaskbarIconSize"] = 24,
             ["Shell_TaskbarPreviewDelay"] = 0.5,
             ["Shell_StartMenuProfileClick"] = true,
+
+            ["Shell_StartMenuPowerSleep"] = true,
+            ["Shell_StartMenuPowerRestartBios"] = false,
+            ["Shell_StartMenuPowerLogOff"] = false
             #endregion
         };
 
@@ -95,6 +99,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static int Shell_TaskbarIconSize { get => (int)_cachedSettings["Shell_TaskbarIconSize"]; set => ChangingParameters("Shell_TaskbarIconSize", value); }
         internal static double Shell_TaskbarPreviewDelay { get => Convert.ToDouble(_cachedSettings["Shell_TaskbarPreviewDelay"]); set => ChangingParameters("Shell_TaskbarPreviewDelay", value); }
         internal static bool Shell_StartMenuProfileClick { get => (bool)_cachedSettings["Shell_StartMenuProfileClick"]; set => ChangingParameters("Shell_StartMenuProfileClick", value); }
+        internal static bool Shell_StartMenuPowerSleep { get => (bool)_cachedSettings["Shell_StartMenuPowerSleep"]; set => ChangingParameters("Shell_StartMenuPowerSleep", value); }
+        internal static bool Shell_StartMenuPowerRestartBios { get => (bool)_cachedSettings["Shell_StartMenuPowerRestartBios"]; set => ChangingParameters("Shell_StartMenuPowerRestartBios", value); }
+        internal static bool Shell_StartMenuPowerLogOff { get => (bool)_cachedSettings["Shell_StartMenuPowerLogOff"]; set => ChangingParameters("Shell_StartMenuPowerLogOff", value); }
         #endregion
 
         #region Registry Engine

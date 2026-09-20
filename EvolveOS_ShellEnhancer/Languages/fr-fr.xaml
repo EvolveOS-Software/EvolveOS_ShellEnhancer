@@ -62,6 +62,9 @@
     <sys:String x:Key="StartMenu_PowerSleep">Mettre en veille</sys:String>
     <sys:String x:Key="StartMenu_PowerShutdown">Arrêter</sys:String>
     <sys:String x:Key="StartMenu_PowerRestart">Redémarrer</sys:String>
+    <sys:String x:Key="StartMenu_PowerSleep">Mettre en veille</sys:String>
+    <sys:String x:Key="StartMenu_PowerLogOff">Se déconnecter</sys:String>
+    <sys:String x:Key="StartMenu_PowerRestartBios">Redémarrer vers le BIOS</sys:String>
     <sys:String x:Key="StartMenu_ActionOpen">Ouvrir</sys:String>
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Exécuter en tant qu'administrateur</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Ouvrir l'emplacement du fichier</sys:String>

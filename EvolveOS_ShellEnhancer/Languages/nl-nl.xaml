@@ -62,6 +62,8 @@
     <sys:String x:Key="StartMenu_PowerSleep">Slaapstand</sys:String>
     <sys:String x:Key="StartMenu_PowerShutdown">Afsluiten</sys:String>
     <sys:String x:Key="StartMenu_PowerRestart">Opnieuw opstarten</sys:String>
+    <sys:String x:Key="StartMenu_PowerLogOff">Afmelden</sys:String>
+    <sys:String x:Key="StartMenu_PowerRestartBios">Opnieuw opstarten naar BIOS</sys:String>
     <sys:String x:Key="StartMenu_ActionOpen">Openen</sys:String>
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Als administrator uitvoeren</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Bestandslocatie openen</sys:String>

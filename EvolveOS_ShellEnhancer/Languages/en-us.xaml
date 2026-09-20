@@ -62,6 +62,8 @@
     <sys:String x:Key="StartMenu_PowerSleep">Sleep</sys:String>
     <sys:String x:Key="StartMenu_PowerShutdown">Shut down</sys:String>
     <sys:String x:Key="StartMenu_PowerRestart">Restart</sys:String>
+    <sys:String x:Key="StartMenu_PowerLogOff">Log off</sys:String>
+    <sys:String x:Key="StartMenu_PowerRestartBios">Restart to BIOS</sys:String>
     <sys:String x:Key="StartMenu_ActionOpen">Open</sys:String>
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Run as administrator</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Open file location</sys:String>

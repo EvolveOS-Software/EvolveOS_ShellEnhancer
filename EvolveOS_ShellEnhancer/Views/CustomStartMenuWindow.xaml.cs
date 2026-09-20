@@ -42,7 +42,7 @@ namespace EvolveOS_ShellEnhancer.Views
         #region Fields & Properties
         public DisplayArea? TargetDisplayArea { get; set; }
 
-         private readonly AppWindow _appWindow;
+        private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
         private bool _isVisible = false;
         private bool _isDataLoaded = false;
@@ -54,6 +54,10 @@ namespace EvolveOS_ShellEnhancer.Views
         public static bool EnableAnimations { get; set; } = true;
         public static string AnimationStyle { get; set; } = "Standard";
         public static double AnimationSpeed { get; set; } = 1.0;
+
+        public static bool ShowPowerSleep { get; set; } = true;
+        public static bool ShowPowerRestartBios { get; set; } = false;
+        public static bool ShowPowerLogOff { get; set; } = false;
 
         public ObservableCollection<AppItem> PinnedAppsCollection { get; } = new();
         public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
@@ -362,9 +366,27 @@ namespace EvolveOS_ShellEnhancer.Views
             if (_isVisible) ShowMenu();
         }
 
+        private void UpdatePowerMenuVisibility()
+        {
+            var sleepVis = ShowPowerSleep ? Visibility.Visible : Visibility.Collapsed;
+            var biosVis = ShowPowerRestartBios ? Visibility.Visible : Visibility.Collapsed;
+            var logOffVis = ShowPowerLogOff ? Visibility.Visible : Visibility.Collapsed;
+
+            if (PowerItemSleep1 != null) PowerItemSleep1.Visibility = sleepVis;
+            if (PowerItemSleep2 != null) PowerItemSleep2.Visibility = sleepVis;
+
+            if (PowerItemRestartBios1 != null) PowerItemRestartBios1.Visibility = biosVis;
+            if (PowerItemRestartBios2 != null) PowerItemRestartBios2.Visibility = biosVis;
+
+            if (PowerItemLogOff1 != null) PowerItemLogOff1.Visibility = logOffVis;
+            if (PowerItemLogOff2 != null) PowerItemLogOff2.Visibility = logOffVis;
+        }
+
         private void ShowMenu()
         {
             var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+
+            UpdatePowerMenuVisibility();
 
             int windowWidth = 750;
             int windowHeight = 650;
@@ -510,16 +532,31 @@ namespace EvolveOS_ShellEnhancer.Views
         private void PowerShutdown_Click(object sender, RoutedEventArgs e)
         {
             Process.Start(new ProcessStartInfo("shutdown", "/s /t 0") { CreateNoWindow = true });
+            HideMenu();
         }
 
         private void PowerRestart_Click(object sender, RoutedEventArgs e)
         {
             Process.Start(new ProcessStartInfo("shutdown", "/r /t 0") { CreateNoWindow = true });
+            HideMenu();
         }
 
         private void PowerSleep_Click(object sender, RoutedEventArgs e)
         {
             Process.Start(new ProcessStartInfo("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0") { CreateNoWindow = true });
+            HideMenu();
+        }
+
+        private void PowerLogOff_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo("shutdown", "/l") { CreateNoWindow = true });
+            HideMenu();
+        }
+
+        private void PowerRestartBios_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo("shutdown", "/r /fw /t 0") { CreateNoWindow = true });
+            HideMenu();
         }
 
         private async void ActionChangeAccount_Click(object sender, RoutedEventArgs e)
