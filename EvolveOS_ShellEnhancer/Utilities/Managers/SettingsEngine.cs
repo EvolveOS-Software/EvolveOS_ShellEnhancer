@@ -110,6 +110,66 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             }
         }
 
+        internal static bool Taskbar_PreviewButtons
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Taskbar_PreviewButtons") is string val && bool.TryParse(val, out bool result))
+                        return result;
+                }
+                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Taskbar_PreviewButtons Error: {ex.Message}"); }
+                return true;
+            }
+        }
+
+        internal static bool Taskbar_PreviewAnimation
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Taskbar_PreviewAnimation") is string val && bool.TryParse(val, out bool result))
+                        return result;
+                }
+                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Taskbar_PreviewAnimation Error: {ex.Message}"); }
+                return true;
+            }
+        }
+
+        internal static bool Taskbar_ClockSeconds
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Taskbar_ClockSeconds") is string val && bool.TryParse(val, out bool result))
+                        return result;
+                }
+                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Taskbar_ClockSeconds Error: {ex.Message}"); }
+                return false;
+            }
+        }
+
+        internal static bool Taskbar_ShowUnpinned
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    if (key?.GetValue("Taskbar_ShowUnpinned") is string val && bool.TryParse(val, out bool result))
+                        return result;
+                }
+                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Taskbar_ShowUnpinned Error: {ex.Message}"); }
+                return true;
+            }
+        }
+
         internal static bool Taskbar_ShowFoldersAsSubmenus
         {
             get

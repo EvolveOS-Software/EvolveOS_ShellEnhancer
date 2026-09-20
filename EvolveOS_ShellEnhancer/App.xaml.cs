@@ -97,6 +97,23 @@ namespace EvolveOS_ShellEnhancer
             ApplyFontGlobally(SettingsEngine.Shell_AppFont);
             ApplyFontSizeGlobally(SettingsEngine.Shell_AppFontSize);
 
+            try
+            {
+                CustomTaskbarWindow.TaskbarSize = SettingsEngine.Shell_TaskbarSize;
+                CustomTaskbarWindow.TaskbarIconSize = SettingsEngine.Shell_TaskbarIconSize;
+                CustomTaskbarWindow.PreviewDelay = SettingsEngine.Shell_TaskbarPreviewDelay;
+
+                LivePreviewWindow.EnableActionButtons = SettingsEngine.Taskbar_PreviewButtons;
+                LivePreviewWindow.EnableAnimations = SettingsEngine.Taskbar_PreviewAnimation;
+
+                CustomTaskbarWindow.ShowSeconds = SettingsEngine.Taskbar_ClockSeconds;
+                CustomTaskbarWindow.ShowUnpinnedApps = SettingsEngine.Taskbar_ShowUnpinned;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Self-Start] Failed to pre-load static settings: {ex.Message}");
+            }
+
             _startMenuWindow = new CustomStartMenuWindow();
 
             _startMenuWindow.SetStyle(SettingsEngine.Shell_StartMenuStyle);
@@ -159,13 +176,17 @@ namespace EvolveOS_ShellEnhancer
             Application.Current.Resources["AppCustomFont"] = targetFont;
             Application.Current.Resources["ContentControlThemeFontFamily"] = targetFont;
 
-            if (_startMenuWindow != null && _startMenuWindow.Content is FrameworkElement root)
+            if (_startMenuWindow != null && _startMenuWindow.Content is FrameworkElement root && _startMenuWindow.Visible)
             {
                 var currentTheme = root.RequestedTheme;
                 var oppositeTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
 
                 root.RequestedTheme = oppositeTheme;
-                root.RequestedTheme = currentTheme;
+
+                _startMenuWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    root.RequestedTheme = currentTheme;
+                });
             }
 
             if (_isTaskbarEnabled)
@@ -182,7 +203,7 @@ namespace EvolveOS_ShellEnhancer
             Application.Current.Resources["AppFontSizeSmall"] = Math.Max(baseSize - 2, 9.0);   // E.g., 12 (Clamped so it never goes below 9)
             Application.Current.Resources["AppFontSizeTiny"] = Math.Max(baseSize - 4, 8.0);    // E.g., 10
             Application.Current.Resources["AppFontSizeHeader"] = baseSize + 2;                 // E.g., 18
-            Application.Current.Resources["AppFontSizeTitle"] = baseSize + 8;                 // E.g., 24
+            Application.Current.Resources["AppFontSizeTitle"] = baseSize + 8;                  // E.g., 24
 
             Application.Current.Resources["ControlContentThemeFontSize"] = baseSize;
             Application.Current.Resources["BodyTextBlockFontSize"] = baseSize;
@@ -192,13 +213,17 @@ namespace EvolveOS_ShellEnhancer
 
         private void RefreshUITheme()
         {
-            if (_startMenuWindow != null && _startMenuWindow.Content is FrameworkElement root)
+            if (_startMenuWindow != null && _startMenuWindow.Content is FrameworkElement root && _startMenuWindow.Visible)
             {
                 var currentTheme = root.RequestedTheme;
                 var oppositeTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
 
                 root.RequestedTheme = oppositeTheme;
-                root.RequestedTheme = currentTheme;
+
+                _startMenuWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    root.RequestedTheme = currentTheme;
+                });
             }
 
             if (_isTaskbarEnabled)
@@ -286,7 +311,13 @@ namespace EvolveOS_ShellEnhancer
         #region IPC Handling
         private void OnIpcCommandReceived(string command, string value)
         {
-            _startMenuWindow!.DispatcherQueue.TryEnqueue(() =>
+            if (_startMenuWindow == null || _startMenuWindow.DispatcherQueue == null)
+            {
+                Debug.WriteLine($"[IPC] Dropped command {command} - Window not ready.");
+                return;
+            }
+
+            _startMenuWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 switch (command)
                 {

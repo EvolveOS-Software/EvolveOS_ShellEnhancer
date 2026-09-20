@@ -185,7 +185,27 @@ namespace EvolveOS_ShellEnhancer.Views
         public static int TaskbarSize { get; set; } = 48;
         public static int TaskbarIconSize { get; set; } = 24;
 
-        public static double PreviewDelay { get; set; } = 0.5;
+        private static double _previewDelay = 0.5;
+        public static double PreviewDelay
+        {
+            get => _previewDelay;
+            set
+            {
+                if (double.IsNaN(value) || double.IsInfinity(value))
+                {
+                    _previewDelay = 0.5;
+                }
+                else if (value > 100)
+                {
+                    _previewDelay = Math.Clamp(value / 1000.0, 0, 10);
+                }
+                else
+                {
+                    _previewDelay = Math.Clamp(value, 0, 10);
+                }
+            }
+        }
+
         private DispatcherTimer _previewDelayTimer = new DispatcherTimer();
         private Action? _pendingPreviewAction;
 
@@ -1023,11 +1043,15 @@ namespace EvolveOS_ShellEnhancer.Views
 
             MenuFlyout contextFlyout = new MenuFlyout();
 
+            contextFlyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+
             Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
-            flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(220, 20, 20, 20))));
+
+            flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
             flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
             flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
             flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+
             contextFlyout.MenuFlyoutPresenterStyle = flyoutStyle;
 
             var launchItem = new MenuFlyoutItem
