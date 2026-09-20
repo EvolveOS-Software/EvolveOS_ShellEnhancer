@@ -23,11 +23,22 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.IO;
 using EvolveOS_ShellEnhancer.Models;
+using System.Runtime.InteropServices;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
     public sealed partial class CustomStartMenuWindow : Window
     {
+        #region Win32 P/Invoke for TopMost Enforcement
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
+        #endregion
+
         #region Fields & Properties
         public DisplayArea? TargetDisplayArea { get; set; }
 
@@ -78,6 +89,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 presenter.IsMaximizable = false;
                 presenter.IsMinimizable = false;
                 presenter.IsResizable = false;
+                presenter.IsAlwaysOnTop = true;
             }
 
             this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
@@ -194,19 +206,12 @@ namespace EvolveOS_ShellEnhancer.Views
 
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (ProfileName1 != null) ProfileName1.Text = displayName;
-                if (ProfileName2 != null) ProfileName2.Text = displayName;
+                if (UnifiedProfileName != null) UnifiedProfileName.Text = displayName;
 
-                if (ProfilePic1 != null)
+                if (UnifiedProfilePic != null)
                 {
-                    ProfilePic1.DisplayName = displayName;
-                    if (profileImage != null) ProfilePic1.ProfilePicture = profileImage;
-                }
-
-                if (ProfilePic2 != null)
-                {
-                    ProfilePic2.DisplayName = displayName;
-                    if (profileImage != null) ProfilePic2.ProfilePicture = profileImage;
+                    UnifiedProfilePic.DisplayName = displayName;
+                    if (profileImage != null) UnifiedProfilePic.ProfilePicture = profileImage;
                 }
             });
         }
@@ -323,12 +328,6 @@ namespace EvolveOS_ShellEnhancer.Views
             DesignSplitStandard.Visibility = isStandard ? Visibility.Visible : Visibility.Collapsed;
             DesignSplitGrouped.Visibility = isGrouped ? Visibility.Visible : Visibility.Collapsed;
 
-            if (isStandard || isGrouped)
-            {
-                MenuContainer.Width = 750;
-                MenuContainer.Height = 650;
-            }
-
             if (_isVisible) ShowMenu();
         }
 
@@ -336,8 +335,9 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
 
-            int menuWidth = (int)MenuContainer.Width;
-            int menuHeight = (int)MenuContainer.Height;
+            int windowWidth = 750;
+            int windowHeight = 650;
+
             int taskbarOffset = 60;
             int margin = 16;
 
@@ -348,49 +348,55 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 case "Top":
                     y = displayArea.OuterBounds.Y + taskbarOffset;
-                    x = (_currentAlignment == "Center") ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2 : displayArea.OuterBounds.X + margin;
+                    x = (_currentAlignment == "Center") ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - windowWidth) / 2 : displayArea.OuterBounds.X + margin;
                     break;
                 case "Left":
                     x = displayArea.OuterBounds.X + taskbarOffset;
-                    y = (_currentAlignment == "Center") ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - menuHeight) / 2 : displayArea.OuterBounds.Y + margin;
+                    y = (_currentAlignment == "Center") ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - windowHeight) / 2 : displayArea.OuterBounds.Y + margin;
                     break;
                 case "Right":
-                    x = displayArea.OuterBounds.X + displayArea.OuterBounds.Width - menuWidth - taskbarOffset;
-                    y = (_currentAlignment == "Center") ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - menuHeight) / 2 : displayArea.OuterBounds.Y + margin;
+                    x = displayArea.OuterBounds.X + displayArea.OuterBounds.Width - windowWidth - taskbarOffset;
+                    y = (_currentAlignment == "Center") ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - windowHeight) / 2 : displayArea.OuterBounds.Y + margin;
                     break;
                 case "Bottom":
                 default:
-                    y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - menuHeight - taskbarOffset;
-                    x = (_currentAlignment == "Center") ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - menuWidth) / 2 : displayArea.OuterBounds.X + margin;
+                    y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - windowHeight - taskbarOffset;
+                    x = (_currentAlignment == "Center") ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - windowWidth) / 2 : displayArea.OuterBounds.X + margin;
                     break;
             }
+
+            AvatarPopup.IsOpen = true;
 
             if (EnableAnimations)
             {
                 int startX = x, startY = y;
-                if (targetPos == "Top") startY = y - menuHeight - 15;
-                else if (targetPos == "Left") startX = x - menuWidth - 15;
-                else if (targetPos == "Right") startX = x + menuWidth + 15;
-                else startY = y + menuHeight + 15;
+                if (targetPos == "Top") startY = y - windowHeight - 15;
+                else if (targetPos == "Left") startX = x - windowWidth - 15;
+                else if (targetPos == "Right") startX = x + windowWidth + 15;
+                else startY = y + windowHeight + 15;
 
-                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(startX, startY, menuWidth, menuHeight));
+                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(startX, startY, windowWidth, windowHeight));
                 _appWindow.Show();
+
+                SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
                 _isVisible = true;
 
                 TaskbarOverlayManager.EnsureTopmost(_hWnd);
-
                 TaskbarManager.EnsureAllTaskbarsTopmost();
 
                 FactoryAnimation.PlayStartMenuAnimation(
                     _appWindow, AnimationStyle, AnimationSpeed, true,
-                    startX, startY, menuWidth, menuHeight,
-                    x, y, menuWidth, menuHeight,
+                    startX, startY, windowWidth, windowHeight,
+                    x, y, windowWidth, windowHeight,
                     null);
             }
             else
             {
-                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, menuWidth, menuHeight));
+                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, windowWidth, windowHeight));
                 _appWindow.Show();
+                SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+
                 _isVisible = true;
                 TaskbarOverlayManager.EnsureTopmost(_hWnd);
                 TaskbarManager.EnsureAllTaskbarsTopmost();
@@ -429,11 +435,13 @@ namespace EvolveOS_ShellEnhancer.Views
                     () =>
                     {
                         _appWindow.Hide();
+                        AvatarPopup.IsOpen = false;
                     });
             }
             else
             {
                 _appWindow.Hide();
+                AvatarPopup.IsOpen = false;
             }
         }
         #endregion
