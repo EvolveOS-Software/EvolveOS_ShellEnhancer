@@ -208,6 +208,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private DispatcherTimer _resizeDebounceTimer = new DispatcherTimer();
         private int _lastW = 0;
         private int _lastH = 0;
+        private string _lastPosition = "";
 
         private static double _previewDelay = 0.5;
         public static double PreviewDelay
@@ -1603,7 +1604,11 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (w < 10) w = 10;
                 if (h < 10) h = 10;
 
-                bool isResizing = (_lastW != 0 && _lastH != 0) && (_lastW != w || _lastH != h);
+                bool isPositionChange = !string.IsNullOrEmpty(_lastPosition) && _lastPosition != _currentPosition;
+                _lastPosition = _currentPosition;
+
+                bool isResizing = !isPositionChange && (_lastW != 0 && _lastH != 0) && (_lastW != w || _lastH != h);
+
                 if (isResizing)
                 {
                     FadeContent(0.0, 0);
