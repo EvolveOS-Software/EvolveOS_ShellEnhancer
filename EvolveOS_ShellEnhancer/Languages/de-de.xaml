@@ -66,6 +66,11 @@
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Als Administrator ausführen</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Dateipfad öffnen</sys:String>
 
+    <sys:String x:Key="StartMenu_AccountSettings">Kontoeinstellungen</sys:String>
+    <sys:String x:Key="StartMenu_MyAccount">Mein Konto verwalten</sys:String>
+    <sys:String x:Key="StartMenu_Lock">Sperren</sys:String>
+    <sys:String x:Key="StartMenu_SignOut">Abmelden</sys:String>
+
     <!-- Back-end Strings -->
     <sys:String x:Key="StartMenu_BackToPinned">&lt; Zurück zu Angeheftet</sys:String>
     <sys:String x:Key="StartMenu_ContextPinStart">An Start anheften</sys:String>

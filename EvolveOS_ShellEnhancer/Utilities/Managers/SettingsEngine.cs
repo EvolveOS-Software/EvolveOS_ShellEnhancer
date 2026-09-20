@@ -58,7 +58,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             ["Shell_HighPriority"] = false,
             ["Shell_TaskbarSize"] = 48,
             ["Shell_TaskbarIconSize"] = 24,
-            ["Shell_TaskbarPreviewDelay"] = 0.5
+            ["Shell_TaskbarPreviewDelay"] = 0.5,
+            ["Shell_StartMenuProfileClick"] = true,
             #endregion
         };
 
@@ -93,6 +94,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static int Shell_TaskbarSize { get => (int)_cachedSettings["Shell_TaskbarSize"]; set => ChangingParameters("Shell_TaskbarSize", value); }
         internal static int Shell_TaskbarIconSize { get => (int)_cachedSettings["Shell_TaskbarIconSize"]; set => ChangingParameters("Shell_TaskbarIconSize", value); }
         internal static double Shell_TaskbarPreviewDelay { get => Convert.ToDouble(_cachedSettings["Shell_TaskbarPreviewDelay"]); set => ChangingParameters("Shell_TaskbarPreviewDelay", value); }
+        internal static bool Shell_StartMenuProfileClick { get => (bool)_cachedSettings["Shell_StartMenuProfileClick"]; set => ChangingParameters("Shell_StartMenuProfileClick", value); }
         #endregion
 
         #region Registry Engine

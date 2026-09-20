@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using EvolveOS_ShellEnhancer.Utilities.Services;
+using Microsoft.UI;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {

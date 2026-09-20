@@ -66,6 +66,11 @@
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Executar como administrador</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Abrir local do arquivo</sys:String>
 
+    <sys:String x:Key="StartMenu_AccountSettings">Configurações da conta</sys:String>
+    <sys:String x:Key="StartMenu_MyAccount">Gerenciar minha conta</sys:String>
+    <sys:String x:Key="StartMenu_Lock">Bloquear</sys:String>
+    <sys:String x:Key="StartMenu_SignOut">Sair</sys:String>
+
     <!-- Back-end Strings -->
     <sys:String x:Key="StartMenu_BackToPinned">&lt; Voltar para Fixado</sys:String>
     <sys:String x:Key="StartMenu_ContextPinStart">Fixar em Iniciar</sys:String>

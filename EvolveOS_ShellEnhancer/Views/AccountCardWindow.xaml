@@ -1,0 +1,64 @@
+<Window
+    x:Class="EvolveOS_ShellEnhancer.Views.AccountCardWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:helpers="using:EvolveOS_ShellEnhancer.Utilities.Helpers"
+    mc:Ignorable="d">
+
+    <Grid Background="Transparent" Padding="0">
+        <Border BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
+                BorderThickness="1" CornerRadius="12" Padding="16"
+                Background="Transparent">
+
+            <StackPanel Spacing="16">
+                <!-- Top Header: Microsoft Brand & Sign Out -->
+                <Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE77B;" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <TextBlock Text="Microsoft" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                    <Button Content="{helpers:ResourceString Key=StartMenu_SignOut}" Click="ActionSignOut_Click" 
+                            Background="Transparent" BorderThickness="0" FontSize="12" Foreground="{ThemeResource SystemAccentColor}"
+                            HorizontalAlignment="Right" Padding="4,2"/>
+                </Grid>
+
+                <!-- User Info Section -->
+                <StackPanel Spacing="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <PersonPicture x:Name="CardProfilePic" Height="56" Width="56" Margin="0,0,12,0"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock x:Name="CardProfileName" FontWeight="Bold" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="CardAccountType" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="CardProfileEmail" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                            <HyperlinkButton Content="{helpers:ResourceString Key=StartMenu_MyAccount}" Click="ActionManageMyAccount_Click" Padding="0" FontSize="11" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <MenuFlyoutSeparator Background="{ThemeResource CardStrokeColorDefaultBrush}"/>
+
+                <!-- Action Buttons (Lock, Settings) -->
+                <StackPanel Spacing="4">
+                    <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="6" Padding="8,8" Click="ActionLock_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE72E;" FontSize="16"/>
+                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_Lock}" FontSize="13"/>
+                        </StackPanel>
+                    </Button>
+                    <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="6" Padding="8,8" Click="ActionAccountSettings_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE713;" FontSize="16"/>
+                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_AccountSettings}" FontSize="13"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

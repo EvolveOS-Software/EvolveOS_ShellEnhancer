@@ -66,6 +66,11 @@
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Esegui come amministratore</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Apri percorso file</sys:String>
 
+    <sys:String x:Key="StartMenu_AccountSettings">Impostazioni account</sys:String>
+    <sys:String x:Key="StartMenu_MyAccount">Gestisci il mio account</sys:String>
+    <sys:String x:Key="StartMenu_Lock">Blocca</sys:String>
+    <sys:String x:Key="StartMenu_SignOut">Disconnetti</sys:String>
+
     <!-- Back-end Strings -->
     <sys:String x:Key="StartMenu_BackToPinned">&lt; Torna ad Aggiunti</sys:String>
     <sys:String x:Key="StartMenu_ContextPinStart">Aggiungi a Start</sys:String>

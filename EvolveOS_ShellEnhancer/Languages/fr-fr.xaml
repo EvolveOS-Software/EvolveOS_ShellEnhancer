@@ -66,6 +66,11 @@
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Exécuter en tant qu'administrateur</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Ouvrir l'emplacement du fichier</sys:String>
 
+    <sys:String x:Key="StartMenu_AccountSettings">Paramètres du compte</sys:String>
+    <sys:String x:Key="StartMenu_MyAccount">Gérer mon compte</sys:String>
+    <sys:String x:Key="StartMenu_Lock">Verrouiller</sys:String>
+    <sys:String x:Key="StartMenu_SignOut">Se déconnecter</sys:String>
+
     <!-- Back-end Strings -->
     <sys:String x:Key="StartMenu_BackToPinned">&lt; Retour à Épinglé</sys:String>
     <sys:String x:Key="StartMenu_ContextPinStart">Épingler à l'écran de démarrage</sys:String>

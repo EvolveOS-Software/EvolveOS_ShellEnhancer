@@ -66,6 +66,11 @@
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Als administrator uitvoeren</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Bestandslocatie openen</sys:String>
 
+    <sys:String x:Key="StartMenu_AccountSettings">Accountinstellingen</sys:String>
+    <sys:String x:Key="StartMenu_MyAccount">Mijn account beheren</sys:String>
+    <sys:String x:Key="StartMenu_Lock">Vergrendelen</sys:String>
+    <sys:String x:Key="StartMenu_SignOut">Afmelden</sys:String>
+
     <!-- Back-end Strings -->
     <sys:String x:Key="StartMenu_BackToPinned">&lt; Terug naar Vastgemaakt</sys:String>
     <sys:String x:Key="StartMenu_ContextPinStart">Aan Start vastmaken</sys:String>

@@ -42,7 +42,7 @@ namespace EvolveOS_ShellEnhancer.Views
         #region Fields & Properties
         public DisplayArea? TargetDisplayArea { get; set; }
 
-        private readonly AppWindow _appWindow;
+         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
         private bool _isVisible = false;
         private bool _isDataLoaded = false;
@@ -68,6 +68,12 @@ namespace EvolveOS_ShellEnhancer.Views
         private FileSystemWatcher? _userStartMenuWatcher;
         private FileSystemWatcher? _systemStartMenuWatcher;
         private DispatcherTimer? _appRefreshDebounceTimer;
+
+        private AccountCardWindow? _activeAccountCardWindow;
+        private DateTime _lastAccountCardCloseTime = DateTime.MinValue;
+        private string _currentUserEmail = string.Empty;
+        private string _currentAccountType = "Local Account";
+        private bool _ignoreDeactivation = false;
         #endregion
 
         #region Initialization & Data Loading
@@ -174,6 +180,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private async void LoadUserProfile()
         {
             string displayName = Environment.UserName;
+            string userEmail = string.Empty;
             ImageSource? profileImage = null;
 
             try
@@ -187,6 +194,12 @@ namespace EvolveOS_ShellEnhancer.Views
                     if (nameObj != null && !string.IsNullOrWhiteSpace(nameObj.ToString()))
                     {
                         displayName = nameObj.ToString()!;
+                    }
+
+                    var emailObj = await user.GetPropertyAsync(KnownUserProperties.PrincipalName);
+                    if (emailObj != null && !string.IsNullOrWhiteSpace(emailObj.ToString()))
+                    {
+                        userEmail = emailObj.ToString()!;
                     }
 
                     var picStreamRef = await user.GetPictureAsync(UserPictureSize.Size64x64);
@@ -206,12 +219,30 @@ namespace EvolveOS_ShellEnhancer.Views
 
             DispatcherQueue.TryEnqueue(() =>
             {
+                _currentUserEmail = userEmail;
+
+                if (!string.IsNullOrEmpty(userEmail) && userEmail.Contains("@"))
+                {
+                    _currentAccountType = "Microsoft Account";
+                }
+                else
+                {
+                    _currentAccountType = "Local Account";
+                }
+
                 if (UnifiedProfileName != null) UnifiedProfileName.Text = displayName;
 
                 if (UnifiedProfilePic != null)
                 {
                     UnifiedProfilePic.DisplayName = displayName;
                     if (profileImage != null) UnifiedProfilePic.ProfilePicture = profileImage;
+                }
+
+                bool enableProfile = SettingsEngine.Shell_StartMenuProfileClick;
+                if (ProfileButton != null)
+                {
+                    ProfileButton.IsHitTestVisible = enableProfile;
+                    ProfileButton.IsEnabled = enableProfile;
                 }
             });
         }
@@ -365,8 +396,6 @@ namespace EvolveOS_ShellEnhancer.Views
                     break;
             }
 
-            AvatarPopup.IsOpen = true;
-
             if (EnableAnimations)
             {
                 int startX = x, startY = y;
@@ -377,6 +406,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(startX, startY, windowWidth, windowHeight));
                 _appWindow.Show();
+
+                AvatarPopup.IsOpen = true;
 
                 SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
@@ -395,6 +426,9 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, windowWidth, windowHeight));
                 _appWindow.Show();
+
+                AvatarPopup.IsOpen = true;
+
                 SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
                 _isVisible = true;
@@ -436,12 +470,18 @@ namespace EvolveOS_ShellEnhancer.Views
                     {
                         _appWindow.Hide();
                         AvatarPopup.IsOpen = false;
+
+                        _activeAccountCardWindow?.Close();
+                        _activeAccountCardWindow = null;
                     });
             }
             else
             {
                 _appWindow.Hide();
                 AvatarPopup.IsOpen = false;
+
+                _activeAccountCardWindow?.Close();
+                _activeAccountCardWindow = null;
             }
         }
         #endregion
@@ -451,6 +491,8 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (args.WindowActivationState == WindowActivationState.Deactivated)
             {
+                if (_ignoreDeactivation) return;
+
                 HideMenu();
             }
         }
@@ -478,6 +520,88 @@ namespace EvolveOS_ShellEnhancer.Views
         private void PowerSleep_Click(object sender, RoutedEventArgs e)
         {
             Process.Start(new ProcessStartInfo("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0") { CreateNoWindow = true });
+        }
+
+        private async void ActionChangeAccount_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await Launcher.LaunchUriAsync(new Uri("ms-settings:accounts"));
+            }
+            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+            HideMenu();
+        }
+
+        private void ActionLock_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo("rundll32.exe", "user32.dll,LockWorkStation") { CreateNoWindow = true });
+            HideMenu();
+        }
+
+        private void ActionSignOut_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo("shutdown", "/l") { CreateNoWindow = true });
+            HideMenu();
+        }
+
+        private void ProfileButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SettingsEngine.Shell_StartMenuProfileClick)
+            {
+                if (_activeAccountCardWindow != null)
+                {
+                    _activeAccountCardWindow.Close();
+                    return;
+                }
+
+                if ((DateTime.Now - _lastAccountCardCloseTime).TotalMilliseconds < 200)
+                {
+                    return;
+                }
+
+                _ignoreDeactivation = true;
+
+                int cardWidth = 320;
+                int offsetX = _appWindow.Position.X + _appWindow.Size.Width - cardWidth - 16;
+                int offsetY = _appWindow.Position.Y + 60;
+
+                _activeAccountCardWindow = new AccountCardWindow(
+                    targetX: offsetX,
+                    targetY: offsetY,
+                    name: UnifiedProfileName.Text,
+                    accountType: _currentAccountType,
+                    email: _currentUserEmail,
+                    profilePic: UnifiedProfilePic.ProfilePicture,
+                    parentHwnd: _hWnd,
+                    onDismiss: (clickedOutsideBoth) =>
+                    {
+                        _activeAccountCardWindow = null;
+                        _ignoreDeactivation = false;
+
+                        if (clickedOutsideBoth)
+                        {
+                            HideMenu();
+                        }
+                    });
+
+                _activeAccountCardWindow.Activate();
+            }
+        }
+
+        private void ProfileButton_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (SettingsEngine.Shell_StartMenuProfileClick)
+            {
+                ProfileGrowStoryboard.Begin();
+            }
+        }
+
+        private void ProfileButton_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (SettingsEngine.Shell_StartMenuProfileClick)
+            {
+                ProfileShrinkStoryboard.Begin();
+            }
         }
 
         private async void QuickFolder_Click(object sender, RoutedEventArgs e)

@@ -65,7 +65,12 @@
     <sys:String x:Key="StartMenu_ActionOpen">Open</sys:String>
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Run as administrator</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Open file location</sys:String>
-    
+
+    <sys:String x:Key="StartMenu_AccountSettings">Account settings</sys:String>
+    <sys:String x:Key="StartMenu_MyAccount">Manage my account</sys:String>
+    <sys:String x:Key="StartMenu_Lock">Lock</sys:String>
+    <sys:String x:Key="StartMenu_SignOut">Sign out</sys:String>
+
     <!-- Back-end Strings -->
     <sys:String x:Key="StartMenu_BackToPinned">&lt; Back to Pinned</sys:String>
     <sys:String x:Key="StartMenu_ContextPinStart">Pin to Start</sys:String>

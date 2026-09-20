@@ -361,6 +361,10 @@ namespace EvolveOS_ShellEnhancer
                             CustomStartMenuWindow.AnimationSpeed = smSpeed;
                         break;
 
+                    case "StartMenu_ProfileClick":
+                        SettingsEngine.Shell_StartMenuProfileClick = bool.Parse(value);
+                        break;
+
                     case "Taskbar_Enable":
                         _isTaskbarEnabled = bool.Parse(value);
                         if (_isTaskbarEnabled)

@@ -464,16 +464,62 @@
                 </Grid>
             </Border>
 
-            <!-- The Companion Popup -->
-            <Grid Width="260" HorizontalAlignment="Right" VerticalAlignment="Top">
-                <Popup x:Name="AvatarPopup" IsOpen="False" ShouldConstrainToRootBounds="False" VerticalOffset="-44">
+            <!-- Profile Badge -->
+            <Grid Width="260" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0">
+
+                <Popup x:Name="AvatarPopup" IsOpen="False" ShouldConstrainToRootBounds="False" VerticalOffset="-44" HorizontalOffset="0">
                     <Grid Width="260">
-                        <StackPanel Spacing="12" IsHitTestVisible="False" HorizontalAlignment="Center">
-                            <PersonPicture x:Name="UnifiedProfilePic" Height="88" Width="88" HorizontalAlignment="Center"/>
-                            <TextBlock x:Name="UnifiedProfileName" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
-                        </StackPanel>
+
+                        <Grid.Resources>
+                            <Storyboard x:Name="ProfileGrowStoryboard">
+                                <DoubleAnimation Storyboard.TargetName="ProfilePicScale" Storyboard.TargetProperty="ScaleX" To="1.06" Duration="0:0:0.15">
+                                    <DoubleAnimation.EasingFunction>
+                                        <QuadraticEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="ProfilePicScale" Storyboard.TargetProperty="ScaleY" To="1.06" Duration="0:0:0.15">
+                                    <DoubleAnimation.EasingFunction>
+                                        <QuadraticEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                            <Storyboard x:Name="ProfileShrinkStoryboard">
+                                <DoubleAnimation Storyboard.TargetName="ProfilePicScale" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.15">
+                                    <DoubleAnimation.EasingFunction>
+                                        <QuadraticEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="ProfilePicScale" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.15">
+                                    <DoubleAnimation.EasingFunction>
+                                        <QuadraticEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </Grid.Resources>
+
+                        <Button x:Name="ProfileButton" Background="Transparent" BorderThickness="0" HorizontalAlignment="Center" Padding="8" CornerRadius="8"
+                                Click="ProfileButton_Click" PointerEntered="ProfileButton_PointerEntered" PointerExited="ProfileButton_PointerExited">
+
+                            <Button.Resources>
+                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent" />
+                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="Transparent" />
+                                <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+                                <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent" />
+                            </Button.Resources>
+
+                            <!-- User Info Badge -->
+                            <StackPanel Spacing="12" IsHitTestVisible="False">
+                                <PersonPicture x:Name="UnifiedProfilePic" Height="88" Width="88" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                    <PersonPicture.RenderTransform>
+                                        <ScaleTransform x:Name="ProfilePicScale" ScaleX="1" ScaleY="1" />
+                                    </PersonPicture.RenderTransform>
+                                </PersonPicture>
+                                <TextBlock x:Name="UnifiedProfileName" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Button>
                     </Grid>
                 </Popup>
+
             </Grid>
 
         </Grid>

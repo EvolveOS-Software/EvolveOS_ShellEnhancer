@@ -66,6 +66,11 @@
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Ejecutar como administrador</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Abrir ubicación de archivo</sys:String>
 
+    <sys:String x:Key="StartMenu_AccountSettings">Configuración de la cuenta</sys:String>
+    <sys:String x:Key="StartMenu_MyAccount">Administrar mi cuenta</sys:String>
+    <sys:String x:Key="StartMenu_Lock">Bloquear</sys:String>
+    <sys:String x:Key="StartMenu_SignOut">Cerrar sesión</sys:String>
+
     <!-- Back-end Strings -->
     <sys:String x:Key="StartMenu_BackToPinned">&lt; Volver a Anclado</sys:String>
     <sys:String x:Key="StartMenu_ContextPinStart">Anclar a Inicio</sys:String>
