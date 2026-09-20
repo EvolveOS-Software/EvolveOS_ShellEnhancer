@@ -101,6 +101,8 @@ namespace EvolveOS_ShellEnhancer
             {
                 CustomTaskbarWindow.TaskbarSize = SettingsEngine.Shell_TaskbarSize;
                 CustomTaskbarWindow.TaskbarIconSize = SettingsEngine.Shell_TaskbarIconSize;
+                CustomTaskbarWindow.TaskbarLength = SettingsEngine.Shell_TaskbarLength;
+                CustomTaskbarWindow.TaskbarCornerRadius = SettingsEngine.Shell_TaskbarCornerRadius;
                 CustomTaskbarWindow.PreviewDelay = SettingsEngine.Shell_TaskbarPreviewDelay;
 
                 LivePreviewWindow.EnableActionButtons = SettingsEngine.Taskbar_PreviewButtons;
@@ -119,6 +121,13 @@ namespace EvolveOS_ShellEnhancer
             _startMenuWindow.SetStyle(SettingsEngine.Shell_StartMenuStyle);
             _startMenuWindow.SetAlignment(SettingsEngine.Shell_TaskbarAlignment);
             _startMenuWindow.SetPosition(SettingsEngine.Shell_TaskbarPosition);
+
+            _startMenuWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                TaskbarManager.SetStyle(SettingsEngine.Taskbar_Style ?? "Standard");
+                TaskbarManager.SetAlignment(SettingsEngine.Shell_TaskbarAlignment ?? "Center");
+                TaskbarManager.SetPosition(SettingsEngine.Shell_TaskbarPosition ?? "Bottom");
+            });
 
             KeyboardHookManager.WindowsKeyPressed += OnWindowsKeyPressed;
 

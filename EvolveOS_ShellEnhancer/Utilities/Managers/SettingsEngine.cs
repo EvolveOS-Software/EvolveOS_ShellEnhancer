@@ -110,6 +110,42 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             }
         }
 
+        internal static int Shell_TaskbarLength
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    var val = key?.GetValue("Shell_TaskbarLength");
+                    if (val != null && int.TryParse(val.ToString(), out int size))
+                    {
+                        return size;
+                    }
+                }
+                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Shell_TaskbarLength Error: {ex.Message}"); }
+                return 100;
+            }
+        }
+
+        internal static int Shell_TaskbarCornerRadius
+        {
+            get
+            {
+                try
+                {
+                    using var key = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                    var val = key?.GetValue("Shell_TaskbarCornerRadius");
+                    if (val != null && int.TryParse(val.ToString(), out int size))
+                    {
+                        return size;
+                    }
+                }
+                catch (Exception ex) { Debug.WriteLine($"[Settings] Read Shell_TaskbarCornerRadius Error: {ex.Message}"); }
+                return 8;
+            }
+        }
+
         internal static bool Taskbar_PreviewButtons
         {
             get

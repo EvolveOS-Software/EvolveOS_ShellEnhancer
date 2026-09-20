@@ -315,7 +315,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 rootElement.Loaded += (s, e) =>
                 {
-                    SetAlignment(TaskbarManager.CurrentAlignment, animate: false);
+                    ShowDock();
                 };
             }
 
