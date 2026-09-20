@@ -39,6 +39,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
 
             #region Shell Settings
             ["Shell_MasterEnabled"] = false,
+            ["Shell_TaskbarEnabled"] = false,
             ["Taskbar_Style"] = "Standard",
             ["Shell_TaskbarLength"] = 100,
             ["Shell_TaskbarCornerRadius"] = 8,
@@ -72,6 +73,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
 
         #region Shell Settings
         internal static bool Shell_MasterEnabled { get => (bool)_cachedSettings["Shell_MasterEnabled"]; set => ChangingParameters("Shell_MasterEnabled", value); }
+        internal static bool Shell_TaskbarEnabled { get => (bool)_cachedSettings["Shell_TaskbarEnabled"]; set => ChangingParameters("Shell_TaskbarEnabled", value); }
         internal static string Taskbar_Style { get => (string)_cachedSettings["Taskbar_Style"]; set => ChangingParameters("Taskbar_Style", value); }
         internal static int Shell_TaskbarLength { get => (int)_cachedSettings["Shell_TaskbarLength"]; set => ChangingParameters("Shell_TaskbarLength", value); }
         internal static int Shell_TaskbarCornerRadius { get => (int)_cachedSettings["Shell_TaskbarCornerRadius"]; set => ChangingParameters("Shell_TaskbarCornerRadius", value); }

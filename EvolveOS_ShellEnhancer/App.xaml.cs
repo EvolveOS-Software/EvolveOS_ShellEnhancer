@@ -136,11 +136,17 @@ namespace EvolveOS_ShellEnhancer
                 bool isMasterEnabled = SettingsEngine.Shell_MasterEnabled;
                 if (isMasterEnabled)
                 {
-                    _isTaskbarEnabled = true;
-                    _ = TaskbarManager.InitializeAndShowTaskbarsAsync();
+                    _isTaskbarEnabled = SettingsEngine.Shell_TaskbarEnabled;
+                    if (_isTaskbarEnabled)
+                    {
+                        _ = TaskbarManager.InitializeAndShowTaskbarsAsync();
+                    }
 
-                    _isStartMenuEnabled = true;
-                    KeyboardHookManager.StartHook();
+                    _isStartMenuEnabled = SettingsEngine.Shell_StartMenuEnabled;
+                    if (_isStartMenuEnabled)
+                    {
+                        KeyboardHookManager.StartHook();
+                    }
                 }
             }
             catch (Exception ex)
