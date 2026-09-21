@@ -136,6 +136,7 @@ namespace EvolveOS_ShellEnhancer
             CustomStartMenuWindow.EnableAnimations = SettingsEngine.Shell_StartMenuAnimation;
             CustomStartMenuWindow.AnimationStyle = SettingsEngine.Shell_StartMenuAnimStyle ?? "Standard";
             CustomStartMenuWindow.AnimationSpeed = SettingsEngine.Shell_StartMenuAnimSpeed;
+            CustomStartMenuWindow.ShowRecentDocs = SettingsEngine.Shell_StartMenuRecentDocs;
 
             _startMenuWindow = new CustomStartMenuWindow();
 

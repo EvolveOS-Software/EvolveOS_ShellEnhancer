@@ -174,19 +174,42 @@
 
                                         <!-- Recent Documents -->
                                         <StackPanel x:Name="RecentDocsPanel" Visibility="Collapsed" Margin="0,8,0,0">
-                                            <TextBlock Text="Recent Documents" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" Margin="0,0,0,12"/>
+                                            <Grid Margin="0,0,0,12">
+                                                <TextBlock Text="Recent Documents" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
+                                                <Button x:Name="RecentDocsMoreBtn" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="8,6" CornerRadius="4" Click="RecentDocsMoreBtn_Click" Visibility="Collapsed">
+                                                    <FontIcon x:Name="RecentDocsChevron" Glyph="&#xE70D;" FontSize="12"/>
+                                                </Button>
+                                            </Grid>
+
                                             <GridView ItemsSource="{x:Bind RecentDocsCollection}" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick">
+                                                <GridView.ItemContainerStyle>
+                                                    <Style TargetType="GridViewItem">
+                                                        <Setter Property="Margin" Value="0,0,6,6"/>
+                                                        <Setter Property="Padding" Value="0"/>
+                                                    </Style>
+                                                </GridView.ItemContainerStyle>
                                                 <GridView.ItemTemplate>
                                                     <DataTemplate x:DataType="models:AppItem">
-                                                        <StackPanel Tag="{x:Bind}" Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" 
-                                                                    RightTapped="AppCard_RightTapped"
-                                                                    PointerPressed="AppCard_PointerPressed"
-                                                                    PointerEntered="AppCard_PointerEntered"
-                                                                    PointerExited="AppCard_PointerExited">
-                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}"/>
-                                                            <TextBlock Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
-                                                        </StackPanel>
+                                                        <Border Tag="{x:Bind}" Width="210" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent" 
+                                                                RightTapped="AppCard_RightTapped"
+                                                                PointerPressed="AppCard_PointerPressed"
+                                                                PointerEntered="AppCard_PointerEntered"
+                                                                PointerExited="AppCard_PointerExited">
+                                                            <Grid ColumnSpacing="12">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="32"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="24" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}"/>
+
+                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                    <TextBlock Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
+                                                                    <TextBlock Text="{x:Bind ExecutablePath}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </Border>
                                                     </DataTemplate>
                                                 </GridView.ItemTemplate>
                                             </GridView>
@@ -297,7 +320,7 @@
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="16" Margin="0,12,0,24">
+                                    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="16" Margin="0,72,0,24">
                                         <Image x:Name="SearchDetailsIcon1" Width="72" Height="72" Stretch="Uniform" HorizontalAlignment="Center"/>
                                         <TextBlock x:Name="SearchDetailsName1" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
                                     </StackPanel>
@@ -548,7 +571,7 @@
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="16" Margin="0,12,0,24">
+                                    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Spacing="16" Margin="0,72,0,24">
                                         <Image x:Name="SearchDetailsIcon2" Width="72" Height="72" Stretch="Uniform" HorizontalAlignment="Center"/>
                                         <TextBlock x:Name="SearchDetailsName2" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
                                     </StackPanel>

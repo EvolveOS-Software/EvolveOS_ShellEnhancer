@@ -80,6 +80,9 @@ namespace EvolveOS_ShellEnhancer.Views
         private string _currentUserEmail = string.Empty;
         private string _currentAccountType = "Local Account";
         private bool _ignoreDeactivation = false;
+
+        private List<AppItem> _allRecentDocs = new();
+        private bool _isRecentDocsExpanded = false;
         #endregion
 
         #region Initialization & Data Loading
@@ -203,7 +206,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         userEmail = emailObj.ToString()!;
                     }
 
-                    var picStreamRef = await user.GetPictureAsync(UserPictureSize.Size64x64);
+                    var picStreamRef = await user.GetPictureAsync(UserPictureSize.Size424x424);
                     if (picStreamRef != null)
                     {
                         using var stream = await picStreamRef.OpenReadAsync();
@@ -348,7 +351,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public void LoadRecentDocuments()
         {
-            RecentDocsCollection.Clear();
+            _allRecentDocs.Clear();
 
             if (RecentDocsPanel == null) return;
 
@@ -366,11 +369,11 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     var recentFiles = new DirectoryInfo(recentPath).GetFiles("*.lnk")
                         .OrderByDescending(f => f.LastWriteTime)
-                        .Take(10);
+                        .Take(24);
 
                     foreach (var file in recentFiles)
                     {
-                        RecentDocsCollection.Add(new AppItem
+                        _allRecentDocs.Add(new AppItem
                         {
                             Name = Path.GetFileNameWithoutExtension(file.Name),
                             ExecutablePath = file.FullName,
@@ -379,10 +382,40 @@ namespace EvolveOS_ShellEnhancer.Views
                         });
                     }
 
-                    _ = ExtractIconsAsync(RecentDocsCollection.ToList());
+                    _ = ExtractIconsAsync(_allRecentDocs);
                 }
             }
             catch (Exception ex) { Debug.WriteLine($"Recent Docs Error: {ex.Message}"); }
+
+            UpdateRecentDocsView();
+        }
+
+        private void UpdateRecentDocsView()
+        {
+            RecentDocsCollection.Clear();
+
+            int limit = _isRecentDocsExpanded ? 24 : 6;
+
+            foreach (var item in _allRecentDocs.Take(limit))
+            {
+                RecentDocsCollection.Add(item);
+            }
+
+            if (RecentDocsChevron != null)
+            {
+                RecentDocsChevron.Glyph = _isRecentDocsExpanded ? "\xE70E" : "\xE70D";
+            }
+
+            if (RecentDocsMoreBtn != null)
+            {
+                RecentDocsMoreBtn.Visibility = _allRecentDocs.Count > 6 ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private void RecentDocsMoreBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _isRecentDocsExpanded = !_isRecentDocsExpanded;
+            UpdateRecentDocsView();
         }
         #endregion
 
