@@ -64,6 +64,7 @@ namespace EvolveOS_ShellEnhancer.Views
         public ObservableCollection<AppItem> RecentDocsCollection { get; } = new();
         public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
         public ObservableCollection<AppItem> SearchResultsCollection { get; } = new();
+        public ObservableCollection<ShortcutItem> StartMenuShortcuts { get; } = new();
 
         private string _currentSearchFilter = "Apps";
         private bool _isShowingAllApps = false;
@@ -118,6 +119,8 @@ namespace EvolveOS_ShellEnhancer.Views
             InitializeAppWatchers();
             LoadAppsData();
             LoadUserProfile();
+
+            UpdateShortcuts(SettingsEngine.Shell_StartMenuShortcuts ?? string.Empty);
         }
 
         private void InitializeAppWatchers()
@@ -758,22 +761,27 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        private async void QuickFolder_Click(object sender, RoutedEventArgs e)
+        private async void Shortcut_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is string folder)
+            if (sender is Button btn && btn.Tag is string targetPath)
             {
                 try
                 {
-                    if (folder == "Settings")
+                    if (targetPath == "ms-settings:")
                     {
                         await Launcher.LaunchUriAsync(new Uri("ms-settings:"));
                     }
-                    else if (folder == "Run")
+                    else if (targetPath == "Standard::Run")
                     {
                         Process.Start(new ProcessStartInfo("explorer.exe", "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}") { UseShellExecute = true });
                     }
-                    else
+                    else if (targetPath.Equals("control.exe", StringComparison.OrdinalIgnoreCase))
                     {
+                        Process.Start(new ProcessStartInfo("control.exe") { UseShellExecute = true });
+                    }
+                    else if (targetPath.StartsWith("Standard::"))
+                    {
+                        string folder = targetPath.Replace("Standard::", "");
                         string? path = folder switch
                         {
                             "Documents" => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -788,10 +796,17 @@ namespace EvolveOS_ShellEnhancer.Views
                             await Launcher.LaunchFolderPathAsync(path);
                         }
                     }
+                    else
+                    {
+                        if (Directory.Exists(targetPath))
+                            await Launcher.LaunchFolderPathAsync(targetPath);
+                        else if (File.Exists(targetPath))
+                            Process.Start(new ProcessStartInfo(targetPath) { UseShellExecute = true });
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Failed to open quick folder/setting: {ex.Message}");
+                    Debug.WriteLine($"Failed to open shortcut: {ex.Message}");
                 }
 
                 HideMenu();
@@ -1696,6 +1711,71 @@ namespace EvolveOS_ShellEnhancer.Views
                 HideMenu();
             }
             catch (Exception ex) { Debug.WriteLine(ex.Message); }
+        }
+
+        public void UpdateShortcuts(string payload)
+        {
+            StartMenuShortcuts.Clear();
+            if (string.IsNullOrWhiteSpace(payload)) return;
+
+            foreach (var itemStr in payload.Split(';', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var parts = itemStr.Split('|');
+                if (parts.Length >= 4)
+                {
+                    int displayMode = int.TryParse(parts[2], out int mode) ? mode : 0;
+                    if (displayMode == 2) continue;
+
+                    string displayName = GetLocalizedName(parts[0]);
+
+                    StartMenuShortcuts.Add(new ShortcutItem
+                    {
+                        Name = displayName,
+                        TargetPath = parts[1],
+                        DisplayModeIndex = displayMode,
+                        IsSeparator = parts[3] == "1",
+                        IconGlyph = parts.Length > 4 && !string.IsNullOrEmpty(parts[4]) ? parts[4] : GetDefaultGlyph(parts[1]),
+                        IconImagePath = parts.Length > 5 ? parts[5] : string.Empty
+                    });
+                }
+            }
+        }
+
+        private string GetDefaultGlyph(string targetPath)
+        {
+            if (targetPath.Contains("Documents")) return "\xE8A5";
+            if (targetPath.Contains("Downloads")) return "\xE896";
+            if (targetPath.Contains("Music")) return "\xE8D6";
+            if (targetPath.Contains("Pictures")) return "\xE8B9";
+            if (targetPath.Contains("Settings") || targetPath.Contains("ms-settings")) return "\xE713";
+            if (targetPath.Contains("Run")) return "\xE78B";
+            if (targetPath.Contains("control.exe")) return "\xE713";
+            return "\xE8B7";
+        }
+
+        private string GetLocalizedName(string rawName)
+        {
+            string? resourceKey = rawName switch
+            {
+                "Documents" => "StartMenu_FolderDocuments",
+                "Downloads" => "StartMenu_FolderDownloads",
+                "Music" => "StartMenu_FolderMusic",
+                "Pictures" => "StartMenu_FolderPictures",
+                "Settings" => "StartMenu_FolderSettings",
+                "Run" => "StartMenu_FolderRun",
+                _ => null
+            };
+
+            if (resourceKey != null)
+            {
+                string localizedString = LocalizationService.Instance.GetString(resourceKey);
+                if (!string.IsNullOrEmpty(localizedString))
+                {
+                    return localizedString;
+                }
+            }
+
+            return rawName;
         }
 
         #endregion

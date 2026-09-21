@@ -424,6 +424,11 @@ namespace EvolveOS_ShellEnhancer
                         _startMenuWindow?.LoadRecentDocuments();
                         break;
 
+                    case "StartMenu_Shortcuts":
+                        SettingsEngine.Shell_StartMenuShortcuts = value;
+                        _startMenuWindow?.UpdateShortcuts(value);
+                        break;
+
                     case "Taskbar_Enable":
                         _isTaskbarEnabled = bool.Parse(value);
                         if (_isTaskbarEnabled)

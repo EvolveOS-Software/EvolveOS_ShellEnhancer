@@ -71,6 +71,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             ["Shell_StartMenuPowerRestartBios"] = false,
             ["Shell_StartMenuPowerLogOff"] = false,
             ["Shell_StartMenuRecentDocs"] = false,
+            ["Shell_StartMenuShortcuts"] = "Documents|Standard::Documents|0|0|;Downloads|Standard::Downloads|0|0|;Music|Standard::Music|0|0|;Pictures|Standard::Pictures|0|0|;Settings|ms-settings:|0|0|;Run|Standard::Run|0|0|;Control Panel|control.exe|0|0|",
             ["Shell_TaskbarAnimation"] = "Spring",
             ["Shell_TaskbarHoverAnimation"] = "Standard",
             ["Shell_TaskbarHoverBackground"] = true,
@@ -121,6 +122,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static bool Shell_StartMenuPowerRestartBios { get => (bool)_cachedSettings["Shell_StartMenuPowerRestartBios"]; set => ChangingParameters("Shell_StartMenuPowerRestartBios", value); }
         internal static bool Shell_StartMenuPowerLogOff { get => (bool)_cachedSettings["Shell_StartMenuPowerLogOff"]; set => ChangingParameters("Shell_StartMenuPowerLogOff", value); }
         internal static bool Shell_StartMenuRecentDocs { get => (bool)_cachedSettings["Shell_StartMenuRecentDocs"]; set => ChangingParameters("Shell_StartMenuRecentDocs", value); }
+        internal static string Shell_StartMenuShortcuts { get => (string)_cachedSettings["Shell_StartMenuShortcuts"]; set => ChangingParameters("Shell_StartMenuShortcuts", value); }
         internal static string Shell_TaskbarAnimation { get => (string)_cachedSettings["Shell_TaskbarAnimation"]; set => ChangingParameters("Shell_TaskbarAnimation", value); }
         internal static string Shell_TaskbarHoverAnimation { get => (string)_cachedSettings["Shell_TaskbarHoverAnimation"]; set => ChangingParameters("Shell_TaskbarHoverAnimation", value); }
         internal static bool Shell_TaskbarHoverBackground { get => (bool)_cachedSettings["Shell_TaskbarHoverBackground"]; set => ChangingParameters("Shell_TaskbarHoverBackground", value); }
