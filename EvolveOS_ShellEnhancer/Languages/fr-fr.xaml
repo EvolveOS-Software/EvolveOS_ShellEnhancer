@@ -38,6 +38,13 @@
 
     <!-- region TaskBar -->
 
+    <!-- Back-end Strings -->
+    <sys:String x:Key="Taskbar_TaskManager">Gestionnaire des tâches</sys:String>
+    <sys:String x:Key="Taskbar_Settings">Paramètres de la barre des tâches</sys:String>
+    <sys:String x:Key="Taskbar_CloseWindow">Fermer la fenêtre</sys:String>
+    <sys:String x:Key="Taskbar_UnpinTaskbar">Détacher de la barre des tâches</sys:String>
+    <sys:String x:Key="Taskbar_EmptyFolder">Dossier vide</sys:String>
+
     <!-- endregion TaskBar -->
 
     <!-- region StartMenu -->

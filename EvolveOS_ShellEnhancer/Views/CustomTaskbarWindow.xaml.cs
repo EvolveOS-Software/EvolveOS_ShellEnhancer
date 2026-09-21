@@ -5,6 +5,7 @@ using EvolveOS_ShellEnhancer.Models;
 using EvolveOS_ShellEnhancer.Utilities.Animations;
 using EvolveOS_ShellEnhancer.Utilities.Helpers;
 using EvolveOS_ShellEnhancer.Utilities.Managers;
+using EvolveOS_ShellEnhancer.Utilities.Services;
 using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Text;
@@ -1113,7 +1114,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (!isDirectory)
             {
-                var closeItem = new MenuFlyoutItem { Text = "Close window", Icon = new FontIcon { Glyph = "\uE8BB" } };
+                var closeItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("Taskbar_CloseWindow") ?? "Close window",
+                    Icon = new FontIcon { Glyph = "\uE8BB" }
+                };
                 closeItem.Click += (s, e) =>
                 {
                     var handles = GetAppWindowHandles(processName);
@@ -1124,7 +1129,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (isShortcut || isDirectory)
             {
-                var unpinItem = new MenuFlyoutItem { Text = "Unpin from taskbar", Icon = new FontIcon { Glyph = "\uE196" } };
+                var unpinItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("Taskbar_UnpinTaskbar") ?? "Unpin from taskbar",
+                    Icon = new FontIcon { Glyph = "\uE196" }
+                };
                 unpinItem.Click += (s, e) =>
                 {
                     try
@@ -1419,7 +1428,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (dirs.Length == 0 && files.Length == 0)
                 {
-                    parentItems.Add(new MenuFlyoutItem { Text = "Empty Folder", IsEnabled = false });
+                    parentItems.Add(new MenuFlyoutItem
+                    {
+                        Text = LocalizationService.Instance.GetString("Taskbar_EmptyFolder") ?? "Empty Folder",
+                        IsEnabled = false
+                    });
                     return;
                 }
 
@@ -1816,6 +1829,69 @@ namespace EvolveOS_ShellEnhancer.Views
         public void ResetUnpinnedScrollView()
         {
             _showingAllRunningView = false;
+        }
+
+        private void Taskbar_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            if (e.OriginalSource is Image || e.OriginalSource is TextBlock || e.OriginalSource is FontIcon)
+            {
+                return;
+            }
+
+            if (sender is FrameworkElement element)
+            {
+                MenuFlyout flyout = new MenuFlyout();
+
+                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
+                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
+                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255))));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
+
+                var taskManagerItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("Taskbar_TaskManager") ?? "Task Manager",
+                    Icon = new FontIcon { Glyph = "\xE9F5" }
+                };
+
+                taskManagerItem.Click += (s, args) =>
+                {
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo("taskmgr.exe") { UseShellExecute = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to open Task Manager: {ex.Message}");
+                    }
+                };
+
+                var settingsItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("Taskbar_Settings") ?? "Taskbar settings",
+                    Icon = new FontIcon { Glyph = "\xE713" }
+                };
+
+                settingsItem.Click += async (s, args) =>
+                {
+                    try
+                    {
+                        await Launcher.LaunchUriAsync(new Uri("ms-settings:taskbar"));
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to open taskbar settings: {ex.Message}");
+                    }
+                };
+
+                flyout.Items.Add(taskManagerItem);
+                flyout.Items.Add(settingsItem);
+
+                flyout.ShowAt(element, e.GetPosition(element));
+                e.Handled = true;
+            }
         }
 
         private async void TaskbarBorder_PointerWheelChanged(object sender, PointerRoutedEventArgs e)

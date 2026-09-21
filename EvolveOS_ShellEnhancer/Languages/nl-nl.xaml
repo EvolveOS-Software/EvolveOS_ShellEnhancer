@@ -38,6 +38,13 @@
 
     <!-- region TaskBar -->
 
+    <!-- Back-end Strings -->
+    <sys:String x:Key="Taskbar_TaskManager">Taakbeheer</sys:String>
+    <sys:String x:Key="Taskbar_Settings">Taakbalkinstellingen</sys:String>
+    <sys:String x:Key="Taskbar_CloseWindow">Venster sluiten</sys:String>
+    <sys:String x:Key="Taskbar_UnpinTaskbar">Van taakbalk losmaken</sys:String>
+    <sys:String x:Key="Taskbar_EmptyFolder">Lege map</sys:String>
+
     <!-- endregion TaskBar -->
 
     <!-- region StartMenu -->

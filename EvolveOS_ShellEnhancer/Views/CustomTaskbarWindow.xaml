@@ -11,6 +11,7 @@
             BorderBrush="Transparent"
             BorderThickness="0" CornerRadius="0" 
             HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0"
+            RightTapped="Taskbar_RightTapped"
             PointerWheelChanged="TaskbarBorder_PointerWheelChanged">
 
             <Grid>
