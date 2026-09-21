@@ -1034,7 +1034,18 @@ namespace EvolveOS_ShellEnhancer.Views
                     {
                         IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
                         IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
-                        shortcut.TargetPath = app.ExecutablePath;
+
+                        string realTarget = app.ExecutablePath;
+                        if (realTarget.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string parsed = StartMenuHelper.ParseShortcutTarget(realTarget);
+                            if (!string.IsNullOrEmpty(parsed) && File.Exists(parsed))
+                            {
+                                realTarget = parsed;
+                            }
+                        }
+
+                        shortcut.TargetPath = realTarget;
                         shortcut.Save();
                     }
                 }

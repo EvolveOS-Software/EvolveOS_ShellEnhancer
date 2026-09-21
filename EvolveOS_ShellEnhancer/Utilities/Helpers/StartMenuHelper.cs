@@ -7,15 +7,16 @@ using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Management.Deployment;
 using Windows.Storage;
 using Windows.Storage.FileProperties;
 using Windows.Storage.Streams;
+using static EvolveOS_ShellEnhancer.Utilities.Helpers.Win32Helper;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {
@@ -39,7 +40,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public static async Task<List<AppItem>> GetAllAppsAsync()
         {
             var apps = new List<AppItem>();
+
             var uniqueNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            var uniquePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             try
             {
@@ -62,7 +66,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                                 name = pkg.Id.Name.Replace("Microsoft.Windows", "").Replace("Microsoft.", "");
                             }
 
-                            if (string.IsNullOrWhiteSpace(name) || !uniqueNames.Add(name)) continue;
+                            if (string.IsNullOrWhiteSpace(name) || !uniqueNames.Add(name) || !uniquePaths.Add(entry.AppUserModelId)) continue;
 
                             bool isUnpadded = UnpaddedUwpKeywords.Any(keyword =>
                                 name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
@@ -75,7 +79,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                                 IsUwp = true,
                                 FallbackGlyph = "\xE713",
                                 UwpLogoStreamRef = entry.DisplayInfo.GetLogo(new Windows.Foundation.Size(256, 256)),
-                                // Default all UWP apps to 3.0x to fix the padding, UNLESS they are in the exclusion list!
                                 IconScale = isUnpadded ? 1.0 : 3.0
                             });
                         }
@@ -111,8 +114,17 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         var lowerName = name.ToLowerInvariant();
                         if (JunkKeywords.Any(junk => lowerName.Contains(junk)) || lowerName.EndsWith(" help") || lowerName.StartsWith("visit ")) continue;
 
-                        string target = ParseShortcutTarget(file);
-                        if (!string.IsNullOrEmpty(target) && target.StartsWith("http", StringComparison.OrdinalIgnoreCase)) continue;
+                        string target = ParseShortcutTarget(file, out string args);
+
+                        if (string.IsNullOrEmpty(target) || target.StartsWith("http", StringComparison.OrdinalIgnoreCase)) continue;
+
+                        string dedupeKey = target.ToLowerInvariant();
+                        if (dedupeKey.EndsWith("explorer.exe") || dedupeKey.EndsWith("cmd.exe") || dedupeKey.EndsWith("rundll32.exe"))
+                        {
+                            dedupeKey += " " + args.ToLowerInvariant();
+                        }
+
+                        if (!uniquePaths.Add(dedupeKey)) continue;
 
                         if (uniqueNames.Add(name))
                         {
@@ -133,12 +145,13 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                 }
             }
 
-            if (uniqueNames.Add("File Explorer"))
+            string defaultExplorerPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\explorer.exe");
+            if (uniqueNames.Add("File Explorer") && uniquePaths.Add(defaultExplorerPath))
             {
                 apps.Add(new AppItem
                 {
                     Name = "File Explorer",
-                    ExecutablePath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\explorer.exe"),
+                    ExecutablePath = defaultExplorerPath,
                     IsUwp = false,
                     FallbackGlyph = "\xE838",
                     IconScale = 1.0
@@ -191,10 +204,15 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         #endregion
 
         #region Shortcut Parsing
-        public static string ParseShortcutTarget(string lnkPath)
+        public static string ParseShortcutTarget(string lnkPath) => ParseShortcutTarget(lnkPath, out _);
+
+        public static string ParseShortcutTarget(string lnkPath, out string arguments)
         {
+            arguments = string.Empty;
             try
             {
+                if (string.IsNullOrWhiteSpace(lnkPath)) return string.Empty;
+
                 if (lnkPath.EndsWith(".url", StringComparison.OrdinalIgnoreCase))
                 {
                     var lines = File.ReadAllLines(lnkPath);
@@ -202,8 +220,42 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                     if (urlLine != null) return urlLine.Substring(4).Trim();
                 }
 
-                IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
-                IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
+                try
+                {
+                    Type? shellAppType = Type.GetTypeFromProgID("Shell.Application");
+                    if (shellAppType != null)
+                    {
+                        dynamic? shell = Activator.CreateInstance(shellAppType);
+                        dynamic? folder = shell?.NameSpace(Path.GetDirectoryName(lnkPath));
+                        dynamic? folderItem = folder?.ParseName(Path.GetFileName(lnkPath));
+
+                        if (folderItem != null && folderItem!.IsLink)
+                        {
+                            dynamic link = folderItem!.GetLink;
+                            string target = link.Path ?? string.Empty;
+                            arguments = link.Arguments ?? string.Empty;
+
+                            if (target.EndsWith("explorer.exe", StringComparison.OrdinalIgnoreCase) &&
+                                arguments.StartsWith(@"shell:appsFolder\", StringComparison.OrdinalIgnoreCase))
+                            {
+                                return arguments.Substring(17);
+                            }
+
+                            if (!string.IsNullOrEmpty(target))
+                            {
+                                return target;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Shell.Application parsing failed: {ex.Message}");
+                }
+
+                IWshRuntimeLibrary.WshShell wsh = new IWshRuntimeLibrary.WshShell();
+                IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)wsh.CreateShortcut(lnkPath);
+                arguments = shortcut.Arguments?.Trim() ?? string.Empty;
                 return shortcut.TargetPath?.Trim().Trim('"', '\'') ?? string.Empty;
             }
             catch { return string.Empty; }
@@ -226,28 +278,46 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                 }
 
                 string target = appItem.ExecutablePath;
+
                 if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
                 {
-                    try
-                    {
-                        StorageFile lnkFile = await StorageFile.GetFileFromPathAsync(target);
-                        var lnkThumbnail = await lnkFile.GetThumbnailAsync(ThumbnailMode.SingleItem, 48);
-                        if (lnkThumbnail == null) lnkThumbnail = await lnkFile.GetThumbnailAsync(ThumbnailMode.ListView, 48);
-
-                        if (lnkThumbnail != null)
-                        {
-                            var bitmapImage = new BitmapImage();
-                            await bitmapImage.SetSourceAsync(lnkThumbnail);
-                            return bitmapImage;
-                        }
-                    }
-                    catch { }
-
                     string parsed = ParseShortcutTarget(target);
-                    if (!string.IsNullOrEmpty(parsed) && File.Exists(parsed)) target = parsed;
+
+                    if (!string.IsNullOrEmpty(parsed) && parsed.Contains("!")) return null;
+
+                    if (!string.IsNullOrEmpty(parsed) && File.Exists(parsed))
+                    {
+                        target = parsed;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(target);
+                            if (icon != null)
+                            {
+                                using var bmp = icon.ToBitmap();
+                                using var ms = new MemoryStream();
+                                bmp.Save(ms, ImageFormat.Png);
+                                ms.Position = 0;
+
+                                var ras = new InMemoryRandomAccessStream();
+                                using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
+                                {
+                                    writer.WriteBytes(ms.ToArray());
+                                    await writer.StoreAsync();
+                                }
+
+                                var bitmapImage = new BitmapImage();
+                                await bitmapImage.SetSourceAsync(ras);
+                                return bitmapImage;
+                            }
+                        }
+                        catch { }
+                    }
                 }
 
-                if (File.Exists(target))
+                if (File.Exists(target) && !target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
                 {
                     try
                     {
@@ -263,25 +333,38 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         }
                     }
                     catch { }
+                }
 
-                    using var icon = Icon.ExtractAssociatedIcon(target);
-                    if (icon != null)
+                if (File.Exists(target) || Directory.Exists(target))
+                {
+                    SHFILEINFO shinfo = new SHFILEINFO();
+                    IntPtr res = SHGetFileInfo(target, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
+
+                    if (res != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
                     {
-                        using var bmp = icon.ToBitmap();
-                        using var ms = new MemoryStream();
-                        bmp.Save(ms, ImageFormat.Png);
-                        ms.Position = 0;
-
-                        var ras = new InMemoryRandomAccessStream();
-                        using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
+                        try
                         {
-                            writer.WriteBytes(ms.ToArray());
-                            await writer.StoreAsync();
-                        }
+                            using var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
+                            using var bmp = icon.ToBitmap();
+                            using var ms = new MemoryStream();
+                            bmp.Save(ms, ImageFormat.Png);
+                            ms.Position = 0;
 
-                        var bitmapImage = new BitmapImage();
-                        await bitmapImage.SetSourceAsync(ras);
-                        return bitmapImage;
+                            var ras = new InMemoryRandomAccessStream();
+                            using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
+                            {
+                                writer.WriteBytes(ms.ToArray());
+                                await writer.StoreAsync();
+                            }
+
+                            var bitmapImage = new BitmapImage();
+                            await bitmapImage.SetSourceAsync(ras);
+                            return bitmapImage;
+                        }
+                        finally
+                        {
+                            DestroyIcon(shinfo.hIcon);
+                        }
                     }
                 }
             }
