@@ -4,6 +4,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System.ComponentModel;
+using System.IO;
 using Windows.Storage.Streams;
 
 namespace EvolveOS_ShellEnhancer.Models
@@ -50,13 +51,54 @@ namespace EvolveOS_ShellEnhancer.Models
             }
         }
 
+        private bool _isExpanded;
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    OnPropertyChanged(nameof(IsExpanded));
+                    OnPropertyChanged(nameof(ChevronGlyph));
+                    OnPropertyChanged(nameof(ChevronAngle));
+                }
+            }
+        }
+
+        private bool _isIndented;
+        public bool IsIndented
+        {
+            get => _isIndented;
+            set
+            {
+                if (_isIndented != value)
+                {
+                    _isIndented = value;
+                    OnPropertyChanged(nameof(IsIndented));
+                    OnPropertyChanged(nameof(ItemMargin));
+                }
+            }
+        }
+
         public string? DisplayToolTip => IsRunning ? null : Name;
+        public double ChevronAngle => _isExpanded ? 180.0 : 0.0;
+        public string ChevronGlyph => _isExpanded ? "\xE70E" : "\xE70D";
 
         internal IRandomAccessStreamReference? UwpLogoStreamRef { get; set; }
 
         public Visibility HasIcon => IconSource != null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility HasNoIcon => IconSource == null ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility IsFolderItem => (!string.IsNullOrEmpty(ExecutablePath) && Directory.Exists(ExecutablePath)) ? Visibility.Visible : Visibility.Collapsed;
+
+        public Thickness ItemMargin => _isIndented ? new Thickness(28, 0, 0, 0) : new Thickness(12, 0, 0, 0);
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

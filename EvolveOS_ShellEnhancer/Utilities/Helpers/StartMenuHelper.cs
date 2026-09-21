@@ -40,9 +40,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public static async Task<List<AppItem>> GetAllAppsAsync()
         {
             var apps = new List<AppItem>();
-
             var uniqueNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
             var uniquePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             try
@@ -94,20 +92,21 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             var paths = new[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs"),
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory),
-                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs")
             };
 
-            foreach (var path in paths)
+            foreach (var basePath in paths)
             {
-                if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) continue;
+                if (string.IsNullOrEmpty(basePath) || !Directory.Exists(basePath)) continue;
 
                 try
                 {
-                    var shortcutFiles = SafeGetShortcuts(path);
+                    // 1. Add root-level shortcuts directly inside Programs
+                    var rootFiles = Directory.GetFiles(basePath, "*.lnk")
+                        .Concat(Directory.GetFiles(basePath, "*.url"))
+                        .Concat(Directory.GetFiles(basePath, "*.appref-ms"));
 
-                    foreach (var file in shortcutFiles)
+                    foreach (var file in rootFiles)
                     {
                         string name = Path.GetFileNameWithoutExtension(file);
 
@@ -115,7 +114,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         if (JunkKeywords.Any(junk => lowerName.Contains(junk)) || lowerName.EndsWith(" help") || lowerName.StartsWith("visit ")) continue;
 
                         string target = ParseShortcutTarget(file, out string args);
-
                         if (string.IsNullOrEmpty(target) || target.StartsWith("http", StringComparison.OrdinalIgnoreCase)) continue;
 
                         string dedupeKey = target.ToLowerInvariant();
@@ -124,9 +122,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                             dedupeKey += " " + args.ToLowerInvariant();
                         }
 
-                        if (!uniquePaths.Add(dedupeKey)) continue;
-
-                        if (uniqueNames.Add(name))
+                        if (uniquePaths.Add(dedupeKey) && uniqueNames.Add(name))
                         {
                             apps.Add(new AppItem
                             {
@@ -138,10 +134,34 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                             });
                         }
                     }
+
+                    // 2. Add top-level subdirectories as Folder items
+                    var subDirs = Directory.GetDirectories(basePath);
+                    foreach (var dir in subDirs)
+                    {
+                        string folderName = Path.GetFileName(dir);
+                        var lowerFolder = folderName.ToLowerInvariant();
+                        if (JunkKeywords.Any(junk => lowerFolder.Contains(junk))) continue;
+
+                        bool hasContent = Directory.GetFiles(dir, "*.lnk", SearchOption.AllDirectories).Length > 0 ||
+                                          Directory.GetFiles(dir, "*.url", SearchOption.AllDirectories).Length > 0;
+
+                        if (hasContent && uniqueNames.Add(folderName))
+                        {
+                            apps.Add(new AppItem
+                            {
+                                Name = folderName,
+                                ExecutablePath = dir, // Directory path
+                                IsUwp = false,
+                                FallbackGlyph = "\xE8B7", // Folder glyph
+                                IconScale = 1.0
+                            });
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Win32 Enumeration Error: {ex.Message}");
+                    Debug.WriteLine($"Folder Enumeration Error: {ex.Message}");
                 }
             }
 
@@ -159,47 +179,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             }
 
             return apps.OrderBy(a => a.Name).ToList();
-        }
-
-        public static async Task<List<AppItem>> GetPinnedAppsAsync()
-        {
-            var allApps = await GetAllAppsAsync();
-            var preferredPins = new[] { "Edge", "Settings", "File Explorer", "Store", "Photos", "Camera", "Calculator", "Clock", "Terminal", "Spotify", "Discord", "Word", "Excel" };
-
-            var pinned = allApps.Where(a => preferredPins.Any(p => a.Name != null && a.Name.Contains(p, StringComparison.OrdinalIgnoreCase))).ToList();
-
-            foreach (var app in allApps)
-            {
-                if (pinned.Count >= 12) break;
-                if (!pinned.Contains(app)) pinned.Add(app);
-            }
-
-            return pinned.Take(12).ToList();
-        }
-
-        private static List<string> SafeGetShortcuts(string rootPath)
-        {
-            var files = new List<string>();
-            var dirs = new Queue<string>();
-            dirs.Enqueue(rootPath);
-
-            while (dirs.Count > 0)
-            {
-                string currentDir = dirs.Dequeue();
-                try
-                {
-                    files.AddRange(Directory.GetFiles(currentDir, "*.lnk"));
-                    files.AddRange(Directory.GetFiles(currentDir, "*.appref-ms"));
-                    files.AddRange(Directory.GetFiles(currentDir, "*.url"));
-
-                    foreach (var dir in Directory.GetDirectories(currentDir))
-                    {
-                        dirs.Enqueue(dir);
-                    }
-                }
-                catch { /* Safely ignore protected/inaccessible folders */ }
-            }
-            return files;
         }
         #endregion
 

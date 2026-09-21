@@ -1072,24 +1072,34 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void AppCard_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
+            if (sender is Border border)
+            {
+                border.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
+            }
+
             if (sender is FrameworkElement card && !_isAppDragging)
             {
                 var app = card.Tag as AppItem ?? card.DataContext as AppItem;
                 if (app != null && app != _placeholderItem)
                 {
-                    FactoryAnimation.AnimateCardScale(card, 1.05);
+                    //FactoryAnimation.AnimateCardScale(card, 1.05);
                 }
             }
         }
 
         private void AppCard_PointerExited(object sender, PointerRoutedEventArgs e)
         {
+            if (sender is Border border)
+            {
+                border.Background = new SolidColorBrush(Colors.Transparent);
+            }
+
             if (sender is FrameworkElement card)
             {
                 var app = card.Tag as AppItem ?? card.DataContext as AppItem;
                 if (app != null && app != _placeholderItem)
                 {
-                    FactoryAnimation.AnimateCardScale(card, 1.0);
+                    //FactoryAnimation.AnimateCardScale(card, 1.0);
                 }
             }
         }
@@ -1270,10 +1280,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 Spacing = 4,
                 Padding = new Thickness(4, 8, 4, 8),
                 CornerRadius = new CornerRadius(8),
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(120, 200, 200, 200)) // Tinted visual ghost
+                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(120, 200, 200, 200))
             };
 
-            // Account for Enum check
             if (_draggedAppItem.HasIcon == Visibility.Visible)
             {
                 panel.Children.Add(new Image
@@ -1549,9 +1558,84 @@ namespace EvolveOS_ShellEnhancer.Views
             if (LocationBtn2 != null) LocationBtn2.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        private Dictionary<string, List<AppItem>> _expandedFolders = new();
+
         private void AppGrid_ItemClick(object sender, ItemClickEventArgs e)
         {
-            if (e.ClickedItem is AppItem app) LaunchApp(app, false);
+            if (e.ClickedItem is AppItem app)
+            {
+                bool isFolder = !string.IsNullOrEmpty(app.ExecutablePath) && Directory.Exists(app.ExecutablePath);
+
+                if (isFolder)
+                {
+                    ToggleFolderExpansion(app);
+                    return;
+                }
+
+                LaunchApp(app, false);
+            }
+        }
+
+        private void ToggleFolderExpansion(AppItem folderApp)
+        {
+            if (SearchAndAllAppsGrid?.ItemsSource is not ObservableCollection<AppItem> currentList) return;
+
+            int index = currentList.IndexOf(folderApp);
+            if (index == -1) return;
+
+            string folderPath = folderApp.ExecutablePath!;
+
+            // Optional: Find the container to animate the rotation smoothly if desired
+            // (The binding will automatically handle state update)
+
+            if (_expandedFolders.ContainsKey(folderPath))
+            {
+                var children = _expandedFolders[folderPath];
+                foreach (var child in children)
+                {
+                    currentList.Remove(child);
+                }
+                _expandedFolders.Remove(folderPath);
+                folderApp.IsExpanded = false;
+            }
+            else
+            {
+                var folderApps = new List<AppItem>();
+                try
+                {
+                    var files = Directory.GetFiles(folderPath, "*.lnk", SearchOption.AllDirectories)
+                        .Concat(Directory.GetFiles(folderPath, "*.url", SearchOption.AllDirectories))
+                        .Concat(Directory.GetFiles(folderPath, "*.appref-ms", SearchOption.AllDirectories));
+
+                    foreach (var file in files)
+                    {
+                        folderApps.Add(new AppItem
+                        {
+                            Name = Path.GetFileNameWithoutExtension(file),
+                            ExecutablePath = file,
+                            IsUwp = false,
+                            FallbackGlyph = "\xE738",
+                            IconScale = 1.0,
+                            IsIndented = true
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to load folder contents: {ex.Message}");
+                }
+
+                _expandedFolders[folderPath] = folderApps;
+
+                int insertIndex = index + 1;
+                foreach (var child in folderApps)
+                {
+                    currentList.Insert(insertIndex++, child);
+                }
+
+                folderApp.IsExpanded = true;
+                _ = ExtractIconsAsync(folderApps);
+            }
         }
 
         private void SearchAction_Open_Click(object sender, RoutedEventArgs e)

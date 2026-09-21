@@ -151,26 +151,65 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
 
-                                        <!-- Search Results & All Apps (Hidden by default) -->
-                                        <GridView x:Name="SearchAndAllAppsGrid" Visibility="Collapsed" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
-                                            <GridView.ItemTemplate>
+                                        <!-- Search Results & All Apps -->
+                                        <ListView x:Name="SearchAndAllAppsGrid" Visibility="Collapsed" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
+
+                                            <ListView.Resources>
+                                                <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent"/>
+                                                <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
+                                                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                            </ListView.Resources>
+
+                                            <ListView.ItemContainerTransitions>
+                                                <TransitionCollection>
+                                                    <AddDeleteThemeTransition />
+                                                </TransitionCollection>
+                                            </ListView.ItemContainerTransitions>
+
+                                            <ListView.ItemContainerStyle>
+                                                <Style TargetType="ListViewItem">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                    <Setter Property="Margin" Value="0,0,0,4"/>
+                                                    <Setter Property="Padding" Value="0"/>
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                </Style>
+                                            </ListView.ItemContainerStyle>
+
+                                            <ListView.ItemTemplate>
                                                 <DataTemplate x:DataType="models:AppItem">
-                                                    <StackPanel Tag="{x:Bind}" Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" 
-                                                                RightTapped="AppCard_RightTapped"
-                                                                PointerPressed="AppCard_PointerPressed"
-                                                                PointerEntered="AppCard_PointerEntered"
-                                                                PointerExited="AppCard_PointerExited">
-                                                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                            <Image.RenderTransform>
-                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                            </Image.RenderTransform>
-                                                        </Image>
-                                                        <TextBlock Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
-                                                    </StackPanel>
+                                                    <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
+                                                            RightTapped="AppCard_RightTapped"
+                                                            PointerPressed="AppCard_PointerPressed"
+                                                            PointerEntered="AppCard_PointerEntered"
+                                                            PointerExited="AppCard_PointerExited">
+                                                        <Grid ColumnSpacing="12" Padding="8,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="32"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                            <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                <Image.RenderTransform>
+                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                </Image.RenderTransform>
+                                                            </Image>
+
+                                                            <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+
+                                                            <FontIcon x:Name="ChevronIcon" Grid.Column="2" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind IsFolderItem, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                <FontIcon.RenderTransform>
+                                                                    <RotateTransform x:Name="ChevronTransform" Angle="{x:Bind ChevronAngle, Mode=OneWay}"/>
+                                                                </FontIcon.RenderTransform>
+                                                            </FontIcon>
+                                                        </Grid>
+                                                    </Border>
                                                 </DataTemplate>
-                                            </GridView.ItemTemplate>
-                                        </GridView>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
 
                                         <!-- Recent Documents -->
                                         <StackPanel x:Name="RecentDocsPanel" Visibility="Collapsed" Margin="0,8,0,0">
