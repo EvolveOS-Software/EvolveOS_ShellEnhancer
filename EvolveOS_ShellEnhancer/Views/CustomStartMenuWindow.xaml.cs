@@ -589,6 +589,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void MenuContainer_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
+            if (e.GetCurrentPoint(MenuContainer).Properties.IsRightButtonPressed)
+            {
+                return;
+            }
+
             if (e.OriginalSource is Image || e.OriginalSource is TextBlock || e.OriginalSource is FontIcon)
             {
                 return;
@@ -847,8 +852,11 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             e.Handled = true;
 
-            if (sender is FrameworkElement element && element.DataContext is AppItem app)
+            if (sender is FrameworkElement element)
             {
+                var app = element.Tag as AppItem ?? element.DataContext as AppItem;
+                if (app == null || app == _placeholderItem) return;
+
                 if (app.ExecutablePath != null && (app.ExecutablePath.StartsWith("WEB_SEARCH:") || app.ExecutablePath.StartsWith("FILE_SEARCH:")))
                     return;
 
@@ -1042,6 +1050,8 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 var app = element.Tag as AppItem ?? element.DataContext as AppItem;
                 if (app == null || app == _placeholderItem) return;
+
+                if (!e.GetCurrentPoint(element).Properties.IsLeftButtonPressed) return;
 
                 _sourceGrid = FindVisualParent<GridView>(element);
 
