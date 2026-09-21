@@ -685,9 +685,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
             PostMessage(handle, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
 
-            _currentSourceHwnds.Remove(handle);
-
             var remainingWindows = new List<IntPtr>(_currentSourceHwnds);
+            remainingWindows.Remove(handle);
 
             this.DispatcherQueue.TryEnqueue(() =>
             {
@@ -713,6 +712,9 @@ namespace EvolveOS_ShellEnhancer.Views
             _hideTimer.Stop();
 
             GetWindowThreadProcessId(handle, out uint pid);
+
+            var remainingWindows = new List<IntPtr>(_currentSourceHwnds);
+
             if (pid > 0)
             {
                 try
@@ -722,7 +724,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
                 catch { }
 
-                _currentSourceHwnds.RemoveAll(h =>
+                remainingWindows.RemoveAll(h =>
                 {
                     GetWindowThreadProcessId(h, out uint targetPid);
                     return targetPid == pid;
@@ -730,10 +732,8 @@ namespace EvolveOS_ShellEnhancer.Views
             }
             else
             {
-                _currentSourceHwnds.Remove(handle);
+                remainingWindows.Remove(handle);
             }
-
-            var remainingWindows = new List<IntPtr>(_currentSourceHwnds);
 
             this.DispatcherQueue.TryEnqueue(() =>
             {
