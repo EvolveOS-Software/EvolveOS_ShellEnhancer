@@ -1160,6 +1160,12 @@ namespace EvolveOS_ShellEnhancer.Views
                 contextFlyout.Items.Add(unpinItem);
             }
 
+            contextFlyout.Opening += (s, args) =>
+            {
+                this.Activate();
+                Win32Helper.SetForegroundWindow(_hWnd);
+            };
+
             appCard.ContextFlyout = contextFlyout;
             if (!isDirectory) _appIndicators.Add((processName, indicator, backIcon, appCard, displayTitle));
 
@@ -1888,6 +1894,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 flyout.Items.Add(taskManagerItem);
                 flyout.Items.Add(settingsItem);
+
+                this.Activate();
+                Win32Helper.SetForegroundWindow(_hWnd);
 
                 flyout.ShowAt(element, e.GetPosition(element));
                 e.Handled = true;
