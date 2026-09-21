@@ -492,6 +492,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(startX, startY, windowWidth, windowHeight));
                 _appWindow.Show();
 
+                this.Activate();
+                Win32Helper.SetForegroundWindow(_hWnd);
+
                 AvatarPopup.IsOpen = true;
 
                 SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
@@ -511,6 +514,9 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, windowWidth, windowHeight));
                 _appWindow.Show();
+
+                this.Activate();
+                Win32Helper.SetForegroundWindow(_hWnd);
 
                 AvatarPopup.IsOpen = true;
 
