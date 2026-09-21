@@ -14,12 +14,17 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace EvolveOS_ShellEnhancer
 {
     public partial class App : Application
     {
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
+
         #region Fields & Properties
         private static System.Threading.Mutex? _appMutex;
 
@@ -74,6 +79,13 @@ namespace EvolveOS_ShellEnhancer
                 msgWindow.Activate();
                 return;
             }
+
+            // Do not kill the standalone app on startup if the Optimizer is missing.
+            // Just warn the user, but allow the Enhancer to continue booting using cached Registry data.
+            /*if (!File.Exists(optimizerPath))
+            {
+                Debug.WriteLine("[Startup] Optimizer not found in directory. Proceeding with standalone cached settings.");
+            }*/
 
             СheckingGlobalParameters.Initialize();
 
@@ -148,17 +160,7 @@ namespace EvolveOS_ShellEnhancer
                 bool isMasterEnabled = SettingsEngine.Shell_MasterEnabled;
                 if (isMasterEnabled)
                 {
-                    _isTaskbarEnabled = SettingsEngine.Shell_TaskbarEnabled;
-                    if (_isTaskbarEnabled)
-                    {
-                        _ = TaskbarManager.InitializeAndShowTaskbarsAsync();
-                    }
-
-                    _isStartMenuEnabled = SettingsEngine.Shell_StartMenuEnabled;
-                    if (_isStartMenuEnabled)
-                    {
-                        KeyboardHookManager.StartHook();
-                    }
+                    _ = WaitForExplorerAndStartAsync();
                 }
             }
             catch (Exception ex)
@@ -168,6 +170,28 @@ namespace EvolveOS_ShellEnhancer
 
             IpcServerManager.CommandReceived += OnIpcCommandReceived;
             IpcServerManager.StartListening();
+        }
+
+        private async Task WaitForExplorerAndStartAsync()
+        {
+            int retries = 0;
+            while (FindWindow("Shell_TrayWnd", null) == IntPtr.Zero && retries < 20)
+            {
+                await Task.Delay(500);
+                retries++;
+            }
+
+            _isTaskbarEnabled = SettingsEngine.Shell_TaskbarEnabled;
+            if (_isTaskbarEnabled)
+            {
+                _ = TaskbarManager.InitializeAndShowTaskbarsAsync();
+            }
+
+            _isStartMenuEnabled = SettingsEngine.Shell_StartMenuEnabled;
+            if (_isStartMenuEnabled)
+            {
+                KeyboardHookManager.StartHook();
+            }
         }
         #endregion
 
