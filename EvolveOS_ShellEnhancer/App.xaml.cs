@@ -220,10 +220,10 @@ namespace EvolveOS_ShellEnhancer
             if (baseSize <= 0) baseSize = 14.0;
 
             Application.Current.Resources["AppFontSizeBase"] = baseSize;
-            Application.Current.Resources["AppFontSizeSmall"] = Math.Max(baseSize - 2, 9.0);   // E.g., 12 (Clamped so it never goes below 9)
-            Application.Current.Resources["AppFontSizeTiny"] = Math.Max(baseSize - 4, 8.0);    // E.g., 10
-            Application.Current.Resources["AppFontSizeHeader"] = baseSize + 2;                 // E.g., 18
-            Application.Current.Resources["AppFontSizeTitle"] = baseSize + 8;                  // E.g., 24
+            Application.Current.Resources["AppFontSizeSmall"] = Math.Max(baseSize - 2, 9.0);
+            Application.Current.Resources["AppFontSizeTiny"] = Math.Max(baseSize - 4, 8.0);
+            Application.Current.Resources["AppFontSizeHeader"] = baseSize + 2;
+            Application.Current.Resources["AppFontSizeTitle"] = baseSize + 8;
 
             Application.Current.Resources["ControlContentThemeFontSize"] = baseSize;
             Application.Current.Resources["BodyTextBlockFontSize"] = baseSize;
@@ -252,7 +252,7 @@ namespace EvolveOS_ShellEnhancer
             }
         }
 
-        private void RestoreWindowsDefaults()
+        private static void RestoreWindowsDefaults()
         {
             try
             {
@@ -264,11 +264,16 @@ namespace EvolveOS_ShellEnhancer
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Registry Restore Error] {ex.Message}");
+            }
         }
 
         public static void ExitApp()
         {
+            RestoreWindowsDefaults();
+
             HandleCleanup();
 
             Application.Current.Exit();
@@ -341,6 +346,11 @@ namespace EvolveOS_ShellEnhancer
             {
                 switch (command)
                 {
+                    case "SHUTDOWN":
+                    case "STOP":
+                        App.ExitApp();
+                        break;
+
                     case "StartMenu_Enable":
                         _isStartMenuEnabled = bool.Parse(value);
                         if (_isStartMenuEnabled)
