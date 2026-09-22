@@ -17,8 +17,6 @@ namespace EvolveOS_ShellEnhancer
         private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
 
         #region Fields & Properties
-        private static System.Threading.Mutex? _appMutex;
-
         private CustomStartMenuWindow? _startMenuWindow;
 
         private bool _isStartMenuEnabled = false;
@@ -52,31 +50,10 @@ namespace EvolveOS_ShellEnhancer
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            _appMutex = new System.Threading.Mutex(true, "EvolveOS_ShellEnhancer_Unique_Instance_Mutex", out bool isFirstInstance);
-
-            if (!isFirstInstance)
+            if (!RunGuard.ValidateStartupEnvironment())
             {
-                var runningMsgWindow = new MessageWindow(Enums.MessageWindowState.AlreadyRunning);
-                runningMsgWindow.Activate();
                 return;
             }
-
-            string exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
-            string optimizerPath = Path.Combine(exeDir, "EvolveOS_Optimizer.exe");
-
-            if (!File.Exists(optimizerPath))
-            {
-                var msgWindow = new MessageWindow(Enums.MessageWindowState.MissingOptimizer);
-                msgWindow.Activate();
-                return;
-            }
-
-            // Do not kill the standalone app on startup if the Optimizer is missing.
-            // Just warn the user, but allow the Enhancer to continue booting using cached Registry data.
-            /*if (!File.Exists(optimizerPath))
-            {
-                Debug.WriteLine("[Startup] Optimizer not found in directory. Proceeding with standalone cached settings.");
-            }*/
 
             СheckingGlobalParameters.Initialize();
 
