@@ -1,34 +1,15 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using Windows.System;
 using WinRT.Interop;
-using EvolveOS_ShellEnhancer.Utilities.Helpers;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
     public sealed partial class AccountCardWindow : Window
     {
-        #region Win32 P/Invoke
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-
-        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
-        private const uint SWP_NOSIZE = 0x0001;
-        private const uint SWP_NOMOVE = 0x0002;
-        #endregion
-
         private AppWindow _appWindow;
         private Action<bool> _onDismiss;
         private IntPtr _parentHwnd;

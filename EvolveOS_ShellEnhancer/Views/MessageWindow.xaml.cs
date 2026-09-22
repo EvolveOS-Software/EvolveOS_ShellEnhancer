@@ -1,17 +1,10 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using System;
-using System.Text.RegularExpressions;
-using EvolveOS_ShellEnhancer.Enums;
-using EvolveOS_ShellEnhancer.Utilities.Helpers;
-using EvolveOS_ShellEnhancer.Utilities.Managers;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
+using System.Text.RegularExpressions;
 using WinRT.Interop;
 
 namespace EvolveOS_ShellEnhancer.Views

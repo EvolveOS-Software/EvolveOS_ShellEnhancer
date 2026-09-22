@@ -1,22 +1,11 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
-using EvolveOS_ShellEnhancer.Utilities.Helpers;
-using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Managers
 {
     public static class KeyboardHookManager
     {
-        private const int WH_KEYBOARD_LL = 13;
-        private const int WM_KEYDOWN = 0x0100;
-        private const int WM_KEYUP = 0x0101;
-        private const int WM_SYSKEYDOWN = 0x0104;
-
-        private const int VK_LWIN = 0x5B;
-        private const int VK_RWIN = 0x5C;
-
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
         private static LowLevelKeyboardProc _proc = HookCallback;
         private static IntPtr _hookID = IntPtr.Zero;

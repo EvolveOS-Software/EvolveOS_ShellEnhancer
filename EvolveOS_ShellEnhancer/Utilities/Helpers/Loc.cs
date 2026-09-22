@@ -1,14 +1,6 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using EvolveOS_ShellEnhancer.Utilities.Services;
-using Microsoft.UI;
-
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {
     public static class Loc

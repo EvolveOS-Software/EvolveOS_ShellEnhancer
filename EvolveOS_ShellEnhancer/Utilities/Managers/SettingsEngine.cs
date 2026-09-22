@@ -2,9 +2,6 @@
 // Licensed under the MIT License.
 
 using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Managers

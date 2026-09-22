@@ -1,44 +1,18 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using EvolveOS_ShellEnhancer.Utilities.Animations;
-using EvolveOS_ShellEnhancer.Utilities.Helpers;
-using EvolveOS_ShellEnhancer.Utilities.Managers;
-using EvolveOS_ShellEnhancer.Utilities.Services;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.IO;
 using Windows.System;
 using WinRT.Interop;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
-using System.IO;
-using EvolveOS_ShellEnhancer.Models;
-using System.Runtime.InteropServices;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
     public sealed partial class CustomStartMenuWindow : Window
     {
-        #region Win32 P/Invoke for TopMost Enforcement
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
-        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
-        private const uint SWP_NOSIZE = 0x0001;
-        private const uint SWP_NOMOVE = 0x0002;
-        #endregion
-
         #region Fields & Properties
         public DisplayArea? TargetDisplayArea { get; set; }
 

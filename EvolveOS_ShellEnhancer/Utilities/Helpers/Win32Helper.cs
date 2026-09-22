@@ -2,11 +2,8 @@
 // Licensed under the MIT License.
 
 using Microsoft.Win32;
-using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using Windows.System;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
@@ -21,6 +18,12 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll")]
         public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+        public static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+        public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
         [DllImport("dwmapi.dll", PreserveSig = true)]
         public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
@@ -28,7 +31,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
 
         [DllImport("user32.dll")]
@@ -39,6 +42,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
 
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -107,6 +113,33 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool SendNotifyMessage(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
+
+        [DllImport("shell32.dll", SetLastError = true)]
+        public static extern IntPtr SHAppBarMessage(uint dwMessage, ref APPBARDATA pData);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr CreateRoundRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidthEllipse, int nHeightEllipse);
+
+        [DllImport("user32.dll")]
+        public static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
+
         #endregion
 
         #region DWM Thumbnail API
@@ -170,6 +203,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             public int Top;
             public int Right;
             public int Bottom;
+
+            public int Width => Right - Left;
+            public int Height => Bottom - Top;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -177,6 +213,26 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         {
             public int X;
             public int Y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct APPBARDATA
+        {
+            public uint cbSize;
+            public IntPtr hWnd;
+            public uint uCallbackMessage;
+            public uint uEdge;
+            public RECT rc;
+            public int lParam;
         }
 
         #endregion
@@ -191,6 +247,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const int WS_BORDER = 0x00800000;
         public const int WS_CAPTION = 0x00C00000;
         public const uint WS_POPUP = 0x80000000;
+        public const long WS_POPUP_LONG = 0x80000000L;
+        public const long WS_CAPTION_LONG = 0x00C00000L;
+        public const long WS_THICKFRAME_LONG = 0x00040000L;
+        public const long WS_BORDER_LONG = 0x00800000L;
 
         // Extended Styles
         public const int GWL_EXSTYLE = -20;
@@ -199,6 +259,12 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const int WS_EX_DLGMODALFRAME = 0x00000001;
         public const int WS_EX_LAYERED = 0x00080000;
         public const int WS_EX_TRANSPARENT = 0x00000020;
+        public const long WS_EX_TOOLWINDOW_LONG = 0x00000080L;
+        public const long WS_EX_TOPMOST_LONG = 0x00000008L;
+        public const long WS_EX_TOPMOST = 0x00000008L;
+
+        // Window Parent / Index Constants
+        public const int GWLP_HWNDPARENT = -8;
 
         // SetWindowPos Flags
         public const uint SWP_NOMOVE = 0x0002;
@@ -206,7 +272,11 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const uint SWP_NOZORDER = 0x0004;
         public const uint SWP_NOACTIVATE = 0x0010;
         public const uint SWP_FRAMECHANGED = 0x0020;
+        public const uint SWP_SHOWWINDOW = 0x0040;
         public const uint WM_SETTINGCHANGE = 0x001A;
+
+        public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        public static readonly IntPtr HWND_TOP = new IntPtr(0);
 
         // DWM Attributes
         public const int DWMWA_BORDER_COLOR = 34;
@@ -222,12 +292,18 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const int SW_SHOW = 5;
 
         public const byte VK_LWIN = 0x5B;
+        public const int VK_RWIN = 0x5C;
         public const uint KEYEVENTF_KEYUP = 0x0002;
 
         public const uint MOUSEEVENTF_MOVE = 0x0001;
         public const uint MOUSEEVENTF_WHEEL = 0x0800;
         public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
         public const uint MOUSEEVENTF_LEFTUP = 0x0004;
+
+        public const int WH_KEYBOARD_LL = 13;
+        public const int WM_KEYDOWN = 0x0100;
+        public const int WM_KEYUP = 0x0101;
+        public const int WM_SYSKEYDOWN = 0x0104;
 
         public const int WS_EX_NOACTIVATE = 0x08000000;
         public const int WS_EX_TOOLWINDOW = 0x00000080;
@@ -236,6 +312,25 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const uint LWA_ALPHA = 0x2;
 
         public const int DWMWA_EXCLUDED_FROM_PEEK = 12;
+
+        public const uint SMTO_ABORTIFHUNG = 0x0002;
+        public static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
+        public const uint MONITOR_DEFAULTTONEAREST = 2;
+
+        public const uint ABM_NEW = 0x0000;
+        public const uint ABM_REMOVE = 0x0001;
+        public const uint ABM_QUERYPOS = 0x0002;
+        public const uint ABM_SETPOS = 0x0003;
+        public const uint ABM_GETTASKBARPOS = 0x00000005;
+
+        public const uint ABE_LEFT = 0;
+        public const uint ABE_TOP = 1;
+        public const uint ABE_RIGHT = 2;
+        public const uint ABE_BOTTOM = 3;
+
+        public const uint GW_OWNER = 4;
+        public const uint WM_CLOSE = 0x0010;
+        public const int DWMWA_CLOAKED = 14;
 
         #endregion
 
@@ -350,7 +445,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
                     key.SetValue("TaskbarLocation", dwordValue, Microsoft.Win32.RegistryValueKind.DWord);
 
-                    IntPtr HWND_BROADCAST = new IntPtr(0xffff);
                     SendNotifyMessage(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings");
                 }
             }
@@ -503,6 +597,49 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             {
                 Debug.WriteLine("Registry Error: " + ex.Message);
             }
+        }
+
+        #endregion
+
+        #region Universal Helpers
+
+        public static RECT GetTaskbarRect()
+        {
+            IntPtr taskbarHwnd = FindWindow("Shell_TrayWnd", null);
+            if (taskbarHwnd != IntPtr.Zero && GetWindowRect(taskbarHwnd, out RECT rect))
+            {
+                return rect;
+            }
+            return new RECT { Left = 0, Top = 1040, Right = 1920, Bottom = 1080 };
+        }
+
+        public static uint GetTaskbarEdge()
+        {
+            APPBARDATA abd = new APPBARDATA();
+            abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
+            SHAppBarMessage(ABM_GETTASKBARPOS, ref abd);
+            return abd.uEdge;
+        }
+
+        public static int GetCurrentWidgetOffset(IntPtr monitorHwnd)
+        {
+            GetWindowRect(monitorHwnd, out RECT windowRect);
+            var taskbarRect = GetTaskbarRect();
+            uint edge = GetTaskbarEdge();
+
+            if (edge == 0 || edge == 2)
+            {
+                return taskbarRect.Bottom - windowRect.Bottom;
+            }
+            else
+            {
+                return taskbarRect.Right - windowRect.Right;
+            }
+        }
+
+        public static bool AreRectsEqual(RECT a, RECT b)
+        {
+            return a.Left == b.Left && a.Top == b.Top && a.Right == b.Right && a.Bottom == b.Bottom;
         }
 
         #endregion

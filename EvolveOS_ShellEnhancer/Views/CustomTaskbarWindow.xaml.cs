@@ -1,151 +1,29 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using EvolveOS_ShellEnhancer.Models;
-using EvolveOS_ShellEnhancer.Utilities.Animations;
-using EvolveOS_ShellEnhancer.Utilities.Helpers;
-using EvolveOS_ShellEnhancer.Utilities.Managers;
-using EvolveOS_ShellEnhancer.Utilities.Services;
 using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Microsoft.Win32;
 using Microsoft.Windows.System.Power;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
-using Windows.Foundation;
 using Windows.Graphics;
 using Windows.Networking.Connectivity;
 using Windows.System;
-using Windows.UI;
 using Windows.UI.Core;
 using WinRT.Interop;
-using static EvolveOS_ShellEnhancer.Utilities.Managers.TaskbarOverlayManager;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
     public sealed partial class CustomTaskbarWindow : Window
     {
-        #region P/Invoke Definitions
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
-
-        [DllImport("user32.dll")]
-        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
-        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
-
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-        [DllImport("user32.dll")]
-        private static extern bool IsWindowVisible(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
-
-        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
-        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-        [DllImport("dwmapi.dll")]
-        private static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
-
-        [DllImport("shell32.dll", ExactSpelling = true)]
-        private static extern uint SHAppBarMessage(uint dwMessage, ref APPBARDATA pData);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
-
-        [DllImport("gdi32.dll")]
-        private static extern IntPtr CreateRoundRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidthEllipse, int nHeightEllipse);
-
-        [DllImport("user32.dll")]
-        private static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
-
-        private const uint WM_SETTINGCHANGE = 0x001A;
-        private const uint SMTO_ABORTIFHUNG = 0x0002;
-        private static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MONITORINFO
-        {
-            public uint cbSize;
-            public RECT rcMonitor;
-            public RECT rcWork;
-            public uint dwFlags;
-        }
-
-        private const uint MONITOR_DEFAULTTONEAREST = 2;
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct APPBARDATA
-        {
-            public uint cbSize;
-            public IntPtr hWnd;
-            public uint uCallbackMessage;
-            public uint uEdge;
-            public RECT rc;
-            public int lParam;
-        }
-
-        private const uint ABM_NEW = 0x0000;
-        private const uint ABM_REMOVE = 0x0001;
-        private const uint ABM_QUERYPOS = 0x0002;
-        private const uint ABM_SETPOS = 0x0003;
-
-        private const uint ABE_LEFT = 0;
-        private const uint ABE_TOP = 1;
-        private const uint ABE_RIGHT = 2;
-        private const uint ABE_BOTTOM = 3;
-
-        private const uint GW_OWNER = 4;
-        private const uint WM_CLOSE = 0x0010;
-        private const int GWL_EXSTYLE = -20;
-        private const long WS_EX_TOOLWINDOW = 0x00000080L;
-        private const int DWMWA_CLOAKED = 14;
-        #endregion
-
         #region Fields & Properties
         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;

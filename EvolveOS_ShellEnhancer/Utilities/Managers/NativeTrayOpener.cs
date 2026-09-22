@@ -1,7 +1,5 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
-using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UIAutomationClient;
 

@@ -1,9 +1,6 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using Microsoft.UI.Xaml;
-using System;
-
 namespace EvolveOS_ShellEnhancer.Utilities.Managers
 {
     internal sealed class TimerControlManager

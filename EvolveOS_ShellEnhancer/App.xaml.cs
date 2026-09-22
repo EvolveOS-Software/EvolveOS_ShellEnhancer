@@ -1,22 +1,13 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using EvolveOS_ShellEnhancer.Utilities.Helpers;
-using EvolveOS_ShellEnhancer.Utilities.Managers;
-using EvolveOS_ShellEnhancer.Utilities.Services;
-using EvolveOS_ShellEnhancer.Views;
 using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.Win32;
-using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace EvolveOS_ShellEnhancer
 {

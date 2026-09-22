@@ -1,22 +1,13 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using EvolveOS_ShellEnhancer.Models;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Windows.Management.Deployment;
 using Windows.Storage;
 using Windows.Storage.FileProperties;
 using Windows.Storage.Streams;
-using static EvolveOS_ShellEnhancer.Utilities.Helpers.Win32Helper;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {
@@ -135,7 +126,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         }
                     }
 
-                    // 2. Add top-level subdirectories as Folder items
                     var subDirs = Directory.GetDirectories(basePath);
                     foreach (var dir in subDirs)
                     {
@@ -151,9 +141,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                             apps.Add(new AppItem
                             {
                                 Name = folderName,
-                                ExecutablePath = dir, // Directory path
+                                ExecutablePath = dir,
                                 IsUwp = false,
-                                FallbackGlyph = "\xE8B7", // Folder glyph
+                                FallbackGlyph = "\xE8B7",
                                 IconScale = 1.0
                             });
                         }
