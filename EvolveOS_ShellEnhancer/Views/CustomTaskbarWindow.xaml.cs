@@ -7,6 +7,7 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Shapes;
 using Microsoft.Win32;
 using Microsoft.Windows.System.Power;
@@ -66,6 +67,8 @@ namespace EvolveOS_ShellEnhancer.Views
         public readonly bool IsPrimaryMonitor;
 
         public static bool MonitorAwareApps = false;
+
+        private bool _isTrayOverflowOpen = false;
 
         public static int TaskbarSize { get; set; } = 48;
         public static int TaskbarIconSize { get; set; } = 24;
@@ -2213,6 +2216,24 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private async void BtnTrayOverflow_Click(object sender, RoutedEventArgs e)
         {
+            _isTrayOverflowOpen = !_isTrayOverflowOpen;
+
+            double targetAngle = _isTrayOverflowOpen ? 180.0 : 0.0;
+
+            DoubleAnimation rotateAnimation = new DoubleAnimation
+            {
+                To = targetAngle,
+                Duration = new Duration(TimeSpan.FromMilliseconds(250)),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+            };
+
+            Storyboard storyboard = new Storyboard();
+            Storyboard.SetTarget(rotateAnimation, ChevronRotation);
+            Storyboard.SetTargetProperty(rotateAnimation, "Angle");
+
+            storyboard.Children.Add(rotateAnimation);
+            storyboard.Begin();
+
             try { await Win32Helper.OpenTrayOverflowAsync(); } catch { }
         }
         #endregion

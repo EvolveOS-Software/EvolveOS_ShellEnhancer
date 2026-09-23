@@ -39,8 +39,19 @@
                 <StackPanel x:Name="RightPanel" Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right" VerticalAlignment="Center">
 
                     <!-- Chevron (Hidden Icons) -->
-                    <Button x:Name="BtnChevron" MinWidth="44" Height="40" Padding="0" HorizontalAlignment="Center" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnTrayOverflow_Click" ToolTipService.ToolTip="Show hidden icons">
-                        <FontIcon x:Name="ChevronIcon" Glyph="&#xE70D;" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Button x:Name="BtnChevron" MinWidth="44" Height="40" Padding="0"
+                            HorizontalAlignment="Center" Background="Transparent"
+                            BorderThickness="0" CornerRadius="4"
+                            Click="BtnTrayOverflow_Click" ToolTipService.ToolTip="Show hidden icons">
+
+                        <FontIcon x:Name="ChevronIcon" Glyph="&#xE70D;" FontSize="14"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <RotateTransform x:Name="ChevronRotation" Angle="0"/>
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
+
                     </Button>
 
                     <!-- Combined Quick Settings (Network & Volume) -->

@@ -272,7 +272,7 @@ namespace EvolveOS_ShellEnhancer
 
         public static void ExitApp()
         {
-            RestoreWindowsDefaults();
+            //RestoreWindowsDefaults();
 
             HandleCleanup();
 

@@ -4,6 +4,7 @@
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Animation;
 using System.Collections.ObjectModel;
 using System.IO;
 using Windows.System;
@@ -378,9 +379,23 @@ namespace EvolveOS_ShellEnhancer.Views
                 RecentDocsCollection.Add(item);
             }
 
-            if (RecentDocsChevron != null)
+            if (RecentDocsChevron != null && RecentDocsChevronRotation != null)
             {
-                RecentDocsChevron.Glyph = _isRecentDocsExpanded ? "\xE70E" : "\xE70D";
+                double targetAngle = _isRecentDocsExpanded ? 180.0 : 0.0;
+
+                DoubleAnimation rotateAnimation = new DoubleAnimation
+                {
+                    To = targetAngle,
+                    Duration = new Duration(TimeSpan.FromMilliseconds(250)),
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+                };
+
+                Storyboard storyboard = new Storyboard();
+                Storyboard.SetTarget(rotateAnimation, RecentDocsChevronRotation);
+                Storyboard.SetTargetProperty(rotateAnimation, "Angle");
+
+                storyboard.Children.Add(rotateAnimation);
+                storyboard.Begin();
             }
 
             if (RecentDocsMoreBtn != null)

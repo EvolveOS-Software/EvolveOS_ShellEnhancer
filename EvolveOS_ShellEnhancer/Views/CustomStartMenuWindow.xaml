@@ -216,7 +216,11 @@
                                             <Grid Margin="0,0,0,12">
                                                 <TextBlock Text="Recent Documents" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
                                                 <Button x:Name="RecentDocsMoreBtn" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="8,6" CornerRadius="4" Click="RecentDocsMoreBtn_Click" Visibility="Collapsed">
-                                                    <FontIcon x:Name="RecentDocsChevron" Glyph="&#xE70D;" FontSize="12"/>
+                                                    <FontIcon x:Name="RecentDocsChevron" Glyph="&#xE70D;" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                        <FontIcon.RenderTransform>
+                                                            <RotateTransform x:Name="RecentDocsChevronRotation" Angle="0"/>
+                                                        </FontIcon.RenderTransform>
+                                                    </FontIcon>
                                                 </Button>
                                             </Grid>
 
