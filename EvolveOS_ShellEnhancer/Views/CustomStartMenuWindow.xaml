@@ -14,7 +14,7 @@
 
         <Grid Background="Transparent" PointerPressed="DismissLayer_PointerPressed" />
 
-        <Grid Width="750" Height="650" HorizontalAlignment="Center" VerticalAlignment="Bottom">
+        <Grid Width="780" Height="680" HorizontalAlignment="Center" VerticalAlignment="Bottom">
 
             <!-- Floating Menu Container -->
             <Border Background="Transparent" 
@@ -95,7 +95,7 @@
 
                                     <FlipView.ItemTemplate>
                                         <DataTemplate x:DataType="models:StartMenuPage">
-                                            <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto" RightTapped="ScrollViewer_RightTapped" Background="Transparent">
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto" RightTapped="ScrollViewer_RightTapped" Background="Transparent" Padding="0,0,16,0">
                                                 <StackPanel Spacing="16" Background="Transparent" MinHeight="300" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 
                                                     <!-- Dynamic Pinned Categories -->
@@ -104,28 +104,62 @@
                                                             <DataTemplate x:DataType="models:AppCategory">
                                                                 <StackPanel Margin="0,0,0,16">
 
-                                                                    <TextBox Text="{x:Bind Name, Mode=TwoWay}"
-                                                                             LostFocus="CategoryName_LostFocus" KeyDown="CategoryName_KeyDown"
-                                                                             Background="Transparent" BorderThickness="0" PlaceholderText="Category Name"
-                                                                             FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" Padding="0" Margin="0,0,0,8">
-                                                                        <TextBox.Resources>
-                                                                            <SolidColorBrush x:Key="TextControlBackground" Color="Transparent"/>
-                                                                            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent"/>
-                                                                            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent"/>
-                                                                            <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent"/>
-                                                                        </TextBox.Resources>
-                                                                        <TextBox.ContextFlyout>
-                                                                            <MenuFlyout>
-                                                                                <MenuFlyoutItem Text="Delete Section" Click="DeleteCategory_Click" Tag="{x:Bind}">
-                                                                                    <MenuFlyoutItem.Icon>
-                                                                                        <FontIcon Glyph="&#xE74D;"/>
-                                                                                    </MenuFlyoutItem.Icon>
-                                                                                </MenuFlyoutItem>
-                                                                            </MenuFlyout>
-                                                                        </TextBox.ContextFlyout>
-                                                                    </TextBox>
+                                                                    <!-- Category Header with Chevron -->
+                                                                    <Grid Margin="0,0,0,8">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
 
-                                                                    <GridView ItemsSource="{x:Bind Apps}" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
+                                                                        <TextBox Grid.Column="0" Text="{x:Bind Name, Mode=TwoWay}"
+                                                                                 LostFocus="CategoryName_LostFocus" KeyDown="CategoryName_KeyDown"
+                                                                                 Background="Transparent" BorderThickness="0" PlaceholderText="Category Name"
+                                                                                 FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" Padding="0">
+                                                                            <TextBox.Resources>
+                                                                                <SolidColorBrush x:Key="TextControlBackground" Color="Transparent"/>
+                                                                                <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent"/>
+                                                                                <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent"/>
+                                                                                <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent"/>
+                                                                            </TextBox.Resources>
+                                                                            <TextBox.ContextFlyout>
+                                                                                <MenuFlyout>
+                                                                                    <MenuFlyoutItem Text="Delete Section" Click="DeleteCategory_Click" Tag="{x:Bind}">
+                                                                                        <MenuFlyoutItem.Icon>
+                                                                                            <FontIcon Glyph="&#xE74D;"/>
+                                                                                        </MenuFlyoutItem.Icon>
+                                                                                    </MenuFlyoutItem>
+                                                                                </MenuFlyout>
+                                                                            </TextBox.ContextFlyout>
+                                                                        </TextBox>
+
+                                                                        <!-- Chevron Toggle Button -->
+                                                                        <ToggleButton Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                                                                      Checked="CategoryChevron_Checked" Unchecked="CategoryChevron_Unchecked"
+                                                                                      Visibility="Collapsed" Padding="8,6" CornerRadius="4">
+
+                                                                            <ToggleButton.Resources>
+                                                                                <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="Transparent" />
+                                                                                <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="Transparent" />
+                                                                                <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="Transparent" />
+                                                                                <StaticResource x:Key="ToggleButtonForegroundChecked" ResourceKey="TextFillColorPrimaryBrush" />
+                                                                                <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="TextFillColorPrimaryBrush" />
+                                                                                <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="TextFillColorSecondaryBrush" />
+                                                                            </ToggleButton.Resources>
+
+                                                                            <FontIcon Glyph="&#xE70D;" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                                                <FontIcon.RenderTransform>
+                                                                                    <RotateTransform Angle="0" />
+                                                                                </FontIcon.RenderTransform>
+                                                                            </FontIcon>
+                                                                        </ToggleButton>
+                                                                    </Grid>
+
+                                                                    <GridView ItemsSource="{x:Bind Apps}" SelectionMode="Single" IsItemClickEnabled="True"
+                                                                              ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged"
+                                                                              MaxHeight="104" SizeChanged="CategoryGrid_SizeChanged"
+                                                                              ScrollViewer.VerticalScrollMode="Disabled"
+                                                                              ScrollViewer.VerticalScrollBarVisibility="Hidden">
+
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
                                                                                 <StackPanel Tag="{x:Bind}" Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent"
@@ -154,13 +188,14 @@
                                                             <Button Background="Transparent" BorderThickness="0" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="8,6" CornerRadius="4" Click="RecentDocsMoreBtn_Click">
                                                                 <FontIcon Glyph="&#xE70D;" FontSize="11" RenderTransformOrigin="0.5,0.5">
                                                                     <FontIcon.RenderTransform>
-                                                                        <RotateTransform Angle="{x:Bind RecentDocsChevronAngle, Mode=OneWay}"/>
+                                                                        <RotateTransform Angle="0"/>
                                                                     </FontIcon.RenderTransform>
                                                                 </FontIcon>
                                                             </Button>
                                                         </Grid>
 
-                                                        <GridView ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick">
+                                                        <GridView ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
+                                                                  MaxHeight="116" ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden">
                                                             <GridView.ItemContainerStyle>
                                                                 <Style TargetType="GridViewItem">
                                                                     <Setter Property="Margin" Value="0,0,6,6"/>
@@ -216,32 +251,64 @@
                                             <Setter Property="FocusVisualMargin" Value="0"/>
                                         </Style>
                                     </ListView.ItemContainerStyle>
+
                                     <ListView.ItemTemplate>
                                         <DataTemplate x:DataType="models:AppItem">
-                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
-                                                    RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                <Grid ColumnSpacing="12" Padding="8,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="32"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                    <Image Source="{x:Bind IconSource, Mode=OneWay}"
-                                                           Width="20" Height="20"
-                                                           Stretch="Uniform"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           Visibility="{x:Bind HasIcon, Mode=OneWay}"
-                                                           RenderTransformOrigin="0.5,0.5">
-                                                        <Image.RenderTransform>
-                                                            <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                        </Image.RenderTransform>
-                                                    </Image>
-                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
-                                                    <FontIcon x:Name="ChevronIcon" Grid.Column="2" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind IsFolderItem, Mode=OneWay}"/>
-                                                </Grid>
-                                            </Border>
+                                            <StackPanel>
+
+                                                <!-- 1. Folder Header / App Card -->
+                                                <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
+                                                        RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                    <Grid ColumnSpacing="12" Padding="8,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="32"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                            <Image.RenderTransform>
+                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                            </Image.RenderTransform>
+                                                        </Image>
+                                                        <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+
+                                                        <FontIcon x:Name="ChevronIcon" Grid.Column="2" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind IsFolderItem, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                            <FontIcon.RenderTransform>
+                                                                <RotateTransform Angle="0"/>
+                                                            </FontIcon.RenderTransform>
+                                                        </FontIcon>
+                                                    </Grid>
+                                                </Border>
+
+                                                <!-- 2. Folder Contents -->
+                                                <ItemsControl x:Name="NestedFolderGrid"
+                                                              ItemsSource="{x:Bind FolderApps, Mode=OneWay}"
+                                                              Visibility="{x:Bind IsFolderItem, Mode=OneWay}"
+                                                              MaxHeight="0">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="models:AppItem">
+                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="Transparent"
+                                                                    RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                <Grid ColumnSpacing="12" Padding="8,0">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="32"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                    <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                        <Image.RenderTransform>
+                                                                            <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                        </Image.RenderTransform>
+                                                                    </Image>
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>

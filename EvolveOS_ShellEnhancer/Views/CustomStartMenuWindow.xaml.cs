@@ -374,9 +374,8 @@ namespace EvolveOS_ShellEnhancer.Views
         private void UpdateRecentDocsView(StartMenuPage page)
         {
             page.RecentDocsCollection.Clear();
-            int limit = _isRecentDocsExpanded ? 24 : 6;
 
-            foreach (var item in _allRecentDocs.Take(limit))
+            foreach (var item in _allRecentDocs)
             {
                 page.RecentDocsCollection.Add(item);
             }
@@ -394,10 +393,31 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void RecentDocsMoreBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is StartMenuPage page)
+            if (sender is Button btn && btn.DataContext is StartMenuPage page)
             {
                 _isRecentDocsExpanded = !_isRecentDocsExpanded;
-                UpdateRecentDocsView(page);
+
+                if (btn.Content is FontIcon icon && icon.RenderTransform is RotateTransform transform)
+                    FactoryAnimation.AnimateRotation(transform, _isRecentDocsExpanded ? 180 : 0);
+
+                if (btn.Parent is Grid headerGrid && headerGrid.Parent is StackPanel stackPanel && stackPanel.Children[1] is GridView recentDocsGrid)
+                {
+                    FactoryAnimation.AnimatePanelExpansion(recentDocsGrid, _isRecentDocsExpanded, 116);
+
+                    if (_isRecentDocsExpanded)
+                    {
+                        DispatcherQueue.TryEnqueue(async () =>
+                        {
+                            await Task.Delay(260);
+
+                            var scrollViewer = FindVisualParent<ScrollViewer>(btn);
+                            if (scrollViewer != null)
+                            {
+                                scrollViewer.ChangeView(null, scrollViewer.ScrollableHeight, null, false);
+                            }
+                        });
+                    }
+                }
             }
         }
         #endregion
@@ -467,8 +487,8 @@ namespace EvolveOS_ShellEnhancer.Views
             UpdatePowerMenuVisibility();
             LoadRecentDocuments();
 
-            int windowWidth = 750;
-            int windowHeight = 650;
+            int windowWidth = 780;
+            int windowHeight = 680;
 
             int taskbarOffset = 60;
             int margin = 16;
@@ -1669,84 +1689,97 @@ namespace EvolveOS_ShellEnhancer.Views
             if (LocationBtn2 != null) LocationBtn2.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private Dictionary<string, List<AppItem>> _expandedFolders = new();
-
         private void AppGrid_ItemClick(object sender, ItemClickEventArgs e)
         {
             if (e.ClickedItem is AppItem app)
             {
-                bool isFolder = !string.IsNullOrEmpty(app.ExecutablePath) && Directory.Exists(app.ExecutablePath);
-
-                if (isFolder)
+                if (app.IsFolderItem == Visibility.Visible)
                 {
-                    ToggleFolderExpansion(app);
-                    return;
-                }
+                    app.IsExpanded = !app.IsExpanded;
 
-                LaunchApp(app, false);
+                    if (app.FolderApps.Count == 0 && !string.IsNullOrEmpty(app.ExecutablePath))
+                    {
+                        try
+                        {
+                            var files = Directory.GetFiles(app.ExecutablePath, "*.lnk", SearchOption.AllDirectories)
+                                .Concat(Directory.GetFiles(app.ExecutablePath, "*.url", SearchOption.AllDirectories))
+                                .Concat(Directory.GetFiles(app.ExecutablePath, "*.appref-ms", SearchOption.AllDirectories));
+
+                            foreach (var file in files)
+                            {
+                                app.FolderApps.Add(new AppItem
+                                {
+                                    Name = Path.GetFileNameWithoutExtension(file),
+                                    ExecutablePath = file,
+                                    IsUwp = false,
+                                    FallbackGlyph = "\xE738",
+                                    IconScale = 1.0
+                                });
+                            }
+
+                            _ = ExtractIconsAsync(app.FolderApps);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Failed to load folder contents: {ex.Message}");
+                        }
+                    }
+
+                    var container = SearchAndAllAppsGrid.ContainerFromItem(app) as ListViewItem;
+
+                    if (container != null)
+                    {
+                        var chevron = FindDescendant<FontIcon>(container, "ChevronIcon");
+                        if (chevron != null && chevron.RenderTransform is RotateTransform transform)
+                        {
+                            FactoryAnimation.AnimateRotation(transform, app.IsExpanded ? 180 : 0);
+                        }
+
+                        var nestedFolderGrid = FindDescendant<ItemsControl>(container, "NestedFolderGrid");
+                        if (nestedFolderGrid != null)
+                        {
+                            FactoryAnimation.AnimatePanelExpansion(nestedFolderGrid, app.IsExpanded, 0);
+
+                            if (app.IsExpanded)
+                            {
+                                DispatcherQueue.TryEnqueue(async () =>
+                                {
+                                    await Task.Delay(260);
+
+                                    container.StartBringIntoView(new BringIntoViewOptions
+                                    {
+                                        AnimationDesired = true
+                                    });
+                                });
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    LaunchApp(app, false);
+                }
             }
         }
 
-        private void ToggleFolderExpansion(AppItem folderApp)
+        private T? FindDescendant<T>(DependencyObject obj, string name) where T : FrameworkElement
         {
-            if (SearchAndAllAppsGrid?.ItemsSource is not ObservableCollection<AppItem> currentList) return;
+            if (obj == null) return null;
 
-            int index = currentList.IndexOf(folderApp);
-            if (index == -1) return;
-
-            string folderPath = folderApp.ExecutablePath!;
-
-            // Optional: Find the container to animate the rotation smoothly if desired
-            // (The binding will automatically handle state update)
-
-            if (_expandedFolders.ContainsKey(folderPath))
+            int count = VisualTreeHelper.GetChildrenCount(obj);
+            for (int i = 0; i < count; i++)
             {
-                var children = _expandedFolders[folderPath];
-                foreach (var child in children)
+                var child = VisualTreeHelper.GetChild(obj, i);
+
+                if (child is T element && element.Name == name)
                 {
-                    currentList.Remove(child);
+                    return element;
                 }
-                _expandedFolders.Remove(folderPath);
-                folderApp.IsExpanded = false;
+
+                var result = FindDescendant<T>(child, name);
+                if (result != null) return result;
             }
-            else
-            {
-                var folderApps = new List<AppItem>();
-                try
-                {
-                    var files = Directory.GetFiles(folderPath, "*.lnk", SearchOption.AllDirectories)
-                        .Concat(Directory.GetFiles(folderPath, "*.url", SearchOption.AllDirectories))
-                        .Concat(Directory.GetFiles(folderPath, "*.appref-ms", SearchOption.AllDirectories));
-
-                    foreach (var file in files)
-                    {
-                        folderApps.Add(new AppItem
-                        {
-                            Name = Path.GetFileNameWithoutExtension(file),
-                            ExecutablePath = file,
-                            IsUwp = false,
-                            FallbackGlyph = "\xE738",
-                            IconScale = 1.0,
-                            IsIndented = true
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to load folder contents: {ex.Message}");
-                }
-
-                _expandedFolders[folderPath] = folderApps;
-
-                int insertIndex = index + 1;
-                foreach (var child in folderApps)
-                {
-                    currentList.Insert(insertIndex++, child);
-                }
-
-                folderApp.IsExpanded = true;
-                _ = ExtractIconsAsync(folderApps);
-            }
+            return null;
         }
 
         private void SearchAction_Open_Click(object sender, RoutedEventArgs e)
@@ -1892,6 +1925,58 @@ namespace EvolveOS_ShellEnhancer.Views
                     return result;
             }
             return null;
+        }
+
+        private void CategoryGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (sender is GridView gridView && gridView.Parent is StackPanel panel)
+            {
+                if (panel.Children[0] is Grid headerGrid && headerGrid.Children[1] is ToggleButton chevronBtn)
+                {
+                    int itemsPerRow = (int)(e.NewSize.Width / 92.0);
+
+                    if (gridView.Items.Count > itemsPerRow)
+                    {
+                        chevronBtn.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        chevronBtn.Visibility = Visibility.Collapsed;
+                        if (chevronBtn.IsChecked == true)
+                        {
+                            chevronBtn.IsChecked = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CategoryChevron_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is Microsoft.UI.Xaml.Controls.Primitives.ToggleButton btn)
+            {
+                if (btn.Content is FontIcon icon && icon.RenderTransform is RotateTransform transform)
+                    FactoryAnimation.AnimateRotation(transform, 180);
+
+                if (btn.Parent is Grid headerGrid && headerGrid.Parent is StackPanel panel && panel.Children[1] is GridView gridView)
+                {
+                    FactoryAnimation.AnimatePanelExpansion(gridView, true, 104);
+                }
+            }
+        }
+
+        private void CategoryChevron_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (sender is Microsoft.UI.Xaml.Controls.Primitives.ToggleButton btn)
+            {
+                if (btn.Content is FontIcon icon && icon.RenderTransform is RotateTransform transform)
+                    FactoryAnimation.AnimateRotation(transform, 0);
+
+                if (btn.Parent is Grid headerGrid && headerGrid.Parent is StackPanel panel && panel.Children[1] is GridView gridView)
+                {
+                    FactoryAnimation.AnimatePanelExpansion(gridView, false, 104);
+                }
+            }
         }
 
         private string GetDefaultGlyph(string targetPath)

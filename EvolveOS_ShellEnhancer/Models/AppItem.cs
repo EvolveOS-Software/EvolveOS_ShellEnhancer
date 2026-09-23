@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using Windows.Storage.Streams;
@@ -16,6 +17,8 @@ namespace EvolveOS_ShellEnhancer.Models
         public bool IsUwp { get; set; }
 
         public double IconScale { get; set; } = 1.0;
+
+        public ObservableCollection<AppItem> FolderApps { get; set; } = new ObservableCollection<AppItem>();
 
         private ImageSource? _iconSource;
         public ImageSource? IconSource

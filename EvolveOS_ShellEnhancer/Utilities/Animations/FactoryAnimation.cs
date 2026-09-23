@@ -552,6 +552,84 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             storyboard.Begin();
         }
 
+        public static void AnimateRotation(RotateTransform transform, double toAngle)
+        {
+            var animation = new DoubleAnimation
+            {
+                To = toAngle,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+            };
+
+            var storyboard = new Storyboard();
+            storyboard.Children.Add(animation);
+            Storyboard.SetTarget(animation, transform);
+            Storyboard.SetTargetProperty(animation, "Angle");
+            storyboard.Begin();
+        }
+
+        public static void AnimatePanelExpansion(FrameworkElement panel, bool isExpanded, double collapsedHeight)
+        {
+            double fromHeight;
+            double toHeight;
+
+            if (isExpanded)
+            {
+                panel.MaxHeight = double.PositiveInfinity;
+                panel.Height = double.NaN;
+
+                panel.UpdateLayout();
+
+                double width = panel.ActualWidth > 0 ? panel.ActualWidth : 1000;
+                panel.Measure(new Windows.Foundation.Size(width, double.PositiveInfinity));
+
+                toHeight = panel.DesiredSize.Height;
+
+                if (toHeight == 0 && panel is Microsoft.UI.Xaml.Controls.ItemsControl itemsControl)
+                {
+                    toHeight = itemsControl.Items.Count * 48;
+                }
+
+                fromHeight = collapsedHeight;
+                panel.Height = fromHeight;
+            }
+            else
+            {
+                fromHeight = panel.ActualHeight;
+                toHeight = collapsedHeight;
+                panel.Height = fromHeight;
+            }
+
+            var animation = new DoubleAnimation
+            {
+                From = fromHeight,
+                To = toHeight,
+                Duration = TimeSpan.FromMilliseconds(250),
+                EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseInOut },
+                EnableDependentAnimation = true
+            };
+
+            var storyboard = new Storyboard();
+            storyboard.Children.Add(animation);
+            Storyboard.SetTarget(animation, panel);
+            Storyboard.SetTargetProperty(animation, "Height");
+
+            storyboard.Completed += (s, e) =>
+            {
+                if (isExpanded)
+                {
+                    panel.Height = double.NaN;
+                }
+                else
+                {
+                    panel.MaxHeight = collapsedHeight;
+                    panel.Height = double.NaN;
+                }
+            };
+
+            storyboard.Begin();
+        }
+
         #endregion
     }
 }
