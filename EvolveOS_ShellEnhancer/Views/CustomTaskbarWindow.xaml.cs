@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using EvolveOS_ShellEnhancer.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Input;
 using Microsoft.UI.Text;
@@ -10,13 +11,11 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Shapes;
 using Microsoft.Win32;
-using Microsoft.Windows.System.Power;
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using Windows.Graphics;
-using Windows.Networking.Connectivity;
 using Windows.System;
 using Windows.UI.Core;
 using WinRT.Interop;
@@ -26,6 +25,8 @@ namespace EvolveOS_ShellEnhancer.Views
     public sealed partial class CustomTaskbarWindow : Window
     {
         #region Fields & Properties
+        public CustomTaskbarViewModel ViewModel { get; } = new();
+
         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
         private string _currentStyle = "Standard";
@@ -54,8 +55,6 @@ namespace EvolveOS_ShellEnhancer.Views
         private int _lastUnpinnedCount = -1;
 
         private bool _isAppBarRegistered = false;
-
-        private List<AppItem> _allAppsCache = new();
 
         public static string PositionAnimationStyle = "Spring";
 
@@ -115,14 +114,6 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private DispatcherTimer _previewDelayTimer = new DispatcherTimer();
         private Action? _pendingPreviewAction;
-
-        private static readonly HashSet<string> IgnoredSystemProcesses = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "SystemSettings", "ApplicationFrameHost", "SearchHost", "StartMenuExperienceHost",
-            "ShellExperienceHost", "TextInputHost", "LockApp", "RuntimeBroker", "dwm", "csrss",
-            "taskhostw", "EvolveOS_ShellEnhancer", "EvolveOS_Optimizer", "Progman", "WorkerW",
-            "cmd", "conhost", "explorer"
-        };
         #endregion
 
         #region Initialization
@@ -133,7 +124,6 @@ namespace EvolveOS_ShellEnhancer.Views
             this.InitializeComponent();
 
             _currentStyle = SettingsEngine.Shell_TaskbarStyle ?? "Standard";
-
             _currentPosition = SettingsEngine.Shell_TaskbarPosition ?? "Bottom";
             PositionAnimationStyle = SettingsEngine.Shell_TaskbarAnimation ?? "Spring";
             HoverAnimationStyle = SettingsEngine.Shell_TaskbarHoverAnimation ?? "Standard";
@@ -178,10 +168,24 @@ namespace EvolveOS_ShellEnhancer.Views
             _resizeDebounceTimer.Tick += (s, e) =>
             {
                 _resizeDebounceTimer.Stop();
-
                 ShowDock();
-
                 FadeContent(1.0, 450);
+            };
+
+            // Wire up ViewModel System Delegates
+            ViewModel.OnNetworkIconUpdated = (glyph) =>
+            {
+                if (NetworkIcon != null) NetworkIcon.Glyph = glyph;
+            };
+
+            ViewModel.OnBatteryIconUpdated = (vis, glyph, tooltip) =>
+            {
+                if (BatteryIcon != null)
+                {
+                    BatteryIcon.Visibility = vis;
+                    BatteryIcon.Glyph = glyph;
+                    ToolTipService.SetToolTip(BatteryIcon, tooltip);
+                }
             };
 
             _clockTimer = new DispatcherTimer();
@@ -190,7 +194,7 @@ namespace EvolveOS_ShellEnhancer.Views
             _clockTimer.Start();
             UpdateClock();
 
-            StartNetworkListener();
+            ViewModel.StartNetworkListener(this.DispatcherQueue);
 
             if (BtnStart != null)
             {
@@ -309,41 +313,13 @@ namespace EvolveOS_ShellEnhancer.Views
             return windowMonitor == taskbarMonitor;
         }
 
-        private static string NormalizeProcessName(string rawName, string shortcutTitle = "", string targetExePath = "")
-        {
-            if (!string.IsNullOrWhiteSpace(targetExePath) && File.Exists(targetExePath))
-            {
-                string exeName = System.IO.Path.GetFileNameWithoutExtension(targetExePath);
-                if (!string.IsNullOrEmpty(exeName))
-                {
-                    return exeName.ToLowerInvariant();
-                }
-            }
-
-            string name = rawName.Trim();
-            if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-            {
-                name = System.IO.Path.GetFileNameWithoutExtension(name);
-            }
-
-            if (name.Equals("File Explorer", StringComparison.OrdinalIgnoreCase) ||
-                name.Equals("Windows Explorer", StringComparison.OrdinalIgnoreCase) ||
-                shortcutTitle.Contains("Explorer", StringComparison.OrdinalIgnoreCase) ||
-                name.Equals("explorer", StringComparison.OrdinalIgnoreCase))
-            {
-                return "explorer";
-            }
-
-            return name.ToLowerInvariant();
-        }
-
         private List<IntPtr> GetAppWindowHandles(string processName)
         {
             List<IntPtr> handles = new List<IntPtr>();
 
             if (string.IsNullOrWhiteSpace(processName)) return handles;
 
-            string norm = NormalizeProcessName(processName);
+            string norm = ViewModel.NormalizeProcessName(processName);
             if (string.IsNullOrWhiteSpace(norm)) return handles;
 
             bool isExplorer = norm.Equals("explorer", StringComparison.OrdinalIgnoreCase);
@@ -408,9 +384,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     var proc = Process.GetProcessById((int)pid);
                     string procName = proc.ProcessName;
-                    string normProc = NormalizeProcessName(procName);
+                    string normProc = ViewModel.NormalizeProcessName(procName);
 
-                    if (IgnoredSystemProcesses.Contains(procName) || IgnoredSystemProcesses.Contains(normProc))
+                    if (CustomTaskbarViewModel.IgnoredSystemProcesses.Contains(procName) || CustomTaskbarViewModel.IgnoredSystemProcesses.Contains(normProc))
                     {
                         return true;
                     }
@@ -488,7 +464,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         }
 
                         bool isUnpinned = tagStr.StartsWith("UNPINNED:");
-                        string processName = isUnpinned ? tagStr.Substring("UNPINNED:".Length) : GetProcessNameFromShortcut(tagStr);
+                        string processName = isUnpinned ? tagStr.Substring("UNPINNED:".Length) : ViewModel.GetProcessNameFromShortcut(tagStr);
 
                         var handles = GetAppWindowHandles(processName);
                         if (handles.Count == 0)
@@ -512,11 +488,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (!isScrollMode || _showingAllRunningView)
                 {
-                    var shortcuts = GetPinnedTaskbarApps();
+                    var shortcuts = ViewModel.GetPinnedTaskbarApps();
                     var pinnedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     foreach (string lnk in shortcuts)
                     {
-                        pinnedNames.Add(GetProcessNameFromShortcut(lnk));
+                        pinnedNames.Add(ViewModel.GetProcessNameFromShortcut(lnk));
                     }
 
                     int currentUnpinnedCount = GetUnpinnedRunningApps(pinnedNames).Count;
@@ -530,129 +506,7 @@ namespace EvolveOS_ShellEnhancer.Views
         }
         #endregion
 
-        #region Shortcut Parsing
-        public static List<string> GetPinnedTaskbarApps()
-        {
-            List<string> pinnedApps = new List<string>();
-            try
-            {
-                string taskbarPath = System.IO.Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
-                );
-
-                if (Directory.Exists(taskbarPath))
-                {
-                    string[] shortcuts = Directory.GetFiles(taskbarPath, "*.lnk");
-                    foreach (string shortcut in shortcuts)
-                    {
-                        pinnedApps.Add(shortcut);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to load shortcuts: {ex.Message}");
-            }
-
-            return pinnedApps;
-        }
-
-        public static string ParseShortcut(string lnkPath)
-        {
-            try
-            {
-                IWshRuntimeLibrary.WshShell shell = new IWshRuntimeLibrary.WshShell();
-                IWshRuntimeLibrary.IWshShortcut shortcut = (IWshRuntimeLibrary.IWshShortcut)shell.CreateShortcut(lnkPath);
-
-                string target = shortcut.TargetPath ?? string.Empty;
-                string args = shortcut.Arguments ?? string.Empty;
-
-                if (target.EndsWith("explorer.exe", StringComparison.OrdinalIgnoreCase) && args.IndexOf(@"shell:appsfolder\", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    int idx = args.IndexOf(@"shell:appsfolder\", StringComparison.OrdinalIgnoreCase);
-                    return args.Substring(idx + 17).Trim();
-                }
-
-                target = target.Trim().Trim('"', '\'');
-                return target;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Shortcut Parse Error: " + ex.Message);
-                return string.Empty;
-            }
-        }
-
-        public static void PinItemToTaskbar(string targetPath)
-        {
-            Task.Run(() =>
-            {
-                try
-                {
-                    if (string.IsNullOrWhiteSpace(targetPath)) return;
-
-                    if (!File.Exists(targetPath) && !Directory.Exists(targetPath)) return;
-
-                    string taskbarPath = System.IO.Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                        @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar"
-                    );
-
-                    if (!Directory.Exists(taskbarPath))
-                    {
-                        Directory.CreateDirectory(taskbarPath);
-                    }
-
-                    string itemName = System.IO.Path.GetFileNameWithoutExtension(targetPath);
-                    if (string.IsNullOrEmpty(itemName))
-                    {
-                        itemName = System.IO.Path.GetFileName(targetPath);
-                    }
-
-                    string lnkPath = System.IO.Path.Combine(taskbarPath, $"{itemName}.lnk");
-
-                    int counter = 1;
-                    while (File.Exists(lnkPath))
-                    {
-                        lnkPath = System.IO.Path.Combine(taskbarPath, $"{itemName} ({counter}).lnk");
-                        counter++;
-                    }
-
-                    Type? wshShellType = Type.GetTypeFromProgID("WScript.Shell");
-                    if (wshShellType != null)
-                    {
-                        dynamic shell = Activator.CreateInstance(wshShellType)!;
-                        dynamic shortcut = shell.CreateShortcut(lnkPath);
-                        shortcut.TargetPath = targetPath;
-                        shortcut.Save();
-
-                        Marshal.ReleaseComObject(shortcut);
-                        Marshal.ReleaseComObject(shell);
-                    }
-
-                    TaskbarManager.ReloadAll();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Failed to pin item to taskbar: {ex.Message}");
-                }
-            });
-        }
-
-        private string GetProcessNameFromShortcut(string lnkPath)
-        {
-            string shortcutName = System.IO.Path.GetFileNameWithoutExtension(lnkPath);
-            string targetExe = ParseShortcut(lnkPath);
-            if (!string.IsNullOrWhiteSpace(targetExe))
-            {
-                targetExe = Environment.ExpandEnvironmentVariables(targetExe);
-            }
-            return NormalizeProcessName(shortcutName, shortcutName, targetExe);
-        }
-        #endregion
-
-        #region App Loading & Icon Extraction
+        #region App Loading & Formatting Wrapper
         public void ReloadTaskbar()
         {
             this.DispatcherQueue.TryEnqueue(() =>
@@ -662,7 +516,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (this.Content is FrameworkElement root)
                 {
                     var currentTheme = root.RequestedTheme;
-                    root.RequestedTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
+                    root.RequestedTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : toElementTheme(Application.Current.RequestedTheme);
                     root.RequestedTheme = currentTheme;
                 }
 
@@ -687,6 +541,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
             });
         }
+
+        // Helper conversion
+        private ElementTheme toElementTheme(ApplicationTheme theme) => theme == ApplicationTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
 
         private async Task LoadPinnedAppsAsync()
         {
@@ -717,20 +574,17 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private async Task LoadPinnedAppsInternalAsync()
         {
-            if (_allAppsCache.Count == 0)
-            {
-                _allAppsCache = await StartMenuHelper.GetAllAppsAsync();
-            }
+            var allApps = await ViewModel.GetAllAppsAsync();
 
             PinnedAppsPanel.Children.Clear();
             _appIndicators.Clear();
 
-            List<string> shortcuts = GetPinnedTaskbarApps();
+            List<string> shortcuts = ViewModel.GetPinnedTaskbarApps();
             var pinnedNormalizedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (string lnk in shortcuts)
             {
-                pinnedNormalizedNames.Add(GetProcessNameFromShortcut(lnk));
+                pinnedNormalizedNames.Add(ViewModel.GetProcessNameFromShortcut(lnk));
             }
 
             string savedOrderStr = SettingsEngine.TaskbarPinnedAppsOrder;
@@ -790,11 +644,11 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     if (!File.Exists(lnk)) continue;
 
-                    string targetExe = ParseShortcut(lnk);
+                    string targetExe = ViewModel.ParseShortcut(lnk);
                     if (!string.IsNullOrWhiteSpace(targetExe)) targetExe = Environment.ExpandEnvironmentVariables(targetExe);
                     if (Directory.Exists(targetExe)) continue;
 
-                    string pName = GetProcessNameFromShortcut(lnk);
+                    string pName = ViewModel.GetProcessNameFromShortcut(lnk);
                     if (GetAppWindowHandles(pName).Count > 0)
                     {
                         await CreateAppCardAsync(lnk, lnk, isShortcut: true);
@@ -820,18 +674,19 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private async Task CreateAppCardAsync(string identifier, string pathOrLnk, bool isShortcut, string windowTitle = "")
         {
-            string targetExe = isShortcut ? ParseShortcut(pathOrLnk) : pathOrLnk;
+            string targetExe = isShortcut ? ViewModel.ParseShortcut(pathOrLnk) : pathOrLnk;
             if (!string.IsNullOrWhiteSpace(targetExe)) targetExe = Environment.ExpandEnvironmentVariables(targetExe);
 
             bool isDirectory = Directory.Exists(targetExe);
 
-            string processName = isShortcut ? GetProcessNameFromShortcut(pathOrLnk) : NormalizeProcessName(identifier, targetExePath: targetExe);
+            string processName = isShortcut ? ViewModel.GetProcessNameFromShortcut(pathOrLnk) : ViewModel.NormalizeProcessName(identifier, targetExePath: targetExe);
             string shortcutName = isShortcut ? System.IO.Path.GetFileNameWithoutExtension(pathOrLnk) : identifier;
 
+            var allApps = await ViewModel.GetAllAppsAsync();
             AppItem? matchingApp = null;
-            if (_allAppsCache != null && !isDirectory)
+            if (allApps != null && !isDirectory)
             {
-                matchingApp = _allAppsCache.FirstOrDefault(a =>
+                matchingApp = allApps.FirstOrDefault(a =>
                     (a.ExecutablePath != null && a.ExecutablePath.Equals(targetExe, StringComparison.OrdinalIgnoreCase)) ||
                     (a.Name != null && a.Name.Equals(shortcutName, StringComparison.OrdinalIgnoreCase)));
             }
@@ -970,11 +825,9 @@ namespace EvolveOS_ShellEnhancer.Views
             };
 
             MenuFlyout contextFlyout = new MenuFlyout();
-
             contextFlyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
             Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
-
             flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
             flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
             flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
@@ -1282,7 +1135,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (appItem.IconSource == null && !isDirectory)
             {
-                _ = LoadIconSafelyAsync(appItem);
+                _ = ViewModel.LoadIconSafelyAsync(appItem);
             }
         }
 
@@ -1373,26 +1226,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 parentItems.Add(new MenuFlyoutItem { Text = "Access Denied", IsEnabled = false });
             }
         }
-
-        private async Task LoadIconSafelyAsync(AppItem item)
-        {
-            try
-            {
-                var src = await StartMenuHelper.ExtractAppIconAsync(item);
-                if (src != null)
-                {
-                    item.IconSource = src;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Taskbar dynamic icon extraction failed: {ex.Message}");
-            }
-        }
         #endregion
 
         #region Dock Visibility
-
         private void FadeContent(double targetOpacity, int durationMs)
         {
             if (durationMs <= 0)
@@ -1411,15 +1247,15 @@ namespace EvolveOS_ShellEnhancer.Views
         private void FadeElement(UIElement element, double targetOpacity, int durationMs)
         {
             if (element == null) return;
-            var storyboard = new Microsoft.UI.Xaml.Media.Animation.Storyboard();
-            var animation = new Microsoft.UI.Xaml.Media.Animation.DoubleAnimation
+            var storyboard = new Storyboard();
+            var animation = new DoubleAnimation
             {
                 To = targetOpacity,
                 Duration = new Duration(TimeSpan.FromMilliseconds(durationMs)),
-                EasingFunction = new Microsoft.UI.Xaml.Media.Animation.QuadraticEase { EasingMode = Microsoft.UI.Xaml.Media.Animation.EasingMode.EaseInOut }
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
             };
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTarget(animation, element);
-            Microsoft.UI.Xaml.Media.Animation.Storyboard.SetTargetProperty(animation, "Opacity");
+            Storyboard.SetTarget(animation, element);
+            Storyboard.SetTargetProperty(animation, "Opacity");
             storyboard.Children.Add(animation);
             storyboard.Begin();
         }
@@ -1683,10 +1519,18 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        public static void PinItemToTaskbar(string targetPath)
+        {
+            var tempViewModel = new CustomTaskbarViewModel();
+
+            tempViewModel.PinItemToTaskbar(targetPath, () =>
+            {
+                // Optional: Any UI updates after pinning if needed in the future
+            });
+        }
         #endregion
 
         #region UI Layout & Styling Handlers
-
         private void BtnStart_Click(object sender, RoutedEventArgs e)
         {
             if ((DateTime.Now - App.LastStartMenuCloseTime).TotalMilliseconds < 250) return;
@@ -1728,12 +1572,12 @@ namespace EvolveOS_ShellEnhancer.Views
             if (sender is FrameworkElement element)
             {
                 MenuFlyout flyout = new MenuFlyout();
-
                 flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+
                 Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
                 flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
                 flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255))));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
                 flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
                 flyout.MenuFlyoutPresenterStyle = flyoutStyle;
 
@@ -2076,108 +1920,6 @@ namespace EvolveOS_ShellEnhancer.Views
         }
         #endregion
 
-        #region System Status Detectors
-        private void StartNetworkListener()
-        {
-            UpdateNetworkIcon();
-
-            NetworkInformation.NetworkStatusChanged += NetworkInformation_NetworkStatusChanged;
-        }
-
-        private void NetworkInformation_NetworkStatusChanged(object sender)
-        {
-            this.DispatcherQueue.TryEnqueue(() =>
-            {
-                UpdateNetworkIcon();
-            });
-        }
-
-        private void UpdateNetworkIcon()
-        {
-            try
-            {
-                var profile = NetworkInformation.GetInternetConnectionProfile();
-
-                if (profile == null)
-                {
-                    NetworkIcon.Glyph = "\xEB55";
-                }
-                else if (profile.IsWlanConnectionProfile)
-                {
-                    NetworkIcon.Glyph = "\xE704";
-                }
-                else if (profile.IsWwanConnectionProfile)
-                {
-                    NetworkIcon.Glyph = "\xE81C";
-                }
-                else
-                {
-                    NetworkIcon.Glyph = "\xE839";
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to fetch network status: {ex.Message}");
-                NetworkIcon.Glyph = "\xE704";
-            }
-        }
-
-        private void StartPowerListener()
-        {
-            UpdateBatteryIcon();
-
-            PowerManager.BatteryStatusChanged += (s, e) => this.DispatcherQueue.TryEnqueue(UpdateBatteryIcon);
-            PowerManager.RemainingChargePercentChanged += (s, e) => this.DispatcherQueue.TryEnqueue(UpdateBatteryIcon);
-            PowerManager.EnergySaverStatusChanged += (s, e) => this.DispatcherQueue.TryEnqueue(UpdateBatteryIcon);
-        }
-
-        private void UpdateBatteryIcon()
-        {
-            try
-            {
-                var status = PowerManager.BatteryStatus;
-
-                if (status == BatteryStatus.NotPresent)
-                {
-                    BatteryIcon.Visibility = Visibility.Collapsed;
-                    return;
-                }
-
-                BatteryIcon.Visibility = Visibility.Visible;
-                int percent = PowerManager.RemainingChargePercent;
-                bool isCharging = status == BatteryStatus.Charging || status == BatteryStatus.Idle;
-
-                int iconIndex = (int)Math.Round(percent / 10.0);
-                if (iconIndex < 0) iconIndex = 0;
-                if (iconIndex > 10) iconIndex = 10;
-
-                int glyphCode;
-
-                if (isCharging)
-                {
-                    glyphCode = iconIndex == 10 ? 0xE83E : 0xE85A + iconIndex;
-                }
-                else if (PowerManager.EnergySaverStatus == EnergySaverStatus.On)
-                {
-                    glyphCode = iconIndex == 10 ? 0xE86E : 0xE864 + iconIndex;
-                }
-                else
-                {
-                    glyphCode = iconIndex == 10 ? 0xE83F : 0xE850 + iconIndex;
-                }
-
-                BatteryIcon.Glyph = ((char)glyphCode).ToString();
-
-                ToolTipService.SetToolTip(BatteryIcon, $"Battery: {percent}%");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to fetch battery status: {ex.Message}");
-                BatteryIcon.Visibility = Visibility.Collapsed;
-            }
-        }
-        #endregion
-
         #region Functionality Handlers
         private void ClockTimer_Tick(object? sender, object e)
         {
@@ -2194,8 +1936,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void UpdateClock()
         {
-            ClockText.Text = ShowSeconds ? DateTime.Now.ToLongTimeString() : DateTime.Now.ToShortTimeString();
-            DateText.Text = DateTime.Now.ToShortDateString();
+            if (ClockText != null)
+                ClockText.Text = ShowSeconds ? DateTime.Now.ToLongTimeString() : DateTime.Now.ToShortTimeString();
+
+            if (DateText != null)
+                DateText.Text = DateTime.Now.ToShortDateString();
         }
 
         private async void BtnClock_Click(object sender, RoutedEventArgs e)
@@ -2203,7 +1948,6 @@ namespace EvolveOS_ShellEnhancer.Views
             try
             {
                 if (!IsPrimaryMonitor) return;
-
                 await Win32Helper.ToggleCalendarAsync();
             }
             catch { }
@@ -2217,7 +1961,6 @@ namespace EvolveOS_ShellEnhancer.Views
         private async void BtnTrayOverflow_Click(object sender, RoutedEventArgs e)
         {
             _isTrayOverflowOpen = !_isTrayOverflowOpen;
-
             double targetAngle = _isTrayOverflowOpen ? 180.0 : 0.0;
 
             DoubleAnimation rotateAnimation = new DoubleAnimation
