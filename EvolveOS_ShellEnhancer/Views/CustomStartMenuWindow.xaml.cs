@@ -1406,14 +1406,22 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (_draggedAppItem.HasIcon == Visibility.Visible)
             {
-                panel.Children.Add(new Image
+                var image = new Image
                 {
                     Source = _draggedAppItem.IconSource,
                     Width = 32,
                     Height = 32,
                     Stretch = Stretch.Uniform,
-                    HorizontalAlignment = HorizontalAlignment.Center
-                });
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
+                    RenderTransform = new ScaleTransform
+                    {
+                        ScaleX = _draggedAppItem.IconScale,
+                        ScaleY = _draggedAppItem.IconScale
+                    }
+                };
+
+                panel.Children.Add(image);
             }
             else
             {
