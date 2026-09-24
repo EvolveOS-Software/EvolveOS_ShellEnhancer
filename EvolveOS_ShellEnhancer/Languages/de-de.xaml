@@ -41,6 +41,7 @@
     <!-- Back-end Strings -->
     <sys:String x:Key="Taskbar_TaskManager">Task Manager</sys:String>
     <sys:String x:Key="Taskbar_Settings">Taskleisteneinstellungen</sys:String>
+    <sys:String x:Key="Taskbar_RestartShell">Shell neu starten</sys:String>
     <sys:String x:Key="Taskbar_CloseWindow">Fenster schließen</sys:String>
     <sys:String x:Key="Taskbar_UnpinTaskbar">Von Taskleiste lösen</sys:String>
     <sys:String x:Key="Taskbar_EmptyFolder">Leerer Ordner</sys:String>

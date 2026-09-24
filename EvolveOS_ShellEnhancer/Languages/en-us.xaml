@@ -41,6 +41,7 @@
     <!-- Back-end Strings -->
     <sys:String x:Key="Taskbar_TaskManager">Task Manager</sys:String>
     <sys:String x:Key="Taskbar_Settings">Taskbar settings</sys:String>
+    <sys:String x:Key="Taskbar_RestartShell">Restart shell</sys:String>
     <sys:String x:Key="Taskbar_CloseWindow">Close window</sys:String>
     <sys:String x:Key="Taskbar_UnpinTaskbar">Unpin from taskbar</sys:String>
     <sys:String x:Key="Taskbar_EmptyFolder">Empty Folder</sys:String>

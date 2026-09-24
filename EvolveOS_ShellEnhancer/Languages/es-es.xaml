@@ -41,6 +41,7 @@
     <!-- Back-end Strings -->
     <sys:String x:Key="Taskbar_TaskManager">Administrador de tareas</sys:String>
     <sys:String x:Key="Taskbar_Settings">Configuración de barra</sys:String>
+    <sys:String x:Key="Taskbar_RestartShell">Reiniciar shell</sys:String>
     <sys:String x:Key="Taskbar_CloseWindow">Cerrar ventana</sys:String>
     <sys:String x:Key="Taskbar_UnpinTaskbar">Desanclar de la barra</sys:String>
     <sys:String x:Key="Taskbar_EmptyFolder">Carpeta vacía</sys:String>

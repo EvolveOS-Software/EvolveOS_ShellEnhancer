@@ -272,11 +272,17 @@ namespace EvolveOS_ShellEnhancer
 
         public static void ExitApp()
         {
+            try
+            {
+                TaskbarManager.HideAll();
+            }
+            catch { }
+
             //RestoreWindowsDefaults();
 
             HandleCleanup();
 
-            Application.Current.Exit();
+            Environment.Exit(0);
         }
 
         private static void HandleCleanup()

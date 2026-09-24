@@ -1617,8 +1617,28 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
                 };
 
+                var restartShellItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("Taskbar_RestartShell") ?? "Restart shell",
+                    Icon = new FontIcon { Glyph = "\xE777" }
+                };
+
+                restartShellItem.Click += (s, args) =>
+                {
+                    try
+                    {
+                        SettingsEngine.SelfReboot();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to restart shell: {ex.Message}");
+                    }
+                };
+
                 flyout.Items.Add(taskManagerItem);
                 flyout.Items.Add(settingsItem);
+                flyout.Items.Add(new MenuFlyoutSeparator());
+                flyout.Items.Add(restartShellItem);
 
                 this.Activate();
                 Win32Helper.SetForegroundWindow(_hWnd);

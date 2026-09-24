@@ -238,5 +238,30 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             internal static readonly string BaseKey = @$"HKEY_CURRENT_USER\{SubKey}";
         }
         #endregion
+
+        #region Self Reboot
+
+        internal static async void SelfReboot(string injectedCommand = "")
+        {
+            string? exePath = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(exePath))
+            {
+                exePath = Process.GetCurrentProcess().MainModule?.FileName;
+            }
+
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                int currentPid = Process.GetCurrentProcess().Id;
+                string extra = string.IsNullOrWhiteSpace(injectedCommand) ? "" : $"{injectedCommand}; ";
+
+                string psScript = $"{extra}Wait-Process -Id {currentPid} -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 500; Start-Process -FilePath \"{exePath}\"";
+
+                await CommandExecutor.RunCommand(psScript, isPowerShell: true, waitForExit: false);
+            }
+
+            App.ExitApp();
+        }
+
+        #endregion
     }
 }

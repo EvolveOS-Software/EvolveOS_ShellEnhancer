@@ -1,0 +1,369 @@
+// Copyright (c) 2026 EvolveOS Software
+// Licensed under the MIT License.
+
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+
+namespace EvolveOS_ShellEnhancer.Utilities.Helpers
+{
+    internal static class CommandExecutor
+    {
+        internal static int PID = 0;
+
+        private static string GetSafePowerShellArguments(string command)
+        {
+            byte[] bytes = Encoding.Unicode.GetBytes(command);
+            string base64Script = Convert.ToBase64String(bytes);
+
+            return $"-NoLogo -NonInteractive -NoProfile -ExecutionPolicy Bypass -EncodedCommand {base64Script}";
+        }
+
+        internal static async Task<string> GetCommandOutput(string command, bool isPowerShell = true)
+        {
+            return await Task.Run(async () =>
+            {
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = isPowerShell ? PathLocator.Executable.PowerShell : PathLocator.Executable.CommandShell,
+                    Arguments = isPowerShell ? GetSafePowerShellArguments(command) : $"/c {command}",
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.UTF8,
+                    StandardErrorEncoding = Encoding.UTF8,
+                    WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System) ?? ""
+                };
+
+                using Process process = new Process { StartInfo = startInfo };
+                process.Start();
+
+                string output = (await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false)) ?? string.Empty;
+                string error = (await process.StandardError.ReadToEndAsync().ConfigureAwait(false)) ?? string.Empty;
+
+                await process.WaitForExitAsync().ConfigureAwait(false);
+
+                if (process.ExitCode == 0)
+                {
+                    return string.Join(Environment.NewLine, output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
+                }
+                else
+                {
+                    Debug.WriteLine($"{process.ExitCode}: {error}");
+                    return string.Empty;
+                }
+            });
+        }
+
+        internal static async Task RunCommandAsTrustedInstaller(string command, bool isPowerShell = false, int timeoutMs = 15000)
+        {
+            try
+            {
+                if (PID == 0)
+                {
+                    var tiProcess = Process.GetProcessesByName("TrustedInstaller").FirstOrDefault();
+                    if (tiProcess != null)
+                    {
+                        PID = tiProcess.Id;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
+                string formattedCommand = isPowerShell
+                    ? $"{PathLocator.Executable.PowerShell} {GetSafePowerShellArguments(command)}"
+                    : $"{PathLocator.Executable.CommandShell} /c {command}";
+
+                int childPid = TrustedInstaller.CreateProcessAsTrustedInstaller(PID, formattedCommand);
+
+                if (childPid > 0)
+                {
+                    var exitTask = WaitForProcessExitAsync(childPid);
+                    var timeoutTask = Task.Delay(timeoutMs);
+
+                    var completedTask = await Task.WhenAny(exitTask, timeoutTask);
+
+                    if (completedTask == timeoutTask)
+                    {
+                        Debug.WriteLine($"[CommandExecutor] TrustedInstaller command timed out after {timeoutMs}ms. Forcing exit.");
+                        try
+                        {
+                            using var stuckProcess = Process.GetProcessById(childPid);
+                            if (!stuckProcess.HasExited)
+                            {
+                                stuckProcess.Kill();
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore exceptions if the process just finished or access is denied
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private static async Task WaitForProcessExitAsync(int pid)
+        {
+            try
+            {
+                using var process = Process.GetProcessById(pid);
+
+                var tcs = new TaskCompletionSource<bool>();
+                process.EnableRaisingEvents = true;
+
+                process.Exited += (object? sender, EventArgs e) => tcs.TrySetResult(true);
+
+                if (process.HasExited)
+                {
+                    return;
+                }
+
+                await tcs.Task;
+            }
+            catch (ArgumentException)
+            {
+                // Process already exited
+            }
+        }
+
+        internal static async Task RunCommand(string command, bool isPowerShell = false, bool waitForExit = false)
+        {
+            await Task.Run(() =>
+            {
+                ProcessStartInfo startInfo = new ProcessStartInfo()
+                {
+                    FileName = isPowerShell ? PathLocator.Executable.PowerShell : PathLocator.Executable.CommandShell,
+                    Arguments = isPowerShell ? GetSafePowerShellArguments(command) : $"/c {command}",
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    CreateNoWindow = true
+                };
+
+                try
+                {
+                    using (Process? process = Process.Start(startInfo))
+                    {
+                        if (waitForExit)
+                        {
+                            process?.WaitForExit();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+            }).ConfigureAwait(false);
+        }
+
+        internal static async void RunCommandShow(string fileName, string arguments = "", bool isElevationRequired = false)
+        {
+            await Task.Run(() =>
+            {
+                if (isElevationRequired)
+                {
+                    TrustedInstaller.CreateProcessAsTrustedInstaller(PID, $"{fileName} {arguments}", true);
+                }
+                else
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo()
+                    {
+                        FileName = fileName,
+                        Arguments = arguments,
+                        WindowStyle = ProcessWindowStyle.Normal,
+                        UseShellExecute = true,
+                        Verb = "runas",
+                        CreateNoWindow = false
+                    };
+
+                    using Process process = new Process() { StartInfo = startInfo };
+                    try { process.Start(); }
+                    catch (Exception ex) { Debug.WriteLine(ex.Message); }
+                }
+            }).ConfigureAwait(false);
+        }
+
+        internal static async Task InvokeRunCommand(string command, bool isPowerShell = false)
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = isPowerShell ? PathLocator.Executable.PowerShell : PathLocator.Executable.CommandShell,
+                Arguments = isPowerShell ? GetSafePowerShellArguments(command) : $"/c {command}",
+                WindowStyle = ProcessWindowStyle.Hidden,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using Process process = new Process { StartInfo = startInfo };
+            try
+            {
+                process.Start();
+                await process.WaitForExitAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+        }
+
+        internal static void ExecuteCommand(string fileName, string arguments)
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = false
+                };
+
+                using (Process? p = Process.Start(psi))
+                {
+                    p?.WaitForExit(10000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Command {arguments} failed: {ex.Message}");
+            }
+        }
+
+        internal static Task WaitForExitAsync(this Process process)
+        {
+            if (process.HasExited)
+            {
+                return Task.CompletedTask;
+            }
+
+            var tcs = new TaskCompletionSource<object?>();
+
+            void Handler(object? s, EventArgs e) => tcs.TrySetResult(null);
+
+            process.EnableRaisingEvents = true;
+            process.Exited += Handler;
+
+            tcs.Task.ContinueWith(_ => process.Exited -= Handler, TaskScheduler.Default);
+
+            if (process.HasExited)
+            {
+                tcs.TrySetResult(null);
+            }
+
+            return tcs.Task;
+        }
+
+        internal static string CleanCommand(string? rawCommand)
+        {
+            if (string.IsNullOrWhiteSpace(rawCommand))
+            {
+                return string.Empty;
+            }
+
+            List<string> lines = rawCommand
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrEmpty(line))
+                .Select(line => Regex.Replace(line, @"\s+", " "))
+                .ToList();
+
+            if (lines.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            if (lines.Count == 1)
+            {
+                return lines[0];
+            }
+
+            string separator = (rawCommand?.Contains("&&") == true) ? " && " : (rawCommand?.Contains("&") == true) ? " & " : " && ";
+
+            return string.Join(separator, lines);
+        }
+
+        internal static async Task<string> StartTaskAsync(string command)
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess
+                        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SysNative\cmd.exe")
+                        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"System32\cmd.exe"),
+                    Arguments = $"/C \"{command}\"",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            return output;
+        }
+
+        internal static async Task<string> StartTask(string command)
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess
+                        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SysNative\cmd.exe")
+                        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"System32\cmd.exe"),
+                    Arguments = $"/C \"{command}\"",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            return output;
+        }
+
+        internal static async Task<int> StartInCmd(string command)
+        {
+            try
+            {
+                using var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess
+                            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SysNative\cmd.exe")
+                            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"System32\cmd.exe"),
+                        Arguments = $"/c {command}",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    }
+                };
+
+                process.Start();
+                await process.WaitForExitAsync().ConfigureAwait(false);
+                return process.ExitCode;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return -1;
+            }
+        }
+    }
+}
