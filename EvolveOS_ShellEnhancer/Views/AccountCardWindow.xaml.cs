@@ -19,6 +19,17 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             this.InitializeComponent();
 
+            if (this.Content is FrameworkElement root)
+            {
+                string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+                if (savedTheme == "Light")
+                    root.RequestedTheme = ElementTheme.Light;
+                else if (savedTheme == "Dark")
+                    root.RequestedTheme = ElementTheme.Dark;
+                else
+                    root.RequestedTheme = ElementTheme.Default;
+            }
+
             var hwnd = WindowNative.GetWindowHandle(this);
             var windowId = Win32Interop.GetWindowIdFromWindow(hwnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
@@ -66,7 +77,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _isClosing = true;
 
-                await System.Threading.Tasks.Task.Delay(50);
+                await Task.Delay(50);
 
                 IntPtr foregroundWindow = GetForegroundWindow();
                 bool clickedOutsideBoth = (foregroundWindow != _parentHwnd);

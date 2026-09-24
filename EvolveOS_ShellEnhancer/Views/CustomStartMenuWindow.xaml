@@ -745,7 +745,13 @@
                                         <ScaleTransform x:Name="ProfilePicScale" ScaleX="1" ScaleY="1" />
                                     </PersonPicture.RenderTransform>
                                 </PersonPicture>
-                                <TextBlock x:Name="UnifiedProfileName" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="UnifiedProfileName"
+                                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                           FontWeight="SemiBold"
+                                           FontSize="{ThemeResource AppFontSizeHeader}"
+                                           HorizontalAlignment="Center"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"/>
                             </StackPanel>
                         </Button>
                     </Grid>

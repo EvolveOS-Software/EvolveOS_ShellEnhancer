@@ -90,11 +90,52 @@ namespace EvolveOS_ShellEnhancer.Views
         private int _lastCardHeight;
         #endregion
 
+        #region Theme & Color Helpers
+        private static bool IsSystemInDarkMode()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (key?.GetValue("AppsUseLightTheme") is int val)
+                {
+                    return val == 0;
+                }
+            }
+            catch { }
+            return true;
+        }
+
+        private static Color GetThemeAwareTextColor()
+        {
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            bool isDark = savedTheme.Equals("Dark", StringComparison.OrdinalIgnoreCase) ||
+                          (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && IsSystemInDarkMode());
+
+            return isDark ? Colors.White : Colors.Black;
+        }
+
+        public void SetTheme(string theme)
+        {
+            if (_rootStackPanel != null)
+            {
+                if (theme == "Light")
+                    _rootStackPanel.RequestedTheme = ElementTheme.Light;
+                else if (theme == "Dark")
+                    _rootStackPanel.RequestedTheme = ElementTheme.Dark;
+                else
+                    _rootStackPanel.RequestedTheme = ElementTheme.Default;
+            }
+
+            this.SystemBackdrop = null;
+            this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+        }
+        #endregion
+
         #region Constructor
         public LivePreviewWindow()
         {
             _hWnd = WindowNative.GetWindowHandle(this);
-            WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
+            Microsoft.UI.WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
 
             if (_appWindow.Presenter is OverlappedPresenter presenter)
@@ -146,6 +187,14 @@ namespace EvolveOS_ShellEnhancer.Views
 
             _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(-32000, -32000, ThumbWidth, ThumbHeight));
             _appWindow.Show();
+
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            if (savedTheme == "Light")
+                _rootStackPanel.RequestedTheme = ElementTheme.Light;
+            else if (savedTheme == "Dark")
+                _rootStackPanel.RequestedTheme = ElementTheme.Dark;
+            else
+                _rootStackPanel.RequestedTheme = ElementTheme.Default;
         }
         #endregion
 
@@ -295,6 +344,14 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void ExecuteShow(List<IntPtr> sourceHwnds, int cardScreenX, int cardScreenY, int cardWidth, int cardHeight)
         {
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            if (savedTheme == "Light")
+                _rootStackPanel.RequestedTheme = ElementTheme.Light;
+            else if (savedTheme == "Dark")
+                _rootStackPanel.RequestedTheme = ElementTheme.Dark;
+            else
+                _rootStackPanel.RequestedTheme = ElementTheme.Default;
+
             bool isSame = false;
             if (sourceHwnds != null && _currentSourceHwnds.Count == sourceHwnds.Count)
             {
@@ -443,6 +500,8 @@ namespace EvolveOS_ShellEnhancer.Views
             IntPtr currentHwnd = WindowNative.GetWindowHandle(this);
             byte initialOpacity = (byte)(isFirstShow && EnableAnimations ? 0 : 255);
 
+            Color dynamicTextColor = GetThemeAwareTextColor();
+
             for (int i = 0; i < sourceHwnds.Count; i++)
             {
                 IntPtr targetHwnd = sourceHwnds[i];
@@ -466,7 +525,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     FontSize = smallFontSize,
                     FontFamily = customFont,
                     FontWeight = FontWeights.SemiBold,
-                    Foreground = new SolidColorBrush(Colors.White),
+                    Foreground = new SolidColorBrush(dynamicTextColor),
                     HorizontalAlignment = HorizontalAlignment.Left,
                     VerticalAlignment = VerticalAlignment.Top,
                     Margin = new Thickness(HighlightPaddingX + SlotMargin, SlotMargin + 3, SlotMargin + 12, 0),
@@ -491,8 +550,8 @@ namespace EvolveOS_ShellEnhancer.Views
                         Orientation = Orientation.Horizontal,
                         Spacing = 6,
                         Children = {
-                            new FontIcon { Glyph = "\uE8BB", FontSize = 12 },
-                            new TextBlock { Text = "Close", FontSize = smallFontSize, FontFamily = customFont }
+                            new FontIcon { Glyph = "\uE8BB", FontSize = 12, Foreground = new SolidColorBrush(dynamicTextColor) },
+                            new TextBlock { Text = "Close", FontSize = smallFontSize, FontFamily = customFont, Foreground = new SolidColorBrush(dynamicTextColor) }
                         }
                     },
                     Height = 28,
@@ -507,8 +566,8 @@ namespace EvolveOS_ShellEnhancer.Views
                         Orientation = Orientation.Horizontal,
                         Spacing = 6,
                         Children = {
-                            new FontIcon { Glyph = "\uE74D", FontSize = 12 },
-                            new TextBlock { Text = "Kill", FontSize = smallFontSize, FontFamily = customFont }
+                            new FontIcon { Glyph = "\uE74D", FontSize = 12, Foreground = new SolidColorBrush(Colors.White) },
+                            new TextBlock { Text = "Kill", FontSize = smallFontSize, FontFamily = customFont, Foreground = new SolidColorBrush(Colors.White) }
                         }
                     },
                     Height = 28,

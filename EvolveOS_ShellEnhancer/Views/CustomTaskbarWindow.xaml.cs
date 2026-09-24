@@ -226,6 +226,18 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (BtnClock != null) BtnClock.IsHitTestVisible = false;
             }
 
+            Color textColor = GetThemeAwareTextColor();
+            Color secondaryColor = textColor == Colors.White
+                ? Color.FromArgb(179, 255, 255, 255)
+                : Color.FromArgb(179, 0, 0, 0);
+
+            if (ClockText != null) ClockText.Foreground = new SolidColorBrush(textColor);
+            if (DateText != null) DateText.Foreground = new SolidColorBrush(secondaryColor);
+            if (ChevronIcon != null) ChevronIcon.Foreground = new SolidColorBrush(textColor);
+            if (BatteryIcon != null) BatteryIcon.Foreground = new SolidColorBrush(textColor);
+            if (NetworkIcon != null) NetworkIcon.Foreground = new SolidColorBrush(textColor);
+            if (VolumeIcon != null) VolumeIcon.Foreground = new SolidColorBrush(textColor);
+
             UpdateSizes();
         }
         #endregion
@@ -504,6 +516,53 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
             }
         }
+
+        private static bool IsSystemInDarkMode()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (key?.GetValue("AppsUseLightTheme") is int val)
+                {
+                    return val == 0;
+                }
+            }
+            catch { }
+            return true;
+        }
+
+        private static Color GetThemeAwareTextColor()
+        {
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            bool isDark = savedTheme.Equals("Dark", StringComparison.OrdinalIgnoreCase) ||
+                          (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && IsSystemInDarkMode());
+
+            return isDark ? Colors.White : Colors.Black;
+        }
+
+        private void ConfigureThemeAwareFlyout(MenuFlyout flyout)
+        {
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            ElementTheme theme = ElementTheme.Default;
+            if (savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase)) theme = ElementTheme.Light;
+            else if (savedTheme.Equals("Dark", StringComparison.OrdinalIgnoreCase)) theme = ElementTheme.Dark;
+            else theme = IsSystemInDarkMode() ? ElementTheme.Dark : ElementTheme.Light;
+
+            flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+
+            bool isDark = theme == ElementTheme.Dark;
+            var borderColor = isDark ? Color.FromArgb(30, 255, 255, 255) : Color.FromArgb(30, 0, 0, 0);
+
+            Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
+            flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
+            flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+            flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(borderColor)));
+            flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+
+            flyoutStyle.Setters.Add(new Setter(FrameworkElement.RequestedThemeProperty, theme));
+
+            flyout.MenuFlyoutPresenterStyle = flyoutStyle;
+        }
         #endregion
 
         #region App Loading & Formatting Wrapper
@@ -513,12 +572,34 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _ = LoadPinnedAppsAsync();
 
+                string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+
                 if (this.Content is FrameworkElement root)
                 {
-                    var currentTheme = root.RequestedTheme;
-                    root.RequestedTheme = root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : toElementTheme(Application.Current.RequestedTheme);
-                    root.RequestedTheme = currentTheme;
+                    if (savedTheme == "Light")
+                        root.RequestedTheme = ElementTheme.Light;
+                    else if (savedTheme == "Dark")
+                        root.RequestedTheme = ElementTheme.Dark;
+                    else
+                        root.RequestedTheme = ElementTheme.Default;
+
+                    this.SystemBackdrop = null;
+                    this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
                 }
+
+                _previewWindow?.SetTheme(savedTheme);
+
+                Color textColor = GetThemeAwareTextColor();
+                Color secondaryColor = textColor == Colors.White
+                    ? Color.FromArgb(179, 255, 255, 255)
+                    : Color.FromArgb(179, 0, 0, 0);
+
+                if (ClockText != null) ClockText.Foreground = new SolidColorBrush(textColor);
+                if (DateText != null) DateText.Foreground = new SolidColorBrush(secondaryColor);
+                if (ChevronIcon != null) ChevronIcon.Foreground = new SolidColorBrush(textColor);
+                if (BatteryIcon != null) BatteryIcon.Foreground = new SolidColorBrush(textColor);
+                if (NetworkIcon != null) NetworkIcon.Foreground = new SolidColorBrush(textColor);
+                if (VolumeIcon != null) VolumeIcon.Foreground = new SolidColorBrush(textColor);
 
                 if (ClockText != null && DateText != null)
                 {
@@ -542,7 +623,6 @@ namespace EvolveOS_ShellEnhancer.Views
             });
         }
 
-        // Helper conversion
         private ElementTheme toElementTheme(ApplicationTheme theme) => theme == ApplicationTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
 
         private async Task LoadPinnedAppsAsync()
@@ -760,7 +840,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 Height = isVertical ? 17 : 3,
                 RadiusX = 1.5,
                 RadiusY = 1.5,
-                Fill = new SolidColorBrush(Colors.LightGray),
+                Fill = (SolidColorBrush)Application.Current.Resources["TextFillColorSecondaryBrush"],
                 HorizontalAlignment = isVertical ? (_currentPosition == "Left" ? HorizontalAlignment.Left : HorizontalAlignment.Right) : HorizontalAlignment.Center,
                 VerticalAlignment = isVertical ? VerticalAlignment.Center : (_currentPosition == "Top" ? VerticalAlignment.Top : VerticalAlignment.Bottom),
                 Margin = new Thickness(0, 0, 0, 0),
@@ -825,7 +905,7 @@ namespace EvolveOS_ShellEnhancer.Views
             };
 
             MenuFlyout contextFlyout = new MenuFlyout();
-            contextFlyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+            ConfigureThemeAwareFlyout(contextFlyout);
 
             Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
             flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
@@ -1572,7 +1652,7 @@ namespace EvolveOS_ShellEnhancer.Views
             if (sender is FrameworkElement element)
             {
                 MenuFlyout flyout = new MenuFlyout();
-                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+                ConfigureThemeAwareFlyout(flyout);
 
                 Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
                 flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));

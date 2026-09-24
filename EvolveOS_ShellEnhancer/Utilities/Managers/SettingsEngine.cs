@@ -37,6 +37,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             #region Shell Settings
             ["Shell_MasterEnabled"] = false,
             ["Shell_RunOnStartup"] = false,
+            ["Shell_AppTheme"] = "Default",
             ["Shell_TaskbarEnabled"] = false,
             ["Shell_TaskbarStyle"] = "Standard",
             ["Shell_TaskbarLength"] = 100,
@@ -89,6 +90,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #region Shell Settings
         internal static bool Shell_MasterEnabled { get => (bool)_cachedSettings["Shell_MasterEnabled"]; set => ChangingParameters("Shell_MasterEnabled", value); }
         internal static bool Shell_RunOnStartup { get => (bool)_cachedSettings["Shell_RunOnStartup"]; set => ChangingParameters("Shell_RunOnStartup", value); }
+        internal static string Shell_AppTheme { get => _cachedSettings["Shell_AppTheme"]?.ToString() ?? "Default"; set => ChangingParameters("Shell_AppTheme", value); }
         internal static bool Shell_TaskbarEnabled { get => (bool)_cachedSettings["Shell_TaskbarEnabled"]; set => ChangingParameters("Shell_TaskbarEnabled", value); }
         internal static string Shell_TaskbarStyle { get => (string)_cachedSettings["Shell_TaskbarStyle"]; set => ChangingParameters("Shell_TaskbarStyle", value); }
         internal static int Shell_TaskbarLength { get => (int)_cachedSettings["Shell_TaskbarLength"]; set => ChangingParameters("Shell_TaskbarLength", value); }

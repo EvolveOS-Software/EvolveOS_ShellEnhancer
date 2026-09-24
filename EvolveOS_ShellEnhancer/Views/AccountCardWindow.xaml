@@ -33,7 +33,7 @@
                         </Grid.ColumnDefinitions>
                         <PersonPicture x:Name="CardProfilePic" Height="56" Width="56" Margin="0,0,12,0"/>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock x:Name="CardProfileName" FontWeight="Bold" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="CardProfileName" Foreground="{ThemeResource TextFillColorPrimaryBrush}" FontWeight="Bold" FontSize="14" TextTrimming="CharacterEllipsis"/>
                             <TextBlock x:Name="CardAccountType" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
                             <TextBlock x:Name="CardProfileEmail" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
                             <HyperlinkButton Content="{helpers:ResourceString Key=StartMenu_MyAccount}" Click="ActionManageMyAccount_Click" Padding="0" FontSize="11" Margin="0,2,0,0"/>
@@ -47,14 +47,14 @@
                 <StackPanel Spacing="4">
                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="6" Padding="8,8" Click="ActionLock_Click">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE72E;" FontSize="16"/>
-                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_Lock}" FontSize="13"/>
+                            <FontIcon Glyph="&#xE72E;" FontSize="16" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_Lock}" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </Button>
                     <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" CornerRadius="6" Padding="8,8" Click="ActionAccountSettings_Click">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE713;" FontSize="16"/>
-                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_AccountSettings}" FontSize="13"/>
+                            <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_AccountSettings}" FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>

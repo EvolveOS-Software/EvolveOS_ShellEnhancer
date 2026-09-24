@@ -18,10 +18,26 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             if (_acrylicController != null) return;
 
             _acrylicController = new DesktopAcrylicController();
+
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+
+            if (savedTheme.Equals("Dark", StringComparison.OrdinalIgnoreCase))
+            {
+                _acrylicController.TintColor = Color.FromArgb(255, 32, 32, 32);
+                _acrylicController.TintOpacity = 0.65f;
+                _acrylicController.FallbackColor = Color.FromArgb(255, 32, 32, 32);
+            }
+            else if (savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase))
+            {
+                _acrylicController.TintColor = Color.FromArgb(255, 240, 240, 240);
+                _acrylicController.TintOpacity = 0.65f;
+                _acrylicController.FallbackColor = Color.FromArgb(255, 240, 240, 240);
+            }
+
             _configuration = new SystemBackdropConfiguration
             {
                 IsInputActive = true,
-                Theme = SystemBackdropTheme.Default
+                Theme = GetDesiredTheme(savedTheme)
             };
 
             _acrylicController.AddSystemBackdropTarget(connectedTarget);
@@ -32,8 +48,19 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         {
             if (_configuration != null)
             {
-                _configuration.IsInputActive = true;
+                _configuration.Theme = GetDesiredTheme(SettingsEngine.Shell_AppTheme ?? "Default");
             }
+        }
+
+        private SystemBackdropTheme GetDesiredTheme(string savedTheme)
+        {
+            if (savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase))
+                return SystemBackdropTheme.Light;
+
+            if (savedTheme.Equals("Dark", StringComparison.OrdinalIgnoreCase))
+                return SystemBackdropTheme.Dark;
+
+            return SystemBackdropTheme.Default;
         }
 
         protected override void OnTargetDisconnected(ICompositionSupportsSystemBackdrop disconnectedTarget)

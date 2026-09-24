@@ -231,6 +231,22 @@ namespace EvolveOS_ShellEnhancer
             RefreshUITheme();
         }
 
+        private void ApplyAppThemeGlobally(string themeStr)
+        {
+            if (_startMenuWindow != null)
+            {
+                _startMenuWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    _startMenuWindow.SetTheme(themeStr);
+                });
+            }
+
+            if (_isTaskbarEnabled)
+            {
+                TaskbarManager.ReloadAll();
+            }
+        }
+
         private void RefreshUITheme()
         {
             if (_startMenuWindow != null && _startMenuWindow.Content is FrameworkElement root && _startMenuWindow.Visible)
@@ -589,6 +605,11 @@ namespace EvolveOS_ShellEnhancer
                                 Debug.WriteLine($"Failed to set process priority: {ex.Message}");
                             }
                         }
+                        break;
+
+                    case "Shell_AppTheme":
+                        SettingsEngine.Shell_AppTheme = value;
+                        ApplyAppThemeGlobally(value);
                         break;
                 }
             });

@@ -79,7 +79,8 @@ namespace EvolveOS_ShellEnhancer.Views
                 presenter.IsAlwaysOnTop = true;
             }
 
-            this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            SetTheme(savedTheme);
 
             _appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
             _appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
@@ -120,6 +121,25 @@ namespace EvolveOS_ShellEnhancer.Views
             ViewModel.LoadUserProfile(DispatcherQueue);
             ViewModel.UpdateShortcuts(SettingsEngine.Shell_StartMenuShortcuts ?? string.Empty);
         }
+
+        public void SetTheme(string theme)
+        {
+            if (this.Content is FrameworkElement root)
+            {
+                if (theme == "Light")
+                    root.RequestedTheme = ElementTheme.Light;
+                else if (theme == "Dark")
+                    root.RequestedTheme = ElementTheme.Dark;
+                else
+                    root.RequestedTheme = ElementTheme.Default;
+            }
+
+            this.SystemBackdrop = null;
+            this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+
+            ViewModel.LoadUserProfile(DispatcherQueue);
+        }
+
         public void LoadRecentDocuments()
         {
             ViewModel.LoadRecentDocuments(ShowRecentDocs);

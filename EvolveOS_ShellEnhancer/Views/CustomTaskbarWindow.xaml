@@ -67,8 +67,15 @@
                     <Button x:Name="BtnClock" MinWidth="44" Height="40" Padding="4,0" HorizontalAlignment="Center" Background="Transparent" BorderThickness="0" CornerRadius="4" Click="BtnClock_Click" ToolTipService.ToolTip="Notifications and Calendar">
                         <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
                             <StackPanel x:Name="ClockContentPanel" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <TextBlock x:Name="ClockText" Text="00:00 AM" FontSize="{ThemeResource AppFontSizeBase}" HorizontalAlignment="Right" TextAlignment="Right"/>
-                                <TextBlock x:Name="DateText" Text="00/00" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Right" TextAlignment="Right" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <!-- Added explicit theme-aware Foreground here -->
+                                <TextBlock x:Name="ClockText" Text="00:00 AM"
+                                           FontSize="{ThemeResource AppFontSizeBase}"
+                                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                           HorizontalAlignment="Right" TextAlignment="Right"/>
+                                <TextBlock x:Name="DateText" Text="00/00"
+                                           FontSize="{ThemeResource AppFontSizeSmall}"
+                                           HorizontalAlignment="Right" TextAlignment="Right"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                             </StackPanel>
                         </Viewbox>
                     </Button>
