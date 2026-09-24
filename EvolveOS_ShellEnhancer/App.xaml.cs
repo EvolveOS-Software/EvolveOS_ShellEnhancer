@@ -233,6 +233,8 @@ namespace EvolveOS_ShellEnhancer
 
         private void ApplyAppThemeGlobally(string themeStr)
         {
+            SettingsEngine.Shell_AppTheme = themeStr;
+
             if (_startMenuWindow != null)
             {
                 _startMenuWindow.DispatcherQueue.TryEnqueue(() =>
@@ -610,6 +612,26 @@ namespace EvolveOS_ShellEnhancer
                     case "Shell_AppTheme":
                         SettingsEngine.Shell_AppTheme = value;
                         ApplyAppThemeGlobally(value);
+                        break;
+
+                    case "Shell_AcrylicStyle":
+                        SettingsEngine.Shell_AcrylicStyle = value;
+                        TaskbarManager.ReloadAll();
+                        _startMenuWindow?.ReloadTheme();
+                        break;
+
+                    case "Shell_AcrylicOpacity":
+                        if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double opVal))
+                            SettingsEngine.Shell_AcrylicOpacity = opVal;
+                        TaskbarManager.ReloadAll();
+                        _startMenuWindow?.ReloadTheme();
+                        break;
+
+                    case "Shell_AcrylicLuminosity":
+                        if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double lumVal))
+                            SettingsEngine.Shell_AcrylicLuminosity = lumVal;
+                        TaskbarManager.ReloadAll();
+                        _startMenuWindow?.ReloadTheme();
                         break;
                 }
             });

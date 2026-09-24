@@ -122,6 +122,12 @@ namespace EvolveOS_ShellEnhancer.Views
             ViewModel.UpdateShortcuts(SettingsEngine.Shell_StartMenuShortcuts ?? string.Empty);
         }
 
+        public void ReloadTheme()
+        {
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            SetTheme(savedTheme);
+        }
+
         public void SetTheme(string theme)
         {
             if (this.Content is FrameworkElement root)
