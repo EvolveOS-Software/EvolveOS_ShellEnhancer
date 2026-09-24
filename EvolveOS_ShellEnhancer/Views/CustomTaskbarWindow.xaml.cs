@@ -426,6 +426,10 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void UpdateAppIndicators()
         {
+            IntPtr foregroundHwnd = GetForegroundWindow();
+            uint fgPid = 0;
+            GetWindowThreadProcessId(foregroundHwnd, out fgPid);
+
             foreach (var item in _appIndicators)
             {
                 if (string.IsNullOrEmpty(item.processName))
@@ -437,7 +441,20 @@ namespace EvolveOS_ShellEnhancer.Views
                 List<IntPtr> handles = GetAppWindowHandles(item.processName);
                 bool isRunning = handles.Count > 0;
 
-                item.indicator.Visibility = isRunning ? Visibility.Visible : Visibility.Collapsed;
+                bool allMinimized = isRunning && handles.All(h => Win32Helper.IsIconic(h));
+                bool isActive = false;
+                if (isRunning)
+                {
+                    string norm = ViewModel.NormalizeProcessName(item.processName);
+                    try
+                    {
+                        var procs = Process.GetProcessesByName(norm);
+                        isActive = procs.Any(p => (uint)p.Id == fgPid);
+                    }
+                    catch { }
+                }
+
+                FactoryAnimation.AnimateIndicatorState(item.indicator, isRunning, allMinimized, isActive);
 
                 object? currentTip = ToolTipService.GetToolTip(item.appCard);
 

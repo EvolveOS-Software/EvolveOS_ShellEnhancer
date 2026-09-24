@@ -5,6 +5,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Shapes;
 using System.Numerics;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Animations
@@ -49,15 +50,110 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             visual.StartAnimation("Scale", springAnim);
         }
 
+        public static void AnimateIndicatorState(Rectangle indicator, bool show, bool isMinimized = false, bool isActive = false)
+        {
+            Brush targetBrush = GetIndicatorBrush(isActive);
+
+            if (show && indicator.Visibility != Visibility.Visible)
+            {
+                indicator.Visibility = Visibility.Visible;
+                indicator.Opacity = 0;
+
+                if (indicator.RenderTransform is not ScaleTransform)
+                {
+                    indicator.RenderTransformOrigin = new Point(0.5, 0.5);
+                    indicator.RenderTransform = new ScaleTransform { ScaleX = 0.5, ScaleY = 0.5 };
+                }
+
+                indicator.Fill = targetBrush;
+
+                var sb = new Storyboard();
+
+                var fadeIn = new DoubleAnimation { To = 1.0, Duration = TimeSpan.FromMilliseconds(200), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+                Storyboard.SetTarget(fadeIn, indicator);
+                Storyboard.SetTargetProperty(fadeIn, "Opacity");
+
+                var scaleTarget = isMinimized ? 0.4 : (isActive ? 1.4 : 1.0);
+                var scaleX = new DoubleAnimation { To = scaleTarget, Duration = TimeSpan.FromMilliseconds(250), EasingFunction = new BackEase { Amplitude = 0.3, EasingMode = EasingMode.EaseOut } };
+                Storyboard.SetTarget(scaleX, indicator);
+                Storyboard.SetTargetProperty(scaleX, "(UIElement.RenderTransform).(ScaleTransform.ScaleX)");
+
+                var scaleY = new DoubleAnimation { To = scaleTarget, Duration = TimeSpan.FromMilliseconds(250), EasingFunction = new BackEase { Amplitude = 0.3, EasingMode = EasingMode.EaseOut } };
+                Storyboard.SetTarget(scaleY, indicator);
+                Storyboard.SetTargetProperty(scaleY, "(UIElement.RenderTransform).(ScaleTransform.ScaleY)");
+
+                sb.Children.Add(fadeIn);
+                sb.Children.Add(scaleX);
+                sb.Children.Add(scaleY);
+                sb.Begin();
+            }
+            else if (show && indicator.Visibility == Visibility.Visible)
+            {
+                var sb = new Storyboard();
+                double scaleTarget = isMinimized ? 0.4 : (isActive ? 1.4 : 1.0);
+                double opacityTarget = isMinimized ? 0.5 : 1.0;
+
+                indicator.Fill = targetBrush;
+
+                var animOpacity = new DoubleAnimation { To = opacityTarget, Duration = TimeSpan.FromMilliseconds(200), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+                Storyboard.SetTarget(animOpacity, indicator);
+                Storyboard.SetTargetProperty(animOpacity, "Opacity");
+
+                var scaleX = new DoubleAnimation { To = scaleTarget, Duration = TimeSpan.FromMilliseconds(200), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+                Storyboard.SetTarget(scaleX, indicator);
+                Storyboard.SetTargetProperty(scaleX, "(UIElement.RenderTransform).(ScaleTransform.ScaleX)");
+
+                var scaleY = new DoubleAnimation { To = scaleTarget, Duration = TimeSpan.FromMilliseconds(200), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+                Storyboard.SetTarget(scaleY, indicator);
+                Storyboard.SetTargetProperty(scaleY, "(UIElement.RenderTransform).(ScaleTransform.ScaleY)");
+
+                sb.Children.Add(animOpacity);
+                sb.Children.Add(scaleX);
+                sb.Children.Add(scaleY);
+                sb.Begin();
+            }
+            else if (!show && indicator.Visibility == Visibility.Visible)
+            {
+                var sb = new Storyboard();
+
+                var fadeOut = new DoubleAnimation { To = 0, Duration = TimeSpan.FromMilliseconds(150), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn } };
+                Storyboard.SetTarget(fadeOut, indicator);
+                Storyboard.SetTargetProperty(fadeOut, "Opacity");
+
+                sb.Children.Add(fadeOut);
+                sb.Completed += (s, e) => { indicator.Visibility = Visibility.Collapsed; };
+                sb.Begin();
+            }
+        }
+
+        private static Brush GetIndicatorBrush(bool isActive)
+        {
+            if (isActive)
+            {
+                try
+                {
+                    var uiSettings = new Windows.UI.ViewManagement.UISettings();
+                    Color accentColor = uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.Accent);
+                    return new SolidColorBrush(accentColor);
+                }
+                catch
+                {
+                    return new SolidColorBrush(Color.FromArgb(255, 0, 120, 215));
+                }
+            }
+            else
+            {
+                return new SolidColorBrush(Color.FromArgb(180, 200, 200, 200));
+            }
+        }
+
         public static void AnimateAppCardHoverEnter(UIElement element, string style)
         {
             var visual = ElementCompositionPreview.GetElementVisual(element);
             var compositor = visual.Compositor;
 
-            // --- FIX: Explicitly enable the Translation facade so the engine doesn't crash ---
             ElementCompositionPreview.SetIsTranslationEnabled(element, true);
 
-            // Set CenterPoint for proper scaling and rotation
             visual.CenterPoint = new Vector3((float)(element.RenderSize.Width / 2), (float)(element.RenderSize.Height / 2), 0f);
 
             switch (style)
@@ -65,7 +161,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
                 case "Rise":
                     var riseAnim = compositor.CreateSpringVector3Animation();
                     riseAnim.Target = "Translation";
-                    riseAnim.FinalValue = new Vector3(0, -6f, 0); // Move up 6px
+                    riseAnim.FinalValue = new Vector3(0, -6f, 0);
                     riseAnim.DampingRatio = 0.6f;
                     riseAnim.Period = TimeSpan.FromMilliseconds(50);
                     visual.StartAnimation("Translation", riseAnim);
@@ -74,7 +170,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
                 case "Grow":
                     var growAnim = compositor.CreateSpringVector3Animation();
                     growAnim.Target = "Scale";
-                    growAnim.FinalValue = new Vector3(1.15f, 1.15f, 1f); // 15% larger
+                    growAnim.FinalValue = new Vector3(1.15f, 1.15f, 1f);
                     growAnim.DampingRatio = 0.6f;
                     growAnim.Period = TimeSpan.FromMilliseconds(50);
                     visual.StartAnimation("Scale", growAnim);
@@ -83,7 +179,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
                 case "Tilt":
                     var tiltAnim = compositor.CreateSpringScalarAnimation();
                     tiltAnim.Target = "RotationAngleInDegrees";
-                    tiltAnim.FinalValue = 6f; // 6 degree tilt
+                    tiltAnim.FinalValue = 6f;
                     tiltAnim.DampingRatio = 0.5f;
                     tiltAnim.Period = TimeSpan.FromMilliseconds(50);
                     visual.StartAnimation("RotationAngleInDegrees", tiltAnim);
@@ -93,10 +189,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
                     var breathingAnim = compositor.CreateVector3KeyFrameAnimation();
                     breathingAnim.Target = "Scale";
                     breathingAnim.InsertKeyFrame(0f, new Vector3(1.0f, 1.0f, 1.0f));
-                    breathingAnim.InsertKeyFrame(0.5f, new Vector3(1.10f, 1.10f, 1.0f)); // Gently expand by 10%
+                    breathingAnim.InsertKeyFrame(0.5f, new Vector3(1.10f, 1.10f, 1.0f));
                     breathingAnim.InsertKeyFrame(1.0f, new Vector3(1.0f, 1.0f, 1.0f));
-                    breathingAnim.Duration = TimeSpan.FromMilliseconds(2000); // 2 seconds per full breath cycle
-                    breathingAnim.IterationBehavior = Microsoft.UI.Composition.AnimationIterationBehavior.Forever; // Loop continuously
+                    breathingAnim.Duration = TimeSpan.FromMilliseconds(2000);
+                    breathingAnim.IterationBehavior = Microsoft.UI.Composition.AnimationIterationBehavior.Forever;
                     visual.StartAnimation("Scale", breathingAnim);
                     break;
 
@@ -113,7 +209,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
 
                 case "Standard":
                 default:
-                    // Standard relies solely on the background color change in CustomTaskbarWindow
                     break;
             }
         }
@@ -125,10 +220,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             var visual = ElementCompositionPreview.GetElementVisual(element);
             var compositor = visual.Compositor;
 
-            // --- FIX: Explicitly enable the Translation facade here too ---
             ElementCompositionPreview.SetIsTranslationEnabled(element, true);
 
-            // Reset Scale
             var scaleAnim = compositor.CreateSpringVector3Animation();
             scaleAnim.Target = "Scale";
             scaleAnim.FinalValue = new Vector3(1f, 1f, 1f);
@@ -136,7 +229,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             scaleAnim.Period = TimeSpan.FromMilliseconds(50);
             visual.StartAnimation("Scale", scaleAnim);
 
-            // Reset Translation
             var transAnim = compositor.CreateSpringVector3Animation();
             transAnim.Target = "Translation";
             transAnim.FinalValue = Vector3.Zero;
@@ -144,7 +236,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             transAnim.Period = TimeSpan.FromMilliseconds(50);
             visual.StartAnimation("Translation", transAnim);
 
-            // Reset Rotation
             var rotAnim = compositor.CreateSpringScalarAnimation();
             rotAnim.Target = "RotationAngleInDegrees";
             rotAnim.FinalValue = 0f;
