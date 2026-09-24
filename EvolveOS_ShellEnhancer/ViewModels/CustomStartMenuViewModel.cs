@@ -14,7 +14,11 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         public ObservableCollection<AppCategory> PinnedCategories { get; } = new();
         public ObservableCollection<AppItem> RecentDocsCollection { get; } = new();
         public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
+
         public ObservableCollection<AppItem> SearchResultsCollection { get; } = new();
+        public ObservableCollection<AppItem> SearchAppsCollection { get; } = new();
+        public ObservableCollection<AppItem> SearchSettingsCollection { get; } = new();
+
         public ObservableCollection<ShortcutItem> StartMenuShortcuts { get; } = new();
 
         public List<AppItem> AllRecentDocs { get; } = new();
@@ -423,6 +427,7 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         #endregion
 
         #region Search Logic
+
         public void PerformSearch(string query, string currentSearchFilter, Microsoft.UI.Dispatching.DispatcherQueue dispatcher, Action<AppItem> onFileFound)
         {
             _searchCts?.Cancel();
@@ -430,15 +435,36 @@ namespace EvolveOS_ShellEnhancer.ViewModels
             var token = _searchCts.Token;
 
             SearchResultsCollection.Clear();
+            SearchAppsCollection.Clear();
+            SearchSettingsCollection.Clear();
+
             if (string.IsNullOrWhiteSpace(query)) return;
 
             if (currentSearchFilter == "Apps")
             {
-                var results = AllAppsCollection
+                var appResults = AllAppsCollection
                     .Where(a => a.Name != null && a.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(a => a.Name!.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    .ThenBy(a => a.Name)
                     .ToList();
 
-                foreach (var item in results) SearchResultsCollection.Add(item);
+                var settingsResults = Helpers.SettingsProvider.KnownSettings
+                    .Where(s => s.Name != null && s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(s => s.Name!.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    .ThenBy(s => s.Name)
+                    .ToList();
+
+                foreach (var item in appResults)
+                {
+                    SearchResultsCollection.Add(item);
+                    SearchAppsCollection.Add(item);
+                }
+
+                foreach (var setting in settingsResults)
+                {
+                    SearchResultsCollection.Add(setting);
+                    SearchSettingsCollection.Add(setting);
+                }
             }
             else if (currentSearchFilter == "Files")
             {
@@ -488,6 +514,7 @@ namespace EvolveOS_ShellEnhancer.ViewModels
 
                                 int insertIndex = SearchResultsCollection.Count > 0 ? SearchResultsCollection.Count - 1 : 0;
                                 SearchResultsCollection.Insert(insertIndex, fileItem);
+                                SearchAppsCollection.Insert(insertIndex, fileItem);
 
                                 _ = ExtractIconsAsync(new[] { fileItem });
                                 onFileFound?.Invoke(fileItem);

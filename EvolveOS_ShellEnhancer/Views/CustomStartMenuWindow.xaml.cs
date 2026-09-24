@@ -42,6 +42,8 @@ namespace EvolveOS_ShellEnhancer.Views
         public ObservableCollection<AppItem> RecentDocsCollection => ViewModel.RecentDocsCollection;
         public ObservableCollection<AppItem> AllAppsCollection => ViewModel.AllAppsCollection;
         public ObservableCollection<AppItem> SearchResultsCollection => ViewModel.SearchResultsCollection;
+        public ObservableCollection<AppItem> SearchAppsCollection => ViewModel.SearchAppsCollection;
+        public ObservableCollection<AppItem> SearchSettingsCollection => ViewModel.SearchSettingsCollection;
         public ObservableCollection<ShortcutItem> StartMenuShortcuts => ViewModel.StartMenuShortcuts;
 
         private string _currentSearchFilter = "Apps";
@@ -93,6 +95,11 @@ namespace EvolveOS_ShellEnhancer.Views
             this.Activated += OnWindowActivated;
             PagesFlipView.Loaded += PagesFlipView_Loaded;
 
+            if (this.Content is UIElement rootElement)
+            {
+                rootElement.CharacterReceived += RootGrid_CharacterReceived;
+            }
+
             ViewModel.OnUserProfileLoaded = (name, pic, email, accountType) =>
             {
                 _currentUserEmail = email;
@@ -136,6 +143,28 @@ namespace EvolveOS_ShellEnhancer.Views
             ViewModel.UpdateShortcuts(SettingsEngine.Shell_StartMenuShortcuts ?? string.Empty);
         }
 
+        private void RootGrid_CharacterReceived(UIElement sender, CharacterReceivedRoutedEventArgs args)
+        {
+            if ((_currentStyle == "Compact" || _currentStyle == "SplitGrouped") && SearchOverlay2 != null && SearchOverlay2.Visibility == Visibility.Collapsed)
+            {
+                if (!char.IsControl(args.Character))
+                {
+                    if (MainSplitContentGrid != null) MainSplitContentGrid.Visibility = Visibility.Collapsed;
+                    SearchOverlay2.Visibility = Visibility.Visible;
+                    SearchBox2.Text = args.Character.ToString();
+                    PerformSearch(SearchBox2.Text);
+
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        SearchBox2.Focus(FocusState.Programmatic);
+                        SearchBox2.Text = SearchBox2.Text;
+                    });
+
+                    args.Handled = true;
+                }
+            }
+        }
+
         public void ReloadTheme()
         {
             string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
@@ -174,7 +203,6 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             ViewModel.UpdateShortcuts(payload);
         }
-
 
         private void UpdateRecentDocsView(StartMenuPage page)
         {
@@ -262,8 +290,14 @@ namespace EvolveOS_ShellEnhancer.Views
             bool isStandard = (_currentStyle == "Standard" || _currentStyle == "SplitStandard");
             bool isGrouped = (_currentStyle == "Compact" || _currentStyle == "SplitGrouped");
 
-            DesignSplitStandard.Visibility = isStandard ? Visibility.Visible : Visibility.Collapsed;
-            DesignSplitGrouped.Visibility = isGrouped ? Visibility.Visible : Visibility.Collapsed;
+            if (SearchBox1 != null) SearchBox1.Text = string.Empty;
+            if (SearchBox2 != null) SearchBox2.Text = string.Empty;
+
+            if (DesignSplitStandard != null) DesignSplitStandard.Visibility = isStandard ? Visibility.Visible : Visibility.Collapsed;
+            if (DesignSplitGrouped != null) DesignSplitGrouped.Visibility = isGrouped ? Visibility.Visible : Visibility.Collapsed;
+
+            if (isStandard && PagesFlipView != null) HideAllFlipViewButtons(PagesFlipView);
+            if (isGrouped && PagesFlipView2 != null) HideAllFlipViewButtons(PagesFlipView2);
 
             if (_isVisible) ShowMenu();
         }
@@ -289,10 +323,17 @@ namespace EvolveOS_ShellEnhancer.Views
             var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
 
             UpdatePowerMenuVisibility();
-
             LoadRecentDocuments();
 
             bool isGroupedStyle = (_currentStyle == "Compact" || _currentStyle == "SplitGrouped");
+
+            if (isGroupedStyle && PagesFlipView2 != null) HideAllFlipViewButtons(PagesFlipView2);
+            else if (!isGroupedStyle && PagesFlipView != null) HideAllFlipViewButtons(PagesFlipView);
+
+            if (SearchBox2 != null) SearchBox2.Text = string.Empty;
+            if (SearchOverlay2 != null) SearchOverlay2.Visibility = Visibility.Collapsed;
+            if (MainSplitContentGrid != null) MainSplitContentGrid.Visibility = Visibility.Visible;
+
             int windowWidth = isGroupedStyle ? 880 : 780;
             int windowHeight = isGroupedStyle ? 720 : 680;
 
@@ -339,7 +380,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 this.Activate();
                 Win32Helper.SetForegroundWindow(_hWnd);
 
-                AvatarPopup.IsOpen = isStandardStyle;
+                if (AvatarPopup != null) AvatarPopup.IsOpen = isStandardStyle;
 
                 SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
@@ -362,7 +403,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 this.Activate();
                 Win32Helper.SetForegroundWindow(_hWnd);
 
-                AvatarPopup.IsOpen = true;
+                if (AvatarPopup != null) AvatarPopup.IsOpen = isStandardStyle;
 
                 SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
@@ -378,6 +419,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
             _isVisible = false;
             App.LastStartMenuCloseTime = DateTime.Now;
+
+            if (SearchBox1 != null) SearchBox1.Text = string.Empty;
+            if (SearchBox2 != null) SearchBox2.Text = string.Empty;
 
             if (EnableAnimations)
             {
@@ -404,7 +448,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     () =>
                     {
                         _appWindow.Hide();
-                        AvatarPopup.IsOpen = false;
+                        if (AvatarPopup != null) AvatarPopup.IsOpen = false;
 
                         _activeAccountCardWindow?.Close();
                         _activeAccountCardWindow = null;
@@ -413,7 +457,7 @@ namespace EvolveOS_ShellEnhancer.Views
             else
             {
                 _appWindow.Hide();
-                AvatarPopup.IsOpen = false;
+                if (AvatarPopup != null) AvatarPopup.IsOpen = false;
 
                 _activeAccountCardWindow?.Close();
                 _activeAccountCardWindow = null;
@@ -545,12 +589,12 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void ProfileButton_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            if (SettingsEngine.Shell_StartMenuProfileClick) ProfileGrowStoryboard.Begin();
+            if (SettingsEngine.Shell_StartMenuProfileClick && ProfileGrowStoryboard != null) ProfileGrowStoryboard.Begin();
         }
 
         private void ProfileButton_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            if (SettingsEngine.Shell_StartMenuProfileClick) ProfileShrinkStoryboard.Begin();
+            if (SettingsEngine.Shell_StartMenuProfileClick && ProfileShrinkStoryboard != null) ProfileShrinkStoryboard.Begin();
         }
 
         private async void Shortcut_Click(object sender, RoutedEventArgs e)
@@ -805,7 +849,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void CategoryChevron_Checked(object sender, RoutedEventArgs e)
         {
-            if (sender is Microsoft.UI.Xaml.Controls.Primitives.ToggleButton btn)
+            if (sender is ToggleButton btn)
             {
                 if (btn.Content is FontIcon icon && icon.RenderTransform is RotateTransform transform)
                     FactoryAnimation.AnimateRotation(transform, 180);
@@ -819,7 +863,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void CategoryChevron_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (sender is Microsoft.UI.Xaml.Controls.Primitives.ToggleButton btn)
+            if (sender is ToggleButton btn)
             {
                 if (btn.Content is FontIcon icon && icon.RenderTransform is RotateTransform transform)
                     FactoryAnimation.AnimateRotation(transform, 0);
@@ -845,11 +889,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 MenuFlyout flyout = new MenuFlyout();
 
-                var addGroupItem = new MenuFlyoutItem { Text = "Add Section" };
+                var addGroupItem = new MenuFlyoutItem { Text = "Add Group" };
                 addGroupItem.Icon = new FontIcon { Glyph = "\xE710" };
                 addGroupItem.Click += (s, args) =>
                 {
-                    currentPage.PinnedCategories.Add(new AppCategory { Name = "New Section" });
+                    currentPage.PinnedCategories.Add(new AppCategory { Name = "New Group" });
                     ViewModel.SaveStartMenuPins();
                 };
                 flyout.Items.Add(addGroupItem);
@@ -859,7 +903,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 addPageItem.Click += (s, args) =>
                 {
                     var newPage = new StartMenuPage { PageIndex = Pages.Count };
-                    newPage.PinnedCategories.Add(new AppCategory { Name = "New Section" });
+                    newPage.PinnedCategories.Add(new AppCategory { Name = "New Group" });
 
                     Pages.Add(newPage);
                     if (PagesFlipView != null) PagesFlipView.SelectedIndex = Pages.Count - 1;
@@ -983,7 +1027,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
                 flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
                 flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255))));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
                 flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
                 flyout.MenuFlyoutPresenterStyle = flyoutStyle;
 
@@ -1007,7 +1051,7 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (sender is Border border)
             {
-                border.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
+                border.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
             }
         }
 
@@ -1030,7 +1074,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 _sourceGrid = FindVisualParent<GridView>(element);
 
-                if (_sourceGrid == null || _sourceGrid == SearchAndAllAppsGrid || _sourceGrid.Name == "RecentDocsGrid")
+                if (_sourceGrid == null || (_sourceGrid.Name != null && _sourceGrid.Name.Contains("Search")) || _sourceGrid.Name == "RecentDocsGrid")
                     return;
 
                 _draggedAppItem = app;
@@ -1330,13 +1374,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void SearchFilter_Click(object sender, RoutedEventArgs e)
         {
-            if (SearchBox1 == null || SearchBox2 == null || DesignSplitStandard == null) return;
+            if (DesignSplitStandard == null) return;
 
             if (sender is MenuFlyoutItem item && item.Tag is string tag)
             {
                 _currentSearchFilter = tag;
 
-                string query = DesignSplitStandard.Visibility == Visibility.Visible ? SearchBox1.Text : SearchBox2.Text;
+                string query = DesignSplitStandard.Visibility == Visibility.Visible ? (SearchBox1?.Text ?? "") : (SearchBox2?.Text ?? "");
                 PerformSearch(query);
             }
         }
@@ -1356,15 +1400,31 @@ namespace EvolveOS_ShellEnhancer.Views
                     if (BottomNavigationGrid != null) BottomNavigationGrid.Visibility = Visibility.Visible;
                 }
 
-                // Ensure the second grid reverts to the full apps list when search is cleared
                 if (SearchAndAllAppsGrid2 != null) SearchAndAllAppsGrid2.ItemsSource = AllAppsCollection;
 
                 if (DefaultRightPane1 != null) DefaultRightPane1.Visibility = Visibility.Visible;
-                if (DefaultRightPane2 != null) DefaultRightPane2.Visibility = Visibility.Visible;
                 if (SearchRightPane1 != null) SearchRightPane1.Visibility = Visibility.Collapsed;
-                if (SearchRightPane2 != null) SearchRightPane2.Visibility = Visibility.Collapsed;
+
+                if (_currentStyle == "SplitGrouped" || _currentStyle == "Compact")
+                {
+                    if (SearchOverlay2 != null) SearchOverlay2.Visibility = Visibility.Collapsed;
+                    if (MainSplitContentGrid != null) MainSplitContentGrid.Visibility = Visibility.Visible;
+                }
+
                 return;
             }
+
+            _isSearchAppsExpanded = false;
+            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = "More";
+            if (SearchAppsMoreIcon?.RenderTransform is RotateTransform r1) FactoryAnimation.AnimateRotation(r1, 0);
+            if (SearchAppsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, false, 116);
+
+            _isSearchSettingsExpanded = false;
+            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = "More";
+            if (SearchSettingsMoreIcon?.RenderTransform is RotateTransform r2) FactoryAnimation.AnimateRotation(r2, 0);
+            if (SearchSettingsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, false, 208);
+
+            if (WebSearchHintText != null) WebSearchHintText.Text = $"{query} - Show web results";
 
             ViewModel.PerformSearch(query, _currentSearchFilter, DispatcherQueue, (fileItem) =>
             {
@@ -1372,38 +1432,33 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.SelectedIndex = 0;
                     if (SearchAndAllAppsGrid2 != null) SearchAndAllAppsGrid2.SelectedIndex = 0;
-                    if (ProductivityAppsGrid != null) ProductivityAppsGrid.SelectedIndex = 0;
-                    if (SecondaryAppsGrid != null) SecondaryAppsGrid.SelectedIndex = 0;
                     UpdateSearchDetailsPane(fileItem);
                 }
             });
 
-            if (SearchAndAllAppsGrid != null)
+            if (_currentStyle == "Standard" || _currentStyle == "SplitStandard")
             {
-                SearchAndAllAppsGrid.Visibility = Visibility.Visible;
-                SearchAndAllAppsGrid.ItemsSource = SearchResultsCollection;
-            }
+                if (PagesFlipView != null) PagesFlipView.Visibility = Visibility.Collapsed;
+                if (BottomNavigationGrid != null) BottomNavigationGrid.Visibility = Visibility.Collapsed;
 
-            if (SearchAndAllAppsGrid2 != null)
+                if (SearchAndAllAppsGrid != null)
+                {
+                    SearchAndAllAppsGrid.Visibility = Visibility.Visible;
+                    SearchAndAllAppsGrid.ItemsSource = SearchResultsCollection;
+                }
+                if (DefaultRightPane1 != null) DefaultRightPane1.Visibility = Visibility.Collapsed;
+                if (SearchRightPane1 != null) SearchRightPane1.Visibility = Visibility.Visible;
+            }
+            else if (_currentStyle == "SplitGrouped" || _currentStyle == "Compact")
             {
-                SearchAndAllAppsGrid2.Visibility = Visibility.Visible;
-                SearchAndAllAppsGrid2.ItemsSource = SearchResultsCollection;
+                if (MainSplitContentGrid != null) MainSplitContentGrid.Visibility = Visibility.Collapsed;
+                if (SearchOverlay2 != null) SearchOverlay2.Visibility = Visibility.Visible;
             }
-
-            if (ProductivityAppsGrid != null) ProductivityAppsGrid.ItemsSource = SearchResultsCollection;
-            if (SecondaryAppsGrid != null) SecondaryAppsGrid.ItemsSource = SearchResultsCollection;
-
-            if (DefaultRightPane1 != null) DefaultRightPane1.Visibility = Visibility.Collapsed;
-            if (DefaultRightPane2 != null) DefaultRightPane2.Visibility = Visibility.Collapsed;
-            if (SearchRightPane1 != null) SearchRightPane1.Visibility = Visibility.Visible;
-            if (SearchRightPane2 != null) SearchRightPane2.Visibility = Visibility.Visible;
 
             if (SearchResultsCollection.Count > 0)
             {
                 if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.SelectedIndex = 0;
                 if (SearchAndAllAppsGrid2 != null) SearchAndAllAppsGrid2.SelectedIndex = 0;
-                if (ProductivityAppsGrid != null) ProductivityAppsGrid.SelectedIndex = 0;
-                if (SecondaryAppsGrid != null) SecondaryAppsGrid.SelectedIndex = 0;
                 UpdateSearchDetailsPane(SearchResultsCollection.First());
             }
             else
@@ -1411,13 +1466,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 _currentSearchItem = null;
                 string noResultsTxt = LocalizationService.Instance.GetString("StartMenu_SearchNoResults");
                 if (SearchDetailsName1 != null) SearchDetailsName1.Text = noResultsTxt;
-                if (SearchDetailsName2 != null) SearchDetailsName2.Text = noResultsTxt;
                 if (SearchDetailsIcon1 != null) SearchDetailsIcon1.Source = null;
-                if (SearchDetailsIcon2 != null) SearchDetailsIcon2.Source = null;
                 if (AdminBtn1 != null) AdminBtn1.Visibility = Visibility.Collapsed;
                 if (LocationBtn1 != null) LocationBtn1.Visibility = Visibility.Collapsed;
-                if (AdminBtn2 != null) AdminBtn2.Visibility = Visibility.Collapsed;
-                if (LocationBtn2 != null) LocationBtn2.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -1433,18 +1484,13 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             _currentSearchItem = item;
             if (SearchDetailsName1 != null) SearchDetailsName1.Text = item.Name;
-            if (SearchDetailsName2 != null) SearchDetailsName2.Text = item.Name;
             if (SearchDetailsIcon1 != null) SearchDetailsIcon1.Source = item.IconSource;
-            if (SearchDetailsIcon2 != null) SearchDetailsIcon2.Source = item.IconSource;
 
             bool isSpecial = item.ExecutablePath?.StartsWith("WEB_SEARCH:") == true || item.ExecutablePath?.StartsWith("FILE_SEARCH:") == true;
             bool isUwpApp = item.IsUwp;
 
             if (AdminBtn1 != null) AdminBtn1.Visibility = (!isUwpApp && !isSpecial) ? Visibility.Visible : Visibility.Collapsed;
             if (LocationBtn1 != null) LocationBtn1.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
-
-            if (AdminBtn2 != null) AdminBtn2.Visibility = (!isUwpApp && !isSpecial) ? Visibility.Visible : Visibility.Collapsed;
-            if (LocationBtn2 != null) LocationBtn2.Visibility = (!isSpecial) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void AppGrid_ItemClick(object sender, ItemClickEventArgs e)
@@ -1564,6 +1610,43 @@ namespace EvolveOS_ShellEnhancer.Views
             HideMenu();
         }
 
+        private async void WebSearchHintBtn_Click(object sender, RoutedEventArgs e)
+        {
+            string query = SearchBox2?.Text ?? "";
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                await Launcher.LaunchUriAsync(new Uri($"https://www.google.com/search?q={Uri.EscapeDataString(query)}"));
+                HideMenu();
+            }
+        }
+
+        private bool _isSearchAppsExpanded = false;
+        private bool _isSearchSettingsExpanded = false;
+
+        private void SearchAppsMoreBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _isSearchAppsExpanded = !_isSearchAppsExpanded;
+            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = _isSearchAppsExpanded ? "Less" : "More";
+
+            if (SearchAppsMoreIcon?.RenderTransform is RotateTransform transform)
+                FactoryAnimation.AnimateRotation(transform, _isSearchAppsExpanded ? 180 : 0);
+
+            if (SearchAppsGrid != null)
+                FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, _isSearchAppsExpanded, 116);
+        }
+
+        private void SearchSettingsMoreBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _isSearchSettingsExpanded = !_isSearchSettingsExpanded;
+            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = _isSearchSettingsExpanded ? "Less" : "More";
+
+            if (SearchSettingsMoreIcon?.RenderTransform is RotateTransform transform)
+                FactoryAnimation.AnimateRotation(transform, _isSearchSettingsExpanded ? 180 : 0);
+
+            if (SearchSettingsGrid != null)
+                FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, _isSearchSettingsExpanded, 208);
+        }
+
         private async void LaunchApp(AppItem app, bool runAsAdmin)
         {
             if (string.IsNullOrEmpty(app.ExecutablePath)) return;
@@ -1580,6 +1663,13 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     string query = app.ExecutablePath.Substring(12);
                     await Launcher.LaunchUriAsync(new Uri($"search-ms:query={Uri.EscapeDataString(query)}"));
+                    HideMenu();
+                    return;
+                }
+
+                else if (app.ExecutablePath.StartsWith("ms-settings:"))
+                {
+                    await Launcher.LaunchUriAsync(new Uri(app.ExecutablePath));
                     HideMenu();
                     return;
                 }
