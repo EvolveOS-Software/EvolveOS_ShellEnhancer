@@ -97,17 +97,31 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _currentUserEmail = email;
                 _currentAccountType = accountType;
+
                 if (UnifiedProfileName != null) UnifiedProfileName.Text = name;
+                if (UnifiedProfileName2 != null) UnifiedProfileName2.Text = name;
+
                 if (UnifiedProfilePic != null)
                 {
                     UnifiedProfilePic.DisplayName = name;
                     if (pic != null) UnifiedProfilePic.ProfilePicture = pic;
                 }
+                if (UnifiedProfilePic2 != null)
+                {
+                    UnifiedProfilePic2.DisplayName = name;
+                    if (pic != null) UnifiedProfilePic2.ProfilePicture = pic;
+                }
+
                 bool enableProfile = SettingsEngine.Shell_StartMenuProfileClick;
                 if (ProfileButton != null)
                 {
                     ProfileButton.IsHitTestVisible = enableProfile;
                     ProfileButton.IsEnabled = enableProfile;
+                }
+                if (ProfileButton2 != null)
+                {
+                    ProfileButton2.IsHitTestVisible = enableProfile;
+                    ProfileButton2.IsEnabled = enableProfile;
                 }
             };
 
@@ -278,8 +292,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
             LoadRecentDocuments();
 
-            int windowWidth = 780;
-            int windowHeight = 680;
+            bool isGroupedStyle = (_currentStyle == "Compact" || _currentStyle == "SplitGrouped");
+            int windowWidth = isGroupedStyle ? 880 : 780;
+            int windowHeight = isGroupedStyle ? 720 : 680;
 
             int taskbarOffset = 60;
             int margin = 16;
@@ -308,6 +323,8 @@ namespace EvolveOS_ShellEnhancer.Views
                     break;
             }
 
+            bool isStandardStyle = (_currentStyle == "Standard" || _currentStyle == "SplitStandard");
+
             if (EnableAnimations)
             {
                 int startX = x, startY = y;
@@ -322,7 +339,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 this.Activate();
                 Win32Helper.SetForegroundWindow(_hWnd);
 
-                AvatarPopup.IsOpen = true;
+                AvatarPopup.IsOpen = isStandardStyle;
 
                 SetWindowPos(_hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
@@ -495,8 +512,17 @@ namespace EvolveOS_ShellEnhancer.Views
                 _ignoreDeactivation = true;
 
                 int cardWidth = 320;
-                int offsetX = _appWindow.Position.X + _appWindow.Size.Width - cardWidth - 16;
+                int offsetX;
                 int offsetY = _appWindow.Position.Y + 60;
+
+                if (sender is Button clickedButton && clickedButton == ProfileButton2)
+                {
+                    offsetX = _appWindow.Position.X + 24;
+                }
+                else
+                {
+                    offsetX = _appWindow.Position.X + _appWindow.Size.Width - cardWidth - 16;
+                }
 
                 _activeAccountCardWindow = new AccountCardWindow(
                     targetX: offsetX,
@@ -631,7 +657,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void CategoryName_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Enter)
+            if (e.Key == VirtualKey.Enter)
             {
                 this.Content.Focus(FocusState.Programmatic);
                 e.Handled = true;
@@ -640,9 +666,18 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void PagesFlipView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (PagesFlipView != null && PagesFlipView.SelectedIndex >= 0)
+            if (sender is FlipView fv && fv.SelectedIndex >= 0)
             {
-                UpdatePageIndicators(PagesFlipView.SelectedIndex);
+                UpdatePageIndicators(fv.SelectedIndex);
+
+                if (fv == PagesFlipView && PagesFlipView2 != null && PagesFlipView2.SelectedIndex != fv.SelectedIndex)
+                {
+                    PagesFlipView2.SelectedIndex = fv.SelectedIndex;
+                }
+                else if (fv == PagesFlipView2 && PagesFlipView != null && PagesFlipView.SelectedIndex != fv.SelectedIndex)
+                {
+                    PagesFlipView.SelectedIndex = fv.SelectedIndex;
+                }
             }
         }
 
@@ -656,17 +691,19 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void PageLeftBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (PagesFlipView != null && PagesFlipView.SelectedIndex > 0)
+            var activeFlipView = (_currentStyle == "Compact" || _currentStyle == "SplitGrouped") ? PagesFlipView2 : PagesFlipView;
+            if (activeFlipView != null && activeFlipView.SelectedIndex > 0)
             {
-                PagesFlipView.SelectedIndex -= 1;
+                activeFlipView.SelectedIndex -= 1;
             }
         }
 
         private void PageRightBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (PagesFlipView != null && PagesFlipView.SelectedIndex >= 0 && PagesFlipView.SelectedIndex < Pages.Count - 1)
+            var activeFlipView = (_currentStyle == "Compact" || _currentStyle == "SplitGrouped") ? PagesFlipView2 : PagesFlipView;
+            if (activeFlipView != null && activeFlipView.SelectedIndex >= 0 && activeFlipView.SelectedIndex < Pages.Count - 1)
             {
-                PagesFlipView.SelectedIndex += 1;
+                activeFlipView.SelectedIndex += 1;
             }
         }
 
@@ -674,9 +711,10 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (sender is Button btn && btn.Tag is int targetIndex)
             {
-                if (PagesFlipView != null && targetIndex >= 0 && targetIndex < Pages.Count)
+                var activeFlipView = (_currentStyle == "Compact" || _currentStyle == "SplitGrouped") ? PagesFlipView2 : PagesFlipView;
+                if (activeFlipView != null && targetIndex >= 0 && targetIndex < Pages.Count)
                 {
-                    PagesFlipView.SelectedIndex = targetIndex;
+                    activeFlipView.SelectedIndex = targetIndex;
                 }
             }
         }
@@ -684,17 +722,21 @@ namespace EvolveOS_ShellEnhancer.Views
         private void PagesFlipView_Loaded(object sender, RoutedEventArgs e)
         {
             PagesFlipView.ApplyTemplate();
+            PagesFlipView2.ApplyTemplate();
             HideAllFlipViewButtons(PagesFlipView);
+            HideAllFlipViewButtons(PagesFlipView2);
         }
 
         private void PagesFlipView_LayoutUpdated(object sender, object e)
         {
             HideAllFlipViewButtons(PagesFlipView);
+            HideAllFlipViewButtons(PagesFlipView2);
         }
 
         private void PagesFlipView_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             HideAllFlipViewButtons(PagesFlipView);
+            HideAllFlipViewButtons(PagesFlipView2);
         }
 
         private void HideAllFlipViewButtons(DependencyObject parent)
@@ -1314,8 +1356,13 @@ namespace EvolveOS_ShellEnhancer.Views
                     if (BottomNavigationGrid != null) BottomNavigationGrid.Visibility = Visibility.Visible;
                 }
 
+                // Ensure the second grid reverts to the full apps list when search is cleared
+                if (SearchAndAllAppsGrid2 != null) SearchAndAllAppsGrid2.ItemsSource = AllAppsCollection;
+
                 if (DefaultRightPane1 != null) DefaultRightPane1.Visibility = Visibility.Visible;
+                if (DefaultRightPane2 != null) DefaultRightPane2.Visibility = Visibility.Visible;
                 if (SearchRightPane1 != null) SearchRightPane1.Visibility = Visibility.Collapsed;
+                if (SearchRightPane2 != null) SearchRightPane2.Visibility = Visibility.Collapsed;
                 return;
             }
 
@@ -1324,6 +1371,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (SearchResultsCollection.Count == 2)
                 {
                     if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.SelectedIndex = 0;
+                    if (SearchAndAllAppsGrid2 != null) SearchAndAllAppsGrid2.SelectedIndex = 0;
                     if (ProductivityAppsGrid != null) ProductivityAppsGrid.SelectedIndex = 0;
                     if (SecondaryAppsGrid != null) SecondaryAppsGrid.SelectedIndex = 0;
                     UpdateSearchDetailsPane(fileItem);
@@ -1334,6 +1382,12 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 SearchAndAllAppsGrid.Visibility = Visibility.Visible;
                 SearchAndAllAppsGrid.ItemsSource = SearchResultsCollection;
+            }
+
+            if (SearchAndAllAppsGrid2 != null)
+            {
+                SearchAndAllAppsGrid2.Visibility = Visibility.Visible;
+                SearchAndAllAppsGrid2.ItemsSource = SearchResultsCollection;
             }
 
             if (ProductivityAppsGrid != null) ProductivityAppsGrid.ItemsSource = SearchResultsCollection;
@@ -1347,6 +1401,7 @@ namespace EvolveOS_ShellEnhancer.Views
             if (SearchResultsCollection.Count > 0)
             {
                 if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.SelectedIndex = 0;
+                if (SearchAndAllAppsGrid2 != null) SearchAndAllAppsGrid2.SelectedIndex = 0;
                 if (ProductivityAppsGrid != null) ProductivityAppsGrid.SelectedIndex = 0;
                 if (SecondaryAppsGrid != null) SecondaryAppsGrid.SelectedIndex = 0;
                 UpdateSearchDetailsPane(SearchResultsCollection.First());
@@ -1428,7 +1483,8 @@ namespace EvolveOS_ShellEnhancer.Views
                         }
                     }
 
-                    var container = SearchAndAllAppsGrid.ContainerFromItem(app) as ListViewItem;
+                    var container = SearchAndAllAppsGrid?.ContainerFromItem(app) as ListViewItem
+                         ?? SearchAndAllAppsGrid2?.ContainerFromItem(app) as ListViewItem;
 
                     if (container != null)
                     {
