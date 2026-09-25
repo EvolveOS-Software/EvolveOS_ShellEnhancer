@@ -88,6 +88,7 @@
     <sys:String x:Key="StartMenu_ContextPinTaskbar">Pin to taskbar</sys:String>
     <sys:String x:Key="StartMenu_ContextUnpinTaskbar">Unpin from taskbar</sys:String>
     <sys:String x:Key="StartMenu_SearchNoResults">No results found</sys:String>
+    <sys:String x:Key="StartMenu_RemoveList">Remove from list</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Search entire PC for '{0}'</sys:String>

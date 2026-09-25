@@ -88,6 +88,7 @@
     <sys:String x:Key="StartMenu_ContextPinTaskbar">Aggiungi alla barra delle applicazioni</sys:String>
     <sys:String x:Key="StartMenu_ContextUnpinTaskbar">Rimuovi dalla barra delle applicazioni</sys:String>
     <sys:String x:Key="StartMenu_SearchNoResults">Nessun risultato trovato</sys:String>
+    <sys:String x:Key="StartMenu_RemoveList">Rimuovi dall'elenco</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Cerca '{0}' nell'intero PC</sys:String>

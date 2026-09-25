@@ -123,7 +123,7 @@
                                                                             </TextBox.Resources>
                                                                             <TextBox.ContextFlyout>
                                                                                 <MenuFlyout>
-                                                                                    <MenuFlyoutItem Text="Delete Section" Click="DeleteCategory_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem Text="Delete Group" Click="DeleteCategory_Click" Tag="{x:Bind}">
                                                                                         <MenuFlyoutItem.Icon>
                                                                                             <FontIcon Glyph="&#xE74D;"/>
                                                                                         </MenuFlyoutItem.Icon>
@@ -194,7 +194,7 @@
                                                             </Button>
                                                         </Grid>
 
-                                                        <GridView ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
+                                                        <GridView ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" RightTapped="RecentItem_RightTapped" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
                                                                   MaxHeight="116" ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden">
                                                             <GridView.ItemContainerStyle>
                                                                 <Style TargetType="GridViewItem">
@@ -205,7 +205,7 @@
                                                             <GridView.ItemTemplate>
                                                                 <DataTemplate x:DataType="models:AppItem">
                                                                     <Border Tag="{x:Bind}" Width="210" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent"
-                                                                            RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                            RightTapped="RecentItem_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                         <Grid ColumnSpacing="12">
                                                                             <Grid.ColumnDefinitions>
                                                                                 <ColumnDefinition Width="32"/>
@@ -598,7 +598,7 @@
                                                                             </TextBox.Resources>
                                                                             <TextBox.ContextFlyout>
                                                                                 <MenuFlyout>
-                                                                                    <MenuFlyoutItem Text="Delete Section" Click="DeleteCategory_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem Text="Delete Group" Click="DeleteCategory_Click" Tag="{x:Bind}">
                                                                                         <MenuFlyoutItem.Icon>
                                                                                             <FontIcon Glyph="&#xE74D;"/>
                                                                                         </MenuFlyoutItem.Icon>
@@ -677,7 +677,7 @@
                                                             <GridView.ItemTemplate>
                                                                 <DataTemplate x:DataType="models:AppItem">
                                                                     <Border Tag="{x:Bind}" Width="210" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent"
-                                                                            RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                            RightTapped="RecentItem_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                         <Grid ColumnSpacing="12">
                                                                             <Grid.ColumnDefinitions>
                                                                                 <ColumnDefinition Width="32"/>

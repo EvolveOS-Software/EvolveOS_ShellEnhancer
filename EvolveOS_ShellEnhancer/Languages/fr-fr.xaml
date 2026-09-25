@@ -89,6 +89,7 @@
     <sys:String x:Key="StartMenu_ContextPinTaskbar">Épingler à la barre des tâches</sys:String>
     <sys:String x:Key="StartMenu_ContextUnpinTaskbar">Détacher de la barre des tâches</sys:String>
     <sys:String x:Key="StartMenu_SearchNoResults">Aucun résultat trouvé</sys:String>
+    <sys:String x:Key="StartMenu_RemoveList">Supprimer de la liste</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Rechercher '{0}' sur tout le PC</sys:String>

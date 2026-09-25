@@ -88,6 +88,7 @@
     <sys:String x:Key="StartMenu_ContextPinTaskbar">Aan taakbalk vastmaken</sys:String>
     <sys:String x:Key="StartMenu_ContextUnpinTaskbar">Van taakbalk losmaken</sys:String>
     <sys:String x:Key="StartMenu_SearchNoResults">Geen resultaten gevonden</sys:String>
+    <sys:String x:Key="StartMenu_RemoveList">Uit lijst verwijderen</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Hele pc doorzoeken op '{0}'</sys:String>

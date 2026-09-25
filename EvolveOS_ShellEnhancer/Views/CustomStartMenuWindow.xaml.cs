@@ -1034,6 +1034,98 @@ namespace EvolveOS_ShellEnhancer.Views
                 flyout.ShowAt(element, e.GetPosition(element));
             }
         }
+
+        private void RecentItem_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            e.Handled = true;
+
+            if (sender is FrameworkElement element && element.Tag is AppItem recentItem)
+            {
+                MenuFlyout flyout = new MenuFlyout();
+                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+
+                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
+                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
+                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
+
+                var adminItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_ActionRunAsAdmin") ?? "Run as administrator",
+                    Icon = new FontIcon { Glyph = "\xE7EF" }
+                };
+                adminItem.Click += (s, args) => LaunchApp(recentItem, true);
+                flyout.Items.Add(adminItem);
+
+                var locItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_ActionOpenLocation") ?? "Open file location",
+                    Icon = new FontIcon { Glyph = "\xE8DA" }
+                };
+                locItem.Click += (s, args) =>
+                {
+                    try
+                    {
+                        string? dir = Path.GetDirectoryName(recentItem.ExecutablePath);
+                        if (!string.IsNullOrEmpty(dir))
+                            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true });
+                    }
+                    catch (Exception ex) { Debug.WriteLine(ex.Message); }
+                    HideMenu();
+                };
+                flyout.Items.Add(locItem);
+
+                flyout.Items.Add(new MenuFlyoutSeparator());
+
+                var removeItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_RemoveList") ?? "Remove from list",
+                    Icon = new FontIcon { Glyph = "\xE711" }
+                };
+
+                removeItem.Click += (s, args) =>
+                {
+                    try
+                    {
+                        string recentFolder = Environment.GetFolderPath(Environment.SpecialFolder.Recent);
+
+                        if (!string.IsNullOrEmpty(recentItem.ExecutablePath) &&
+                            recentItem.ExecutablePath.StartsWith(recentFolder, StringComparison.OrdinalIgnoreCase) &&
+                            recentItem.ExecutablePath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (File.Exists(recentItem.ExecutablePath))
+                            {
+                                File.Delete(recentItem.ExecutablePath);
+                            }
+                        }
+                        else if (!string.IsNullOrEmpty(recentItem.ExecutablePath))
+                        {
+                            var recentLinks = Directory.GetFiles(recentFolder, "*.lnk");
+                            foreach (var lnkPath in recentLinks)
+                            {
+                                string target = Utilities.Helpers.StartMenuHelper.ParseShortcutTarget(lnkPath);
+                                if (!string.IsNullOrEmpty(target) && target.Equals(recentItem.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    File.Delete(lnkPath);
+                                    break;
+                                }
+                            }
+                        }
+
+                        LoadRecentDocuments();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to remove recent document shortcut: {ex.Message}");
+                    }
+                };
+
+                flyout.Items.Add(removeItem);
+                flyout.ShowAt(element, e.GetPosition(element));
+            }
+        }
         #endregion
 
         #region Custom Pointer-Based Drag and Drop Engine
