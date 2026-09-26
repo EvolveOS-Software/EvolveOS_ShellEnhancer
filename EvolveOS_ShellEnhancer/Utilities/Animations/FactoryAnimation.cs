@@ -1,6 +1,7 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
@@ -394,10 +395,19 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
 
         #region Start Menu Native Animations
 
+        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOZORDER = 0x0004;
+        private const uint SWP_NOACTIVATE = 0x0010;
+        private const uint SWP_ASYNCWINDOWPOS = 0x4000;
+
         private static bool _isSmAnimating = false;
-        private static DateTime _smAnimStartTime;
+        private static System.Diagnostics.Stopwatch _smStopwatch = new System.Diagnostics.Stopwatch();
         private static double _smAnimDuration;
         private static AppWindow? _smAppWindow;
+        private static IntPtr _smHwnd;
         private static string _smAnimStyle = "Standard";
         private static int _smStartX, _smStartY, _smStartW, _smStartH;
         private static int _smTargetX, _smTargetY, _smTargetW, _smTargetH;
@@ -413,6 +423,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             StopStartMenuAnimation();
 
             _smAppWindow = appWindow;
+            _smHwnd = Win32Interop.GetWindowFromWindowId(appWindow.Id);
+
             _smAnimStyle = animStyle;
             _smStartX = startX; _smStartY = startY; _smStartW = startW; _smStartH = startH;
             _smTargetX = targetX; _smTargetY = targetY; _smTargetW = targetW; _smTargetH = targetH;
@@ -420,7 +432,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
 
             int baseDuration = isEntrance ? 300 : 250;
             _smAnimDuration = baseDuration / Math.Max(0.1, animSpeed);
-            _smAnimStartTime = DateTime.Now;
+
+            _smStopwatch.Restart();
             _isSmAnimating = true;
 
             CompositionTarget.Rendering += SmAnim_Rendering;
@@ -431,33 +444,34 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             if (_isSmAnimating)
             {
                 _isSmAnimating = false;
+                _smStopwatch.Stop();
                 CompositionTarget.Rendering -= SmAnim_Rendering;
                 _smAppWindow = null;
+                _smHwnd = IntPtr.Zero;
                 _smOnComplete = null;
             }
         }
 
         private static void SmAnim_Rendering(object? sender, object e)
         {
-            if (!_isSmAnimating || _smAppWindow == null) return;
+            if (!_isSmAnimating || _smHwnd == IntPtr.Zero) return;
 
-            double elapsed = (DateTime.Now - _smAnimStartTime).TotalMilliseconds;
+            double elapsed = _smStopwatch.Elapsed.TotalMilliseconds;
             double t = elapsed / _smAnimDuration;
             if (t >= 1.0) t = 1.0;
 
             double easeBounds = CalculateSmEasing(t, _smAnimStyle);
-
             if (t >= 1.0) easeBounds = 1.0;
 
-            int curX = (int)(_smStartX + (_smTargetX - _smStartX) * easeBounds);
-            int curY = (int)(_smStartY + (_smTargetY - _smStartY) * easeBounds);
-            int curW = (int)(_smStartW + (_smTargetW - _smStartW) * easeBounds);
-            int curH = (int)(_smStartH + (_smTargetH - _smStartH) * easeBounds);
+            int curX = (int)Math.Round(_smStartX + (_smTargetX - _smStartX) * easeBounds);
+            int curY = (int)Math.Round(_smStartY + (_smTargetY - _smStartY) * easeBounds);
 
-            _smAppWindow.MoveAndResize(new Windows.Graphics.RectInt32(curX, curY, curW, curH));
+            SetWindowPos(_smHwnd, IntPtr.Zero, curX, curY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS);
 
             if (t >= 1.0)
             {
+                _smAppWindow?.MoveAndResize(new Windows.Graphics.RectInt32(_smTargetX, _smTargetY, _smTargetW, _smTargetH));
+
                 var callback = _smOnComplete;
                 StopStartMenuAnimation();
                 callback?.Invoke();
