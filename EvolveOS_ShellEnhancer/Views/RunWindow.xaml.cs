@@ -4,57 +4,28 @@
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Input;
-using System.Text.RegularExpressions;
 using WinRT.Interop;
+using Windows.Storage.Pickers;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
-    public sealed partial class MessageWindow : Window
+    public sealed partial class RunWindow : Window
     {
-        private TimerControlManager? _timer = default;
-
-        public MessageWindow(MessageWindowState windowState = MessageWindowState.Warning)
+        public RunWindow()
         {
             this.InitializeComponent();
-
-            SettingsEngine.CheckingParameters();
 
             ConfigureWindow();
 
             string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
             SetTheme(savedTheme);
 
-            if (this.Content is FrameworkElement rootElement)
+            if (this.Content is FrameworkElement rootElement && rootElement is Panel rootPanel)
             {
-                if (rootElement is Panel rootPanel)
-                {
-                    rootPanel.Background = new SolidColorBrush(Colors.Transparent);
-                }
+                rootPanel.Background = new SolidColorBrush(Colors.Transparent);
             }
 
-            WarningContent.Visibility = windowState == MessageWindowState.Warning ? Visibility.Visible : Visibility.Collapsed;
-            NotSupportContent.Visibility = windowState == MessageWindowState.NotSupported ? Visibility.Visible : Visibility.Collapsed;
-            AlreadyRunningContent.Visibility = windowState == MessageWindowState.AlreadyRunning ? Visibility.Visible : Visibility.Collapsed;
-            MissingOptimizerContent.Visibility = windowState == MessageWindowState.MissingOptimizer ? Visibility.Visible : Visibility.Collapsed;
-
-            this.Closed += (s, e) =>
-            {
-                _timer?.Stop();
-            };
-
-            _timer = new TimerControlManager(TimeSpan.FromSeconds(4), TimerControlManager.TimerMode.CountDown, time =>
-            {
-                this.DispatcherQueue.TryEnqueue(() =>
-                {
-                    string currentContent = BtnAccept.Content?.ToString() ?? "";
-                    BtnAccept.Content = $"{new Regex("[(05)(04)(03)(02)]").Replace(currentContent, "")}({time:ss})";
-                });
-            }, () =>
-            {
-                this.DispatcherQueue.TryEnqueue(() => App.ExitApp());
-            });
-
-            _timer.Start();
+            this.Activated += (s, e) => InputTextBox.Focus(FocusState.Programmatic);
         }
 
         private void ConfigureWindow()
@@ -72,8 +43,10 @@ namespace EvolveOS_ShellEnhancer.Views
                 presenter.SetBorderAndTitleBar(false, false);
             }
 
-            int width = 400; int height = 200;
+            int width = 420;
+            int height = 220;
             var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
+
             if (displayArea != null)
             {
                 int centeredX = displayArea.WorkArea.X + (displayArea.WorkArea.Width - width) / 2;
@@ -152,6 +125,54 @@ namespace EvolveOS_ShellEnhancer.Views
 
         #endregion
 
-        private void BtnAccept_Click(object sender, RoutedEventArgs e) => App.ExitApp();
+        private void BtnOk_Click(object sender, RoutedEventArgs e) => ExecuteCommand();
+
+        private void BtnCancel_Click(object sender, RoutedEventArgs e) => this.Close();
+
+        private void InputTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Enter)
+            {
+                ExecuteCommand();
+                e.Handled = true;
+            }
+        }
+
+        private void ExecuteCommand()
+        {
+            string command = InputTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(command)) return;
+
+            try
+            {
+                // Clean, centralized, and flicker-free!
+                CommandExecutor.ExecuteRunDialogCommand(command);
+
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to run command: {ex.Message}");
+                // Fallback: Optionally spawn MessageWindow here to show an error
+                // new MessageWindow(MessageWindowState.Warning).Activate();
+            }
+        }
+
+        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
+        {
+            string? filePath = Win32FileDialogHelper.ShowOpenFilePicker(
+                window: this,
+                title: "Browse",
+                filterName: "Programs",
+                filterPattern: "*.exe;*.pif;*.com;*.bat;*.cmd"
+            );
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                InputTextBox.Text = $"\"{filePath}\"";
+                InputTextBox.SelectAll();
+                InputTextBox.Focus(FocusState.Programmatic);
+            }
+        }
     }
 }

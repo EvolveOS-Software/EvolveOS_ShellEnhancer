@@ -193,6 +193,27 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             }).ConfigureAwait(false);
         }
 
+        internal static void ExecuteRunDialogCommand(string command)
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c start \"\" {command}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[CommandExecutor] ExecuteRunDialogCommand failed: {ex.Message}");
+            }
+        }
+
         internal static async Task InvokeRunCommand(string command, bool isPowerShell = false)
         {
             ProcessStartInfo startInfo = new ProcessStartInfo

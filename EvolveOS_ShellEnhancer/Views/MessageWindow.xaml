@@ -21,7 +21,13 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Grid x:Name="TitleBar" Grid.Row="0" PointerPressed="TitleBar_PointerPressed" Background="Transparent">
+            <Grid x:Name="TitleBar"
+                  Grid.Row="0"
+                  Background="Transparent"
+                  PointerPressed="TitleBar_PointerPressed"
+                  PointerMoved="TitleBar_PointerMoved"
+                  PointerReleased="TitleBar_PointerReleased"
+                  Padding="16,12,16,12">
                 <Grid VerticalAlignment="Center" HorizontalAlignment="Left" Height="48">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>

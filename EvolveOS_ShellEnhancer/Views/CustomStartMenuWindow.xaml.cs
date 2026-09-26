@@ -609,7 +609,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
                     else if (targetPath == "Standard::Run")
                     {
-                        Process.Start(new ProcessStartInfo("explorer.exe", "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}") { UseShellExecute = true });
+                        new RunWindow().Activate();
                     }
                     else if (targetPath.Equals("control.exe", StringComparison.OrdinalIgnoreCase))
                     {
@@ -642,6 +642,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     Debug.WriteLine($"Failed to open shortcut: {ex.Message}");
                 }
+
                 HideMenu();
             }
         }
