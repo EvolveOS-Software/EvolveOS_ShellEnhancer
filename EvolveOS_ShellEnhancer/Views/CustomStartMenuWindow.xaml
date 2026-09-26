@@ -17,9 +17,8 @@
         <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 
             <!-- Floating Menu Container -->
-            <Border Background="Transparent" 
-                    BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" 
-                    BorderThickness="1" CornerRadius="12" 
+            <Grid Background="Transparent" 
+                    CornerRadius="12" 
                     x:Name="MenuContainer"
                     PointerMoved="MenuContainer_PointerMoved"
                     PointerReleased="MenuContainer_PointerReleased"
@@ -958,7 +957,7 @@
                     <Canvas x:Name="DragCanvas" IsHitTestVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Canvas.ZIndex="9999"/>
 
                 </Grid>
-            </Border>
+            </Grid>
 
             <!-- Profile Badge -->
             <Grid Width="260" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0">
