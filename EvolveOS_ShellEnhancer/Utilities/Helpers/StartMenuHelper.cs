@@ -13,6 +13,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {
     public static class StartMenuHelper
     {
+        #region Fields & Properties
+        private static readonly Dictionary<string, ImageSource> _iconCache = new(StringComparer.OrdinalIgnoreCase);
+        #endregion
+
         #region Constants & Exclusion Lists
         private static readonly string[] JunkKeywords = new[]
         {
@@ -92,7 +96,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
                 try
                 {
-                    // 1. Add root-level shortcuts directly inside Programs
                     var rootFiles = Directory.GetFiles(basePath, "*.lnk")
                         .Concat(Directory.GetFiles(basePath, "*.url"))
                         .Concat(Directory.GetFiles(basePath, "*.appref-ms"));
@@ -238,39 +241,93 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             {
                 if (string.IsNullOrEmpty(appItem.ExecutablePath)) return null;
 
+                if (_iconCache.TryGetValue(appItem.ExecutablePath, out var cachedIcon))
+                {
+                    return cachedIcon;
+                }
+
+                ImageSource? resultImage = null;
+
                 if (appItem.IsUwp && appItem.UwpLogoStreamRef != null)
                 {
                     using IRandomAccessStreamWithContentType stream = await appItem.UwpLogoStreamRef.OpenReadAsync();
                     var bitmap = new BitmapImage();
                     await bitmap.SetSourceAsync(stream);
-                    return bitmap;
+                    resultImage = bitmap;
                 }
-
-                string target = appItem.ExecutablePath;
-
-                if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                else
                 {
-                    string parsed = ParseShortcutTarget(target);
+                    string target = appItem.ExecutablePath;
 
-                    if (!string.IsNullOrEmpty(parsed) && parsed.Contains("!")) return null;
-
-                    if (!string.IsNullOrEmpty(parsed) && File.Exists(parsed))
+                    if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
                     {
-                        target = parsed;
+                        string parsed = ParseShortcutTarget(target);
+                        if (!string.IsNullOrEmpty(parsed) && !parsed.Contains("!"))
+                        {
+                            if (File.Exists(parsed)) target = parsed;
+                            else
+                            {
+                                try
+                                {
+                                    using var icon = System.Drawing.Icon.ExtractAssociatedIcon(target);
+                                    if (icon != null)
+                                    {
+                                        using var bmp = icon.ToBitmap();
+                                        using var ms = new MemoryStream();
+                                        bmp.Save(ms, ImageFormat.Png);
+                                        ms.Position = 0;
+
+                                        using var ras = new InMemoryRandomAccessStream();
+                                        using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
+                                        {
+                                            writer.WriteBytes(ms.ToArray());
+                                            await writer.StoreAsync();
+                                        }
+
+                                        var bitmapImage = new BitmapImage();
+                                        await bitmapImage.SetSourceAsync(ras);
+                                        resultImage = bitmapImage;
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
                     }
-                    else
+
+                    if (resultImage == null && File.Exists(target) && !target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
                     {
                         try
                         {
-                            using var icon = System.Drawing.Icon.ExtractAssociatedIcon(target);
-                            if (icon != null)
+                            StorageFile file = await StorageFile.GetFileFromPathAsync(target);
+                            var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.SingleItem, 48);
+                            if (thumbnail == null) thumbnail = await file.GetThumbnailAsync(ThumbnailMode.ListView, 48);
+
+                            if (thumbnail != null)
                             {
+                                var bitmapImage = new BitmapImage();
+                                await bitmapImage.SetSourceAsync(thumbnail);
+                                resultImage = bitmapImage;
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (resultImage == null && (File.Exists(target) || Directory.Exists(target)))
+                    {
+                        SHFILEINFO shinfo = new SHFILEINFO();
+                        IntPtr res = SHGetFileInfo(target, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
+
+                        if (res != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
+                        {
+                            try
+                            {
+                                using var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
                                 using var bmp = icon.ToBitmap();
                                 using var ms = new MemoryStream();
                                 bmp.Save(ms, ImageFormat.Png);
                                 ms.Position = 0;
 
-                                var ras = new InMemoryRandomAccessStream();
+                                using var ras = new InMemoryRandomAccessStream();
                                 using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
                                 {
                                     writer.WriteBytes(ms.ToArray());
@@ -279,63 +336,22 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
                                 var bitmapImage = new BitmapImage();
                                 await bitmapImage.SetSourceAsync(ras);
-                                return bitmapImage;
+                                resultImage = bitmapImage;
                             }
-                        }
-                        catch { }
-                    }
-                }
-
-                if (File.Exists(target) && !target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
-                {
-                    try
-                    {
-                        StorageFile file = await StorageFile.GetFileFromPathAsync(target);
-                        var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.SingleItem, 48);
-                        if (thumbnail == null) thumbnail = await file.GetThumbnailAsync(ThumbnailMode.ListView, 48);
-
-                        if (thumbnail != null)
-                        {
-                            var bitmapImage = new BitmapImage();
-                            await bitmapImage.SetSourceAsync(thumbnail);
-                            return bitmapImage;
-                        }
-                    }
-                    catch { }
-                }
-
-                if (File.Exists(target) || Directory.Exists(target))
-                {
-                    SHFILEINFO shinfo = new SHFILEINFO();
-                    IntPtr res = SHGetFileInfo(target, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
-
-                    if (res != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
-                    {
-                        try
-                        {
-                            using var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
-                            using var bmp = icon.ToBitmap();
-                            using var ms = new MemoryStream();
-                            bmp.Save(ms, ImageFormat.Png);
-                            ms.Position = 0;
-
-                            var ras = new InMemoryRandomAccessStream();
-                            using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
+                            finally
                             {
-                                writer.WriteBytes(ms.ToArray());
-                                await writer.StoreAsync();
+                                DestroyIcon(shinfo.hIcon);
                             }
-
-                            var bitmapImage = new BitmapImage();
-                            await bitmapImage.SetSourceAsync(ras);
-                            return bitmapImage;
-                        }
-                        finally
-                        {
-                            DestroyIcon(shinfo.hIcon);
                         }
                     }
                 }
+
+                if (resultImage != null)
+                {
+                    _iconCache[appItem.ExecutablePath] = resultImage;
+                }
+
+                return resultImage;
             }
             catch (Exception ex)
             {
