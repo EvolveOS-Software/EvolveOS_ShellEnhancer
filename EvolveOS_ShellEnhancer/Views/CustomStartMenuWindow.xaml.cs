@@ -145,6 +145,12 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void RootGrid_CharacterReceived(UIElement sender, CharacterReceivedRoutedEventArgs args)
         {
+            var focusedElement = FocusManager.GetFocusedElement(this.Content.XamlRoot);
+            if (focusedElement is TextBox || focusedElement is AutoSuggestBox)
+            {
+                return;
+            }
+
             if ((_currentStyle == "Compact" || _currentStyle == "SplitGrouped") && SearchOverlay2 != null && SearchOverlay2.Visibility == Visibility.Collapsed)
             {
                 if (!char.IsControl(args.Character))
@@ -1291,12 +1297,12 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        private (GridView? grid, AppCategory? category, int index) GetHoveredDropTarget(Windows.Foundation.Point pointerPos)
+        private (GridView? grid, AppCategory? category, int index) GetHoveredDropTarget(Point pointerPos)
         {
             foreach (var grid in GetAllCategoryGrids())
             {
                 var transform = grid.TransformToVisual(MenuContainer);
-                var bounds = transform.TransformBounds(new Windows.Foundation.Rect(0, 0, grid.ActualWidth, grid.ActualHeight));
+                var bounds = transform.TransformBounds(new Rect(0, 0, grid.ActualWidth, grid.ActualHeight));
 
                 bounds.X -= 10; bounds.Y -= 10; bounds.Width += 20; bounds.Height += 40;
 
@@ -1313,7 +1319,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         if (grid.ContainerFromIndex(i) is FrameworkElement itemContainer)
                         {
                             var itemTransform = itemContainer.TransformToVisual(MenuContainer);
-                            var itemBounds = itemTransform.TransformBounds(new Windows.Foundation.Rect(0, 0, itemContainer.ActualWidth, itemContainer.ActualHeight));
+                            var itemBounds = itemTransform.TransformBounds(new Rect(0, 0, itemContainer.ActualWidth, itemContainer.ActualHeight));
 
                             var centerX = itemBounds.X + (itemBounds.Width / 2);
                             var centerY = itemBounds.Y + (itemBounds.Height / 2);
