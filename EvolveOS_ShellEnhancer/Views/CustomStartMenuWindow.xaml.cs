@@ -57,10 +57,14 @@ namespace EvolveOS_ShellEnhancer.Views
         private bool _ignoreDeactivation = false;
 
         private bool _isRecentDocsExpanded = false;
+        private bool _isSearchAppsExpanded = false;
+        private bool _isSearchSettingsExpanded = false;
 
         private DateTime _lastPageFlipTime = DateTime.MinValue;
         private const double EdgeScrollThreshold = 60.0;
         private const int PageFlipDelayMs = 700;
+
+        private AppItem? _sourceFolderItem;
         #endregion
 
         #region Initialization & Data Loading
@@ -135,6 +139,35 @@ namespace EvolveOS_ShellEnhancer.Views
             ViewModel.OnAppsDataLoaded = () =>
             {
                 UpdatePageIndicators(0);
+
+                // 1. Get the actual saved size from the Registry
+                int savedSize = SettingsEngine.Shell_StartMenuFolderSize;
+                if (savedSize < 1 || savedSize > 2) savedSize = 1;
+
+                // 2. Loop through the DATA MODEL directly (UI is not ready yet!)
+                foreach (var page in ViewModel.Pages)
+                {
+                    foreach (var category in page.PinnedCategories)
+                    {
+                        foreach (var app in category.Apps)
+                        {
+                            if (app.ExecutablePath == "PINNED_FOLDER")
+                            {
+                                app.FolderSize = savedSize;
+                            }
+                        }
+                    }
+                }
+
+                // 3. Force the UI to redraw once it finishes loading
+                foreach (var grid in GetAllCategoryGrids())
+                {
+                    if (grid.ItemsPanelRoot is Controls.StartMenuWrapPanel wrapPanel)
+                    {
+                        wrapPanel.InvalidateMeasure();
+                        wrapPanel.InvalidateArrange();
+                    }
+                }
             };
 
             ViewModel.InitializeAppWatchers(DispatcherQueue);
@@ -146,10 +179,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private void RootGrid_CharacterReceived(UIElement sender, CharacterReceivedRoutedEventArgs args)
         {
             var focusedElement = FocusManager.GetFocusedElement(this.Content.XamlRoot);
-            if (focusedElement is TextBox || focusedElement is AutoSuggestBox)
-            {
-                return;
-            }
+            if (focusedElement is TextBox || focusedElement is AutoSuggestBox) return;
 
             if ((_currentStyle == "Compact" || _currentStyle == "SplitGrouped") && SearchOverlay2 != null && SearchOverlay2.Visibility == Visibility.Collapsed)
             {
@@ -340,7 +370,7 @@ namespace EvolveOS_ShellEnhancer.Views
             if (SearchOverlay2 != null) SearchOverlay2.Visibility = Visibility.Collapsed;
             if (MainSplitContentGrid != null) MainSplitContentGrid.Visibility = Visibility.Visible;
 
-            int windowWidth = isGroupedStyle ? 880 : 780;
+            int windowWidth = isGroupedStyle ? 920 : 780;
             int windowHeight = isGroupedStyle ? 720 : 680;
 
             int taskbarOffset = 60;
@@ -684,7 +714,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void AddCategory_Click(object sender, RoutedEventArgs e)
         {
-            PinnedCategories.Add(new AppCategory { Name = "New Section" });
+            PinnedCategories.Add(new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" });
             ViewModel.SaveStartMenuPins();
         }
 
@@ -896,21 +926,21 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 MenuFlyout flyout = new MenuFlyout();
 
-                var addGroupItem = new MenuFlyoutItem { Text = "Add Group" };
+                var addGroupItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_AddGroup") ?? "Add Group" };
                 addGroupItem.Icon = new FontIcon { Glyph = "\xE710" };
                 addGroupItem.Click += (s, args) =>
                 {
-                    currentPage.PinnedCategories.Add(new AppCategory { Name = "New Group" });
+                    currentPage.PinnedCategories.Add(new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" });
                     ViewModel.SaveStartMenuPins();
                 };
                 flyout.Items.Add(addGroupItem);
 
-                var addPageItem = new MenuFlyoutItem { Text = "Add Page" };
+                var addPageItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_AddPage") ?? "Add Page" };
                 addPageItem.Icon = new FontIcon { Glyph = "\xE7C3" };
                 addPageItem.Click += (s, args) =>
                 {
                     var newPage = new StartMenuPage { PageIndex = Pages.Count };
-                    newPage.PinnedCategories.Add(new AppCategory { Name = "New Group" });
+                    newPage.PinnedCategories.Add(new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" });
 
                     Pages.Add(newPage);
                     if (PagesFlipView != null) PagesFlipView.SelectedIndex = Pages.Count - 1;
@@ -924,7 +954,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
                 flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
                 flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255))));
+                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
                 flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
                 flyout.MenuFlyoutPresenterStyle = flyoutStyle;
 
@@ -976,7 +1006,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         else
                         {
                             if (Pages.Count == 0) Pages.Add(new StartMenuPage { PageIndex = 0 });
-                            var defaultCat = new AppCategory { Name = "Pinned" };
+                            var defaultCat = new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_PinnedCategory") ?? "Pinned" };
                             defaultCat.Apps.Add(app);
                             Pages[0].PinnedCategories.Add(defaultCat);
                         }
@@ -1148,18 +1178,18 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void AppCard_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            if (sender is Border border)
-            {
+            if (sender is StackPanel panel)
+                panel.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
+            else if (sender is Border border)
                 border.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
-            }
         }
 
         private void AppCard_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            if (sender is Border border)
-            {
+            if (sender is StackPanel panel)
+                panel.Background = new SolidColorBrush(Colors.Transparent);
+            else if (sender is Border border)
                 border.Background = new SolidColorBrush(Colors.Transparent);
-            }
         }
 
         private void AppCard_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -1177,10 +1207,34 @@ namespace EvolveOS_ShellEnhancer.Views
                     return;
 
                 _draggedAppItem = app;
+                _sourceFolderItem = null;
                 _sourceCategory = _sourceGrid.DataContext as AppCategory;
 
                 if (_sourceCategory == null)
+                {
                     _sourceCategory = Pages.SelectMany(p => p.PinnedCategories).FirstOrDefault(c => c.Apps.Contains(app));
+
+                    if (_sourceCategory == null)
+                    {
+                        foreach (var page in Pages)
+                        {
+                            foreach (var cat in page.PinnedCategories)
+                            {
+                                foreach (var pinnedApp in cat.Apps)
+                                {
+                                    if (pinnedApp.FolderApps.Contains(app))
+                                    {
+                                        _sourceFolderItem = pinnedApp;
+                                        _sourceCategory = cat;
+                                        break;
+                                    }
+                                }
+                                if (_sourceFolderItem != null) break;
+                            }
+                            if (_sourceFolderItem != null) break;
+                        }
+                    }
+                }
 
                 _dragStartPoint = e.GetCurrentPoint(MenuContainer).Position;
                 _isAppDragging = false;
@@ -1203,10 +1257,14 @@ namespace EvolveOS_ShellEnhancer.Views
                     _isAppDragging = true;
                     CreateDragGhost();
 
-                    int idx = _sourceCategory.Apps.IndexOf(_draggedAppItem);
-                    if (idx != -1)
+                    if (_sourceFolderItem != null)
                     {
-                        _sourceCategory.Apps[idx] = _placeholderItem;
+                        _sourceFolderItem.FolderApps.Remove(_draggedAppItem);
+                    }
+                    else
+                    {
+                        int idx = _sourceCategory.Apps.IndexOf(_draggedAppItem);
+                        if (idx != -1) _sourceCategory.Apps[idx] = _placeholderItem;
                     }
                 }
             }
@@ -1216,43 +1274,22 @@ namespace EvolveOS_ShellEnhancer.Views
                 Canvas.SetLeft(_dragGhost, pt.X - 40);
                 Canvas.SetTop(_dragGhost, pt.Y - 48);
 
-                if (PagesFlipView != null)
-                {
-                    var flipPt = e.GetCurrentPoint(PagesFlipView).Position;
-
-                    if ((DateTime.Now - _lastPageFlipTime).TotalMilliseconds > PageFlipDelayMs)
-                    {
-                        if (flipPt.X > 0 && flipPt.X < EdgeScrollThreshold && PagesFlipView.SelectedIndex > 0)
-                        {
-                            PagesFlipView.SelectedIndex -= 1;
-                            _lastPageFlipTime = DateTime.Now;
-                        }
-                        else if (flipPt.X > PagesFlipView.ActualWidth - EdgeScrollThreshold && flipPt.X < PagesFlipView.ActualWidth && PagesFlipView.SelectedIndex < Pages.Count - 1)
-                        {
-                            PagesFlipView.SelectedIndex += 1;
-                            _lastPageFlipTime = DateTime.Now;
-                        }
-                    }
-                }
-
-                var (targetGrid, targetCategory, targetIndex) = GetHoveredDropTarget(pt);
+                var (targetGrid, targetCategory, targetIndex, mergeTarget) = GetHoveredDropTarget(pt);
 
                 if (targetGrid != null && targetCategory != null)
                 {
                     var currentCategory = Pages.SelectMany(p => p.PinnedCategories).FirstOrDefault(c => c.Apps.Contains(_placeholderItem)) ?? _sourceCategory;
-                    int currentIndex = currentCategory.Apps.IndexOf(_placeholderItem);
 
-                    if (currentCategory != targetCategory || currentIndex != targetIndex)
+                    if (mergeTarget == null)
                     {
-                        currentCategory.Apps.Remove(_placeholderItem);
-
-                        if (targetIndex > targetCategory.Apps.Count)
-                            targetIndex = targetCategory.Apps.Count;
-
-                        if (targetIndex < 0)
-                            targetIndex = 0;
-
-                        targetCategory.Apps.Insert(targetIndex, _placeholderItem);
+                        int currentIndex = currentCategory.Apps.IndexOf(_placeholderItem);
+                        if (currentCategory != targetCategory || currentIndex != targetIndex)
+                        {
+                            currentCategory.Apps.Remove(_placeholderItem);
+                            if (targetIndex > targetCategory.Apps.Count) targetIndex = targetCategory.Apps.Count;
+                            if (targetIndex < 0) targetIndex = 0;
+                            targetCategory.Apps.Insert(targetIndex, _placeholderItem);
+                        }
                     }
                 }
             }
@@ -1262,42 +1299,136 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (_draggedAppItem != null)
             {
-                MenuContainer.ReleasePointerCapture(e.Pointer);
-
-                if (_isAppDragging)
+                try
                 {
-                    if (_dragGhost != null)
-                    {
-                        DragCanvas.Children.Remove(_dragGhost);
-                        _dragGhost = null;
-                    }
+                    MenuContainer.ReleasePointerCapture(e.Pointer);
+                }
+                catch { }
 
-                    var finalCategory = Pages.SelectMany(p => p.PinnedCategories).FirstOrDefault(c => c.Apps.Contains(_placeholderItem));
-                    if (finalCategory != null)
+                try
+                {
+                    if (_isAppDragging)
                     {
-                        int idx = finalCategory.Apps.IndexOf(_placeholderItem);
-                        finalCategory.Apps[idx] = _draggedAppItem;
+                        if (_dragGhost != null)
+                        {
+                            DragCanvas.Children.Remove(_dragGhost);
+                            _dragGhost = null;
+                        }
+
+                        var pt = e.GetCurrentPoint(MenuContainer).Position;
+                        var (targetGrid, targetCategory, targetIndex, mergeTarget) = GetHoveredDropTarget(pt);
+
+                        var placeholderCategory = Pages.SelectMany(p => p.PinnedCategories).FirstOrDefault(c => c.Apps.Contains(_placeholderItem));
+
+                        if (mergeTarget != null && targetCategory != null && mergeTarget != _draggedAppItem)
+                        {
+                            placeholderCategory?.Apps.Remove(_placeholderItem);
+
+                            if (mergeTarget.ExecutablePath == "PINNED_FOLDER")
+                            {
+                                mergeTarget.FolderApps.Add(_draggedAppItem);
+                            }
+                            else
+                            {
+                                int mergeIdx = targetCategory.Apps.IndexOf(mergeTarget);
+                                if (mergeIdx != -1)
+                                {
+                                    int currentFolderSize = SettingsEngine.Shell_StartMenuFolderSize;
+
+                                    var existingFolder = targetCategory.Apps.FirstOrDefault(a => a.ExecutablePath == "PINNED_FOLDER");
+                                    if (existingFolder != null)
+                                    {
+                                        currentFolderSize = existingFolder.FolderSize;
+                                    }
+
+                                    var folderItem = new AppItem
+                                    {
+                                        Name = " ",
+                                        ExecutablePath = "PINNED_FOLDER",
+                                        FallbackGlyph = "",
+                                        IsUwp = false,
+                                        FolderSize = currentFolderSize
+                                    };
+                                    folderItem.FolderApps.Add(mergeTarget);
+                                    folderItem.FolderApps.Add(_draggedAppItem);
+                                    targetCategory.Apps[mergeIdx] = folderItem;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (placeholderCategory != null)
+                            {
+                                int idx = placeholderCategory.Apps.IndexOf(_placeholderItem);
+                                placeholderCategory.Apps[idx] = _draggedAppItem;
+                            }
+                            else
+                            {
+                                _sourceCategory?.Apps.Add(_draggedAppItem);
+                            }
+                        }
+
+                        if (_sourceFolderItem != null)
+                        {
+                            if (_sourceFolderItem.FolderApps.Count == 1)
+                            {
+                                var remainingApp = _sourceFolderItem.FolderApps[0];
+                                foreach (var page in Pages)
+                                {
+                                    foreach (var cat in page.PinnedCategories)
+                                    {
+                                        int fIdx = cat.Apps.IndexOf(_sourceFolderItem);
+                                        if (fIdx != -1)
+                                        {
+                                            cat.Apps[fIdx] = remainingApp;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (_sourceFolderItem.FolderApps.Count == 0)
+                            {
+                                foreach (var page in Pages)
+                                {
+                                    foreach (var cat in page.PinnedCategories)
+                                    {
+                                        cat.Apps.Remove(_sourceFolderItem);
+                                    }
+                                }
+                            }
+                        }
+
+                        ViewModel.SaveStartMenuPins();
                     }
                     else
                     {
-                        _sourceCategory?.Apps.Add(_draggedAppItem);
+                        if (_draggedAppItem.ExecutablePath == "PINNED_FOLDER" && _sourceGrid != null)
+                        {
+                            var container = _sourceGrid.ContainerFromItem(_draggedAppItem) as FrameworkElement;
+                            OpenPinnedFolder(_draggedAppItem, container ?? _sourceGrid);
+                        }
+                        else
+                        {
+                            LaunchApp(_draggedAppItem, false);
+                        }
                     }
-
-                    ViewModel.SaveStartMenuPins();
                 }
-                else
+                catch (Exception ex)
                 {
-                    LaunchApp(_draggedAppItem, false);
+                    Debug.WriteLine($"[Pointer Release Error Handled] {ex.Message}");
                 }
-
-                _draggedAppItem = null;
-                _sourceCategory = null;
-                _sourceGrid = null;
-                _isAppDragging = false;
+                finally
+                {
+                    _draggedAppItem = null;
+                    _sourceCategory = null;
+                    _sourceFolderItem = null;
+                    _sourceGrid = null;
+                    _isAppDragging = false;
+                }
             }
         }
 
-        private (GridView? grid, AppCategory? category, int index) GetHoveredDropTarget(Point pointerPos)
+        private (GridView? grid, AppCategory? category, int index, AppItem? mergeTarget) GetHoveredDropTarget(Point pointerPos)
         {
             foreach (var grid in GetAllCategoryGrids())
             {
@@ -1308,8 +1439,10 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (bounds.Contains(pointerPos))
                 {
-                    int index = grid.Items.Count;
+                    int targetIndex = grid.Items.Count;
                     double closestDist = double.MaxValue;
+                    AppItem? mergeTarget = null;
+                    int visibleCount = 0;
 
                     for (int i = 0; i < grid.Items.Count; i++)
                     {
@@ -1328,8 +1461,13 @@ namespace EvolveOS_ShellEnhancer.Views
                             if (dist < closestDist)
                             {
                                 closestDist = dist;
-                                index = pointerPos.X < centerX ? i : i + 1;
+                                targetIndex = pointerPos.X < centerX ? visibleCount : visibleCount + 1;
+
+                                double mergeThreshold = Math.Pow(itemBounds.Width * 0.35, 2);
+                                if (dist < mergeThreshold) mergeTarget = item;
+                                else mergeTarget = null;
                             }
+                            visibleCount++;
                         }
                     }
 
@@ -1340,10 +1478,10 @@ namespace EvolveOS_ShellEnhancer.Views
                         else if (grid.Name == "SecondaryAppsGrid" && PinnedCategories.Count > 1) cat = PinnedCategories[1];
                     }
 
-                    return (grid, cat, index);
+                    return (grid, cat, targetIndex, mergeTarget);
                 }
             }
-            return (null, null, -1);
+            return (null, null, -1, null);
         }
 
         private void CreateDragGhost()
@@ -1357,7 +1495,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 Spacing = 4,
                 Padding = new Thickness(4, 8, 4, 8),
                 CornerRadius = new CornerRadius(8),
-                Background = new SolidColorBrush(Windows.UI.Color.FromArgb(120, 200, 200, 200))
+                Background = new SolidColorBrush(Color.FromArgb(120, 200, 200, 200))
             };
 
             if (_draggedAppItem.HasIcon == Visibility.Visible)
@@ -1369,14 +1507,13 @@ namespace EvolveOS_ShellEnhancer.Views
                     Height = 32,
                     Stretch = Stretch.Uniform,
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
+                    RenderTransformOrigin = new Point(0.5, 0.5),
                     RenderTransform = new ScaleTransform
                     {
                         ScaleX = _draggedAppItem.IconScale,
                         ScaleY = _draggedAppItem.IconScale
                     }
                 };
-
                 panel.Children.Add(image);
             }
             else
@@ -1403,6 +1540,41 @@ namespace EvolveOS_ShellEnhancer.Views
             DragCanvas.Children.Add(_dragGhost);
         }
 
+        private void AppGrid_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            // The StartMenuWrapPanel handles 2D spatial arrangement natively
+        }
+
+        public void SetGlobalFolderSize(int newSize)
+        {
+            SettingsEngine.Shell_StartMenuFolderSize = newSize;
+
+            foreach (var page in ViewModel.Pages)
+            {
+                foreach (var category in page.PinnedCategories)
+                {
+                    foreach (var app in category.Apps)
+                    {
+                        if (app.ExecutablePath == "PINNED_FOLDER")
+                        {
+                            app.FolderSize = newSize;
+                        }
+                    }
+                }
+            }
+
+            foreach (var grid in GetAllCategoryGrids())
+            {
+                if (grid.ItemsPanelRoot is Controls.StartMenuWrapPanel wrapPanel)
+                {
+                    wrapPanel.InvalidateMeasure();
+                    wrapPanel.InvalidateArrange();
+                }
+            }
+
+            ViewModel.SaveStartMenuPins();
+        }
+
         private IEnumerable<GridView> GetAllCategoryGrids()
         {
             var grids = new List<GridView>();
@@ -1412,10 +1584,16 @@ namespace EvolveOS_ShellEnhancer.Views
                 for (int i = 0; i < Pages.Count; i++)
                 {
                     var container = PagesFlipView.ContainerFromIndex(i) as FrameworkElement;
-                    if (container != null)
-                    {
-                        FindAllGridViewsRecursive(container, grids);
-                    }
+                    if (container != null) FindAllGridViewsRecursive(container, grids);
+                }
+            }
+
+            if (PagesFlipView2 != null)
+            {
+                for (int i = 0; i < Pages.Count; i++)
+                {
+                    var container = PagesFlipView2.ContainerFromIndex(i) as FrameworkElement;
+                    if (container != null) FindAllGridViewsRecursive(container, grids);
                 }
             }
 
@@ -1430,10 +1608,7 @@ namespace EvolveOS_ShellEnhancer.Views
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is GridView gv)
-                {
-                    results.Add(gv);
-                }
+                if (child is GridView gv) results.Add(gv);
                 FindAllGridViewsRecursive(child, results);
             }
         }
@@ -1458,6 +1633,163 @@ namespace EvolveOS_ShellEnhancer.Views
             if (parent == null) return null;
             if (parent is T t) return t;
             return FindVisualParent<T>(parent);
+        }
+        #endregion
+
+        #region Open Folder Popup Engine
+        private bool _isFolderWindowOpen = false;
+        public bool IsFolderWindowOpen => _isFolderWindowOpen;
+
+        private bool _isClosingFolderOverlay = false;
+        private AppItem? _activeFolderApp;
+
+        private void OpenPinnedFolder(AppItem app, FrameworkElement container)
+        {
+            _activeFolderApp = app;
+            if (OverlayFolderNameBox != null)
+                OverlayFolderNameBox.Text = string.IsNullOrWhiteSpace(app.Name) || app.Name == " " ? (LocalizationService.Instance.GetString("StartMenu_DefaultFolderName") ?? "Folder") : app.Name;
+
+            if (OverlayFolderGrid != null)
+                OverlayFolderGrid.ItemsSource = app.FolderApps;
+
+            if (PinnedFolderOverlay != null)
+            {
+                PinnedFolderOverlay.Visibility = Visibility.Visible;
+                FolderOverlayEnterAnimation.Begin();
+            }
+
+            _isFolderWindowOpen = true;
+        }
+
+        private void OverlayFolderNameBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                SaveOverlayFolderName();
+
+                OverlayFolderGrid.Focus(FocusState.Programmatic);
+                e.Handled = true;
+            }
+        }
+
+        private void OverlayFolderNameBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            SaveOverlayFolderName();
+        }
+
+        private void SaveOverlayFolderName()
+        {
+            if (_activeFolderApp != null && OverlayFolderNameBox.Text != _activeFolderApp.Name)
+            {
+                _activeFolderApp.Name = OverlayFolderNameBox.Text;
+
+                ViewModel.SaveStartMenuPins();
+            }
+        }
+
+        private async void CloseFolderOverlay()
+        {
+            if (PinnedFolderOverlay == null || PinnedFolderOverlay.Visibility == Visibility.Collapsed || _isClosingFolderOverlay)
+                return;
+
+            _isClosingFolderOverlay = true;
+
+            FolderOverlayExitAnimation.Begin();
+
+            _isFolderWindowOpen = false;
+            _activeFolderApp = null;
+            ViewModel.SaveStartMenuPins();
+
+            await Task.Delay(150);
+
+            PinnedFolderOverlay.Visibility = Visibility.Collapsed;
+            _isClosingFolderOverlay = false;
+        }
+
+        private void CloseFolderOverlay_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (object.ReferenceEquals(e.OriginalSource, PinnedFolderOverlay))
+            {
+                CloseFolderOverlay();
+            }
+        }
+
+        private void OverlayFolderGrid_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is AppItem app)
+            {
+                LaunchApp(app, false);
+                CloseFolderOverlay();
+            }
+        }
+
+        private void OverlayFolderGrid_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
+        {
+            if (e.Items.Count > 0 && e.Items[0] is AppItem app && _activeFolderApp != null)
+            {
+                e.Data.Properties.Add("DraggedApp", app);
+                e.Data.Properties.Add("SourceFolder", _activeFolderApp);
+                e.Data.SetText(app.Name ?? (LocalizationService.Instance.GetString("StartMenu_DefaultAppName") ?? "App"));
+                e.Data.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            }
+        }
+
+        private void OverlayFolderGrid_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+        {
+            if (_activeFolderApp != null)
+            {
+                if (_activeFolderApp.FolderApps.Count <= 1)
+                {
+                    CloseFolderOverlay();
+                }
+                else
+                {
+                    ViewModel.SaveStartMenuPins();
+                }
+            }
+        }
+
+        private void FolderPageUpBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var sv = GetScrollViewer(OverlayFolderGrid);
+            if (sv != null)
+            {
+                sv.ChangeView(null, Math.Max(0, sv.VerticalOffset - sv.ViewportHeight), null);
+            }
+        }
+
+        private void FolderPageDownBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var sv = GetScrollViewer(OverlayFolderGrid);
+            if (sv != null)
+            {
+                sv.ChangeView(null, sv.VerticalOffset + sv.ViewportHeight, null);
+            }
+        }
+
+        private void FolderPageDotIndicator_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is int pageIndex)
+            {
+                var sv = GetScrollViewer(OverlayFolderGrid);
+                if (sv != null)
+                {
+                    sv.ChangeView(null, pageIndex * sv.ViewportHeight, null);
+                }
+            }
+        }
+
+        private ScrollViewer? GetScrollViewer(DependencyObject depObj)
+        {
+            if (depObj is ScrollViewer sv) return sv;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(depObj, i);
+                var result = GetScrollViewer(child);
+                if (result != null) return result;
+            }
+            return null;
         }
         #endregion
 
@@ -1514,12 +1846,12 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             _isSearchAppsExpanded = false;
-            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = "More";
+            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = LocalizationService.Instance.GetString("StartMenu_More") ?? "More";
             if (SearchAppsMoreIcon?.RenderTransform is RotateTransform r1) FactoryAnimation.AnimateRotation(r1, 0);
             if (SearchAppsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, false, 116);
 
             _isSearchSettingsExpanded = false;
-            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = "More";
+            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = LocalizationService.Instance.GetString("StartMenu_More") ?? "More";
             if (SearchSettingsMoreIcon?.RenderTransform is RotateTransform r2) FactoryAnimation.AnimateRotation(r2, 0);
             if (SearchSettingsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, false, 208);
 
@@ -1596,11 +1928,13 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (e.ClickedItem is AppItem app)
             {
-                if (app.IsFolderItem == Visibility.Visible)
+                bool isAllAppsFolder = app.FallbackGlyph == "\xE8B7" || (!string.IsNullOrEmpty(app.ExecutablePath) && Directory.Exists(app.ExecutablePath));
+
+                if (isAllAppsFolder && app.ExecutablePath != "PINNED_FOLDER")
                 {
                     app.IsExpanded = !app.IsExpanded;
 
-                    if (app.FolderApps.Count == 0 && !string.IsNullOrEmpty(app.ExecutablePath))
+                    if (app.FolderApps.Count == 0 && !string.IsNullOrEmpty(app.ExecutablePath) && Directory.Exists(app.ExecutablePath))
                     {
                         try
                         {
@@ -1619,41 +1953,35 @@ namespace EvolveOS_ShellEnhancer.Views
                                     IconScale = 1.0
                                 });
                             }
-
                             _ = ViewModel.ExtractIconsAsync(app.FolderApps);
                         }
                         catch (Exception ex)
                         {
-                            Debug.WriteLine($"Failed to load folder contents: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"Failed to load folder contents: {ex.Message}");
                         }
                     }
 
-                    var container = SearchAndAllAppsGrid?.ContainerFromItem(app) as ListViewItem
-                         ?? SearchAndAllAppsGrid2?.ContainerFromItem(app) as ListViewItem;
+                    var listContainer = (sender as ListView)?.ContainerFromItem(app) as FrameworkElement
+                                     ?? (sender as GridView)?.ContainerFromItem(app) as FrameworkElement;
 
-                    if (container != null)
+                    if (listContainer != null)
                     {
-                        var chevron = FindDescendant<FontIcon>(container, "ChevronIcon");
+                        var chevron = FindDescendant<FontIcon>(listContainer, "ChevronIcon");
                         if (chevron != null && chevron.RenderTransform is RotateTransform transform)
                         {
                             FactoryAnimation.AnimateRotation(transform, app.IsExpanded ? 180 : 0);
                         }
 
-                        var nestedFolderGrid = FindDescendant<ItemsControl>(container, "NestedFolderGrid");
+                        var nestedFolderGrid = FindDescendant<ItemsControl>(listContainer, "NestedFolderGrid");
                         if (nestedFolderGrid != null)
                         {
                             FactoryAnimation.AnimatePanelExpansion(nestedFolderGrid, app.IsExpanded, 0);
-
                             if (app.IsExpanded)
                             {
                                 DispatcherQueue.TryEnqueue(async () =>
                                 {
                                     await Task.Delay(260);
-
-                                    container.StartBringIntoView(new BringIntoViewOptions
-                                    {
-                                        AnimationDesired = true
-                                    });
+                                    (listContainer as UIElement)?.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = true });
                                 });
                             }
                         }
@@ -1705,7 +2033,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (!string.IsNullOrEmpty(dir))
                     Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
             }
-            catch (Exception ex) { Debug.WriteLine(ex.Message); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); }
             HideMenu();
         }
 
@@ -1719,31 +2047,22 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        private bool _isSearchAppsExpanded = false;
-        private bool _isSearchSettingsExpanded = false;
-
         private void SearchAppsMoreBtn_Click(object sender, RoutedEventArgs e)
         {
             _isSearchAppsExpanded = !_isSearchAppsExpanded;
-            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = _isSearchAppsExpanded ? "Less" : "More";
+            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = _isSearchAppsExpanded ? (LocalizationService.Instance.GetString("StartMenu_Less") ?? "Less") : (LocalizationService.Instance.GetString("StartMenu_More") ?? "More");
 
-            if (SearchAppsMoreIcon?.RenderTransform is RotateTransform transform)
-                FactoryAnimation.AnimateRotation(transform, _isSearchAppsExpanded ? 180 : 0);
-
-            if (SearchAppsGrid != null)
-                FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, _isSearchAppsExpanded, 116);
+            if (SearchAppsMoreIcon?.RenderTransform is RotateTransform r1) FactoryAnimation.AnimateRotation(r1, 0);
+            if (SearchAppsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, false, 116);
         }
 
         private void SearchSettingsMoreBtn_Click(object sender, RoutedEventArgs e)
         {
             _isSearchSettingsExpanded = !_isSearchSettingsExpanded;
-            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = _isSearchSettingsExpanded ? "Less" : "More";
+            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = _isSearchSettingsExpanded ? (LocalizationService.Instance.GetString("StartMenu_Less") ?? "Less") : (LocalizationService.Instance.GetString("StartMenu_More") ?? "More");
 
-            if (SearchSettingsMoreIcon?.RenderTransform is RotateTransform transform)
-                FactoryAnimation.AnimateRotation(transform, _isSearchSettingsExpanded ? 180 : 0);
-
-            if (SearchSettingsGrid != null)
-                FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, _isSearchSettingsExpanded, 208);
+            if (SearchSettingsMoreIcon?.RenderTransform is RotateTransform r2) FactoryAnimation.AnimateRotation(r2, 0);
+            if (SearchSettingsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, false, 208);
         }
 
         private async void LaunchApp(AppItem app, bool runAsAdmin)
@@ -1765,7 +2084,6 @@ namespace EvolveOS_ShellEnhancer.Views
                     HideMenu();
                     return;
                 }
-
                 else if (app.ExecutablePath.StartsWith("ms-settings:"))
                 {
                     await Launcher.LaunchUriAsync(new Uri(app.ExecutablePath));
@@ -1789,6 +2107,7 @@ namespace EvolveOS_ShellEnhancer.Views
             }
             catch (Exception ex) { Debug.WriteLine(ex.Message); }
         }
+
         #endregion
     }
 }

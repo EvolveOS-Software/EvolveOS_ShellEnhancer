@@ -625,7 +625,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
                 targetElement = content;
             }
 
-            targetElement.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
+            targetElement.RenderTransformOrigin = new Point(0.5, 0.5);
 
             if (targetElement.RenderTransform is not CompositeTransform transform)
             {
@@ -686,7 +686,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
                 panel.UpdateLayout();
 
                 double width = panel.ActualWidth > 0 ? panel.ActualWidth : 1000;
-                panel.Measure(new Windows.Foundation.Size(width, double.PositiveInfinity));
+                panel.Measure(new Size(width, double.PositiveInfinity));
 
                 toHeight = panel.DesiredSize.Height;
 

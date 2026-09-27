@@ -431,6 +431,13 @@ namespace EvolveOS_ShellEnhancer
                         _startMenuWindow?.UpdateShortcuts(value);
                         break;
 
+                    case "StartMenu_FolderSize":
+                        if (int.TryParse(value, out int newSize))
+                        {
+                            _startMenuWindow?.SetGlobalFolderSize(newSize);
+                        }
+                        break;
+
                     case "Taskbar_Enable":
                         _isTaskbarEnabled = bool.Parse(value);
                         if (_isTaskbarEnabled)

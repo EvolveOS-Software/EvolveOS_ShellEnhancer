@@ -75,7 +75,13 @@
     <sys:String x:Key="StartMenu_ActionOpen">Openen</sys:String>
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Als administrator uitvoeren</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Bestandslocatie openen</sys:String>
-
+    <sys:String x:Key="StartMenu_CategoryNamePlaceholder">Categorienaam</sys:String>
+    <sys:String x:Key="StartMenu_DeleteGroup">Groep verwijderen</sys:String>
+    <sys:String x:Key="StartMenu_RecentDocuments">Recente documenten</sys:String>
+    <sys:String x:Key="StartMenu_SearchPlaceholderWide">Typ hier om te zoeken...</sys:String>
+    <sys:String x:Key="StartMenu_AppsTitle">Apps</sys:String>
+    <sys:String x:Key="StartMenu_SettingsTitle">Instellingen</sys:String>
+    <sys:String x:Key="StartMenu_More">Meer</sys:String>
     <sys:String x:Key="StartMenu_AccountSettings">Accountinstellingen</sys:String>
     <sys:String x:Key="StartMenu_MyAccount">Mijn account beheren</sys:String>
     <sys:String x:Key="StartMenu_Lock">Vergrendelen</sys:String>
@@ -89,6 +95,13 @@
     <sys:String x:Key="StartMenu_ContextUnpinTaskbar">Van taakbalk losmaken</sys:String>
     <sys:String x:Key="StartMenu_SearchNoResults">Geen resultaten gevonden</sys:String>
     <sys:String x:Key="StartMenu_RemoveList">Uit lijst verwijderen</sys:String>
+    <sys:String x:Key="StartMenu_DefaultFolderName">Map</sys:String>
+    <sys:String x:Key="StartMenu_Less">Minder</sys:String>
+    <sys:String x:Key="StartMenu_AddGroup">Groep toevoegen</sys:String>
+    <sys:String x:Key="StartMenu_AddPage">Pagina toevoegen</sys:String>
+    <sys:String x:Key="StartMenu_NewGroup">Nieuwe groep</sys:String>
+    <sys:String x:Key="StartMenu_PinnedCategory">Vastgemaakt</sys:String>
+    <sys:String x:Key="StartMenu_DefaultAppName">App</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Hele pc doorzoeken op '{0}'</sys:String>

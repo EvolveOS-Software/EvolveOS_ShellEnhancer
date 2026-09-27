@@ -11,6 +11,7 @@ global using System.Threading.Tasks;
 #endregion
 
 #region EvolveOS Shell Enhancer Namespaces
+global using EvolveOS_ShellEnhancer.Controls;
 global using EvolveOS_ShellEnhancer.Enums;
 global using EvolveOS_ShellEnhancer.Interfaces;
 global using EvolveOS_ShellEnhancer.Models;

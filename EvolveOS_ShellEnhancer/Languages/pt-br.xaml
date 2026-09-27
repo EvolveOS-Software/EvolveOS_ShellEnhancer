@@ -75,7 +75,13 @@
     <sys:String x:Key="StartMenu_ActionOpen">Abrir</sys:String>
     <sys:String x:Key="StartMenu_ActionRunAsAdmin">Executar como administrador</sys:String>
     <sys:String x:Key="StartMenu_ActionOpenLocation">Abrir local do arquivo</sys:String>
-
+    <sys:String x:Key="StartMenu_CategoryNamePlaceholder">Nome da Categoria</sys:String>
+    <sys:String x:Key="StartMenu_DeleteGroup">Excluir Grupo</sys:String>
+    <sys:String x:Key="StartMenu_RecentDocuments">Documentos Recentes</sys:String>
+    <sys:String x:Key="StartMenu_SearchPlaceholderWide">Digite aqui para pesquisar...</sys:String>
+    <sys:String x:Key="StartMenu_AppsTitle">Aplicativos</sys:String>
+    <sys:String x:Key="StartMenu_SettingsTitle">Configurações</sys:String>
+    <sys:String x:Key="StartMenu_More">Mais</sys:String>
     <sys:String x:Key="StartMenu_AccountSettings">Configurações da conta</sys:String>
     <sys:String x:Key="StartMenu_MyAccount">Gerenciar minha conta</sys:String>
     <sys:String x:Key="StartMenu_Lock">Bloquear</sys:String>
@@ -89,6 +95,13 @@
     <sys:String x:Key="StartMenu_ContextUnpinTaskbar">Desafixar da barra de tarefas</sys:String>
     <sys:String x:Key="StartMenu_SearchNoResults">Nenhum resultado encontrado</sys:String>
     <sys:String x:Key="StartMenu_RemoveList">Remover da lista</sys:String>
+    <sys:String x:Key="StartMenu_DefaultFolderName">Pasta</sys:String>
+    <sys:String x:Key="StartMenu_Less">Menos</sys:String>
+    <sys:String x:Key="StartMenu_AddGroup">Adicionar Grupo</sys:String>
+    <sys:String x:Key="StartMenu_AddPage">Adicionar Página</sys:String>
+    <sys:String x:Key="StartMenu_NewGroup">Novo Grupo</sys:String>
+    <sys:String x:Key="StartMenu_PinnedCategory">Fixado</sys:String>
+    <sys:String x:Key="StartMenu_DefaultAppName">Aplicativo</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Pesquisar todo o PC por '{0}'</sys:String>

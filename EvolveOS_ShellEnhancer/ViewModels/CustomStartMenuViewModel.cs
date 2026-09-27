@@ -178,10 +178,45 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                                     {
                                         var cat = new AppCategory { Name = parts[0] };
                                         var pinNames = parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
+
                                         foreach (var name in pinNames)
                                         {
-                                            var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
-                                            if (match != null) cat.Apps.Add(match);
+                                            if (name.StartsWith("[PINNED_FOLDER]"))
+                                            {
+                                                var separatorIndex = name.IndexOf("::");
+                                                string folderName = "Map";
+                                                string contents = "";
+
+                                                if (separatorIndex != -1)
+                                                {
+                                                    folderName = name.Substring(15, separatorIndex - 15);
+                                                    contents = name.Substring(separatorIndex + 2);
+                                                }
+
+                                                var folderItem = new AppItem
+                                                {
+                                                    Name = string.IsNullOrWhiteSpace(folderName) ? "Map" : folderName,
+                                                    ExecutablePath = "PINNED_FOLDER",
+                                                    FallbackGlyph = "",
+                                                    IsUwp = false
+                                                };
+
+                                                if (!string.IsNullOrEmpty(contents))
+                                                {
+                                                    var innerApps = contents.Split('~', StringSplitOptions.RemoveEmptyEntries);
+                                                    foreach (var innerName in innerApps)
+                                                    {
+                                                        var innerMatch = fetchedAllApps.FirstOrDefault(a => a.Name == innerName);
+                                                        if (innerMatch != null) folderItem.FolderApps.Add(innerMatch);
+                                                    }
+                                                }
+                                                cat.Apps.Add(folderItem);
+                                            }
+                                            else
+                                            {
+                                                var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
+                                                if (match != null) cat.Apps.Add(match);
+                                            }
                                         }
                                         page.PinnedCategories.Add(cat);
                                     }
@@ -224,7 +259,7 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         {
             foreach (var app in apps)
             {
-                if (app.IconSource == null)
+                if (app.IconSource == null && app.ExecutablePath != "PINNED_FOLDER")
                 {
                     try
                     {
@@ -351,8 +386,23 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                 var categoryStrings = new List<string>();
                 foreach (var cat in page.PinnedCategories)
                 {
-                    var appNames = cat.Apps.Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n));
-                    categoryStrings.Add($"{cat.Name}|{string.Join(",", appNames)}");
+                    var appStrings = new List<string>();
+                    foreach (var app in cat.Apps)
+                    {
+                        if (app == null) continue;
+
+                        if (app.ExecutablePath == "PINNED_FOLDER")
+                        {
+                            var validApps = app.FolderApps?.Where(a => a != null && !string.IsNullOrWhiteSpace(a.Name)).Select(a => a.Name) ?? new List<string>();
+                            var insideApps = string.Join("~", validApps);
+                            appStrings.Add($"[PINNED_FOLDER]{app.Name}::{insideApps}");
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrWhiteSpace(app.Name)) appStrings.Add(app.Name);
+                        }
+                    }
+                    categoryStrings.Add($"{cat.Name}|{string.Join(",", appStrings)}");
                 }
                 pageStrings.Add(string.Join(";", categoryStrings));
             }
