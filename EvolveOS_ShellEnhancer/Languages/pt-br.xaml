@@ -97,15 +97,40 @@
     <sys:String x:Key="StartMenu_RemoveList">Remover da lista</sys:String>
     <sys:String x:Key="StartMenu_DefaultFolderName">Pasta</sys:String>
     <sys:String x:Key="StartMenu_Less">Menos</sys:String>
-    <sys:String x:Key="StartMenu_AddGroup">Adicionar Grupo</sys:String>
-    <sys:String x:Key="StartMenu_AddPage">Adicionar Página</sys:String>
-    <sys:String x:Key="StartMenu_NewGroup">Novo Grupo</sys:String>
-    <sys:String x:Key="StartMenu_PinnedCategory">Fixado</sys:String>
-    <sys:String x:Key="StartMenu_DefaultAppName">Aplicativo</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Pesquisar todo o PC por '{0}'</sys:String>
     <sys:String x:Key="StartMenu_SearchWebPrefix">Pesquisar na Web por '{0}'</sys:String>
+
+    <!-- Context Menu Options -->
+    <sys:String x:Key="StartMenu_Rename">Renomear</sys:String>
+    <sys:String x:Key="StartMenu_New">Novo</sys:String>
+    <sys:String x:Key="StartMenu_AddGroup">Adicionar grupo</sys:String>
+    <sys:String x:Key="StartMenu_AddTabbedGroup">Adicionar grupo com guias</sys:String>
+    <sys:String x:Key="StartMenu_AddPage">Adicionar página</sys:String>
+    <sys:String x:Key="StartMenu_PinFile">Fixar arquivo</sys:String>
+    <sys:String x:Key="StartMenu_PinFolder">Fixar pasta</sys:String>
+    <sys:String x:Key="StartMenu_PinWebSite">Fixar site</sys:String>
+    <sys:String x:Key="StartMenu_Remove">Remover página</sys:String>
+
+    <!-- Dialogs (Rename Page & Pin Website) -->
+    <sys:String x:Key="StartMenu_RenamePage">Renomear página</sys:String>
+    <sys:String x:Key="StartMenu_Save">Salvar</sys:String>
+    <sys:String x:Key="StartMenu_Cancel">Cancelar</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteName">Nome do site (ex. Google)</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteUrl">URL (ex. https://google.com)</sys:String>
+
+    <!-- Default Generated Names -->
+    <sys:String x:Key="StartMenu_NewGroup">Novo grupo</sys:String>
+    <sys:String x:Key="StartMenu_NewTabbedGroup">Novo grupo com guias</sys:String>
+    <sys:String x:Key="StartMenu_NewPage">Nova página</sys:String>
+    <sys:String x:Key="StartMenu_DefaultFolderName">Pasta</sys:String>
+    <sys:String x:Key="StartMenu_DefaultAppName">Aplicativo</sys:String>
+    <sys:String x:Key="StartMenu_PinnedCategory">Fixado</sys:String>
+
+    <!-- Tabbed Group Controls -->
+    <sys:String x:Key="StartMenu_NewTab">Nova guia</sys:String>
+    <sys:String x:Key="StartMenu_RenameTab">Renomear guia</sys:String>
 
     <!-- endregion StartMenu -->
 

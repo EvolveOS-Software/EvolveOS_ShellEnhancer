@@ -10,6 +10,7 @@ using System.IO;
 using Windows.System;
 using WinRT.Interop;
 using EvolveOS_ShellEnhancer.ViewModels;
+using Windows.Graphics;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
@@ -59,10 +60,6 @@ namespace EvolveOS_ShellEnhancer.Views
         private bool _isRecentDocsExpanded = false;
         private bool _isSearchAppsExpanded = false;
         private bool _isSearchSettingsExpanded = false;
-
-        private DateTime _lastPageFlipTime = DateTime.MinValue;
-        private const double EdgeScrollThreshold = 60.0;
-        private const int PageFlipDelayMs = 700;
 
         private AppItem? _sourceFolderItem;
         #endregion
@@ -139,27 +136,43 @@ namespace EvolveOS_ShellEnhancer.Views
             ViewModel.OnAppsDataLoaded = () =>
             {
                 UpdatePageIndicators(0);
-
-                // 1. Get the actual saved size from the Registry
                 int savedSize = SettingsEngine.Shell_StartMenuFolderSize;
                 if (savedSize < 1 || savedSize > 2) savedSize = 1;
 
-                // 2. Loop through the DATA MODEL directly (UI is not ready yet!)
                 foreach (var page in ViewModel.Pages)
                 {
                     foreach (var category in page.PinnedCategories)
                     {
-                        foreach (var app in category.Apps)
+                        if (category.Tabs != null && category.Tabs.Count > 0)
                         {
-                            if (app.ExecutablePath == "PINNED_FOLDER")
+                            category.IsTabbed = true;
+
+                            foreach (var tab in category.Tabs)
                             {
-                                app.FolderSize = savedSize;
+                                foreach (var app in tab.Apps)
+                                {
+                                    if (app.ExecutablePath == "PINNED_FOLDER")
+                                    {
+                                        app.FolderSize = savedSize;
+                                    }
+                                }
+                            }
+
+                            category.SelectedTabIndex = 0;
+                        }
+                        else
+                        {
+                            foreach (var app in category.Apps)
+                            {
+                                if (app.ExecutablePath == "PINNED_FOLDER")
+                                {
+                                    app.FolderSize = savedSize;
+                                }
                             }
                         }
                     }
                 }
 
-                // 3. Force the UI to redraw once it finishes loading
                 foreach (var grid in GetAllCategoryGrids())
                 {
                     if (grid.ItemsPanelRoot is Controls.StartMenuWrapPanel wrapPanel)
@@ -410,7 +423,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 else if (targetPos == "Right") startX = x + windowWidth + 15;
                 else startY = y + windowHeight + 15;
 
-                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(startX, startY, windowWidth, windowHeight));
+                _appWindow.MoveAndResize(new RectInt32(startX, startY, windowWidth, windowHeight));
                 _appWindow.Show();
 
                 this.Activate();
@@ -433,7 +446,7 @@ namespace EvolveOS_ShellEnhancer.Views
             }
             else
             {
-                _appWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, windowWidth, windowHeight));
+                _appWindow.MoveAndResize(new RectInt32(x, y, windowWidth, windowHeight));
                 _appWindow.Show();
 
                 this.Activate();
@@ -715,7 +728,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private void AddCategory_Click(object sender, RoutedEventArgs e)
         {
             PinnedCategories.Add(new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" });
-            ViewModel.SaveStartMenuPins();
+            SafeSavePins();
         }
 
         private void DeleteCategory_Click(object sender, RoutedEventArgs e)
@@ -726,14 +739,82 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (page != null)
                 {
                     page.PinnedCategories.Remove(cat);
-                    ViewModel.SaveStartMenuPins();
+                    SafeSavePins();
+                }
+            }
+        }
+
+        private void AddTab_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is AppCategory parentCategory)
+            {
+                parentCategory.Tabs.Add(new AppCategory
+                {
+                    Name = LocalizationService.Instance.GetString("StartMenu_NewTab") ?? "New Tab"
+                });
+
+                parentCategory.SelectedTabIndex = parentCategory.Tabs.Count - 1;
+
+                SafeSavePins();
+            }
+        }
+
+        private async void RenameTab_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is AppCategory tabCategory)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = LocalizationService.Instance.GetString("StartMenu_RenameTab") ?? "Rename Tab",
+                    PrimaryButtonText = LocalizationService.Instance.GetString("StartMenu_Save") ?? "Save",
+                    CloseButtonText = LocalizationService.Instance.GetString("StartMenu_Cancel") ?? "Cancel",
+                    XamlRoot = this.Content.XamlRoot,
+                    RequestedTheme = this.Content is FrameworkElement fe ? fe.RequestedTheme : ElementTheme.Default
+                };
+
+                var nameBox = new TextBox
+                {
+                    Text = tabCategory.Name,
+                    Width = 300
+                };
+                dialog.Content = nameBox;
+
+                if (await dialog.ShowAsync() == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(nameBox.Text))
+                {
+                    tabCategory.Name = nameBox.Text;
+                    SafeSavePins();
+                }
+            }
+        }
+
+        private void DeleteTab_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is AppCategory tabCategory)
+            {
+                foreach (var page in Pages)
+                {
+                    foreach (var parentCategory in page.PinnedCategories)
+                    {
+                        if (parentCategory.Tabs != null && parentCategory.Tabs.Contains(tabCategory))
+                        {
+                            parentCategory.Tabs.Remove(tabCategory);
+
+                            if (parentCategory.SelectedTabIndex >= parentCategory.Tabs.Count)
+                            {
+                                parentCategory.SelectedTabIndex = Math.Max(0, parentCategory.Tabs.Count - 1);
+                            }
+
+                            SafeSavePins();
+                            return;
+                        }
+                    }
                 }
             }
         }
 
         private void CategoryName_LostFocus(object sender, RoutedEventArgs e)
         {
-            ViewModel.SaveStartMenuPins();
+            SafeSavePins();
         }
 
         private void CategoryName_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -845,43 +926,9 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        private T? FindVisualChild<T>(DependencyObject parent, string name) where T : FrameworkElement
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T element && element.Name == name)
-                    return element;
-
-                var result = FindVisualChild<T>(child, name);
-                if (result != null)
-                    return result;
-            }
-            return null;
-        }
-
         private void CategoryGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (sender is GridView gridView && gridView.Parent is StackPanel panel)
-            {
-                if (panel.Children[0] is Grid headerGrid && headerGrid.Children[1] is ToggleButton chevronBtn)
-                {
-                    int itemsPerRow = (int)(e.NewSize.Width / 92.0);
-
-                    if (gridView.Items.Count > itemsPerRow)
-                    {
-                        chevronBtn.Visibility = Visibility.Visible;
-                    }
-                    else
-                    {
-                        chevronBtn.Visibility = Visibility.Collapsed;
-                        if (chevronBtn.IsChecked == true)
-                        {
-                            chevronBtn.IsChecked = false;
-                        }
-                    }
-                }
-            }
+            if (sender is GridView gridView) EvaluateChevronVisibility(gridView, e.NewSize.Width);
         }
 
         private void CategoryChevron_Checked(object sender, RoutedEventArgs e)
@@ -893,7 +940,24 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (btn.Parent is Grid headerGrid && headerGrid.Parent is StackPanel panel && panel.Children[1] is GridView gridView)
                 {
-                    FactoryAnimation.AnimatePanelExpansion(gridView, true, 104);
+                    gridView.ClearValue(FrameworkElement.MaxHeightProperty);
+
+                    double[] heights = gridView.Tag as double[] ?? new double[] { 104.0, 500.0 };
+                    double fullHeight = heights[1];
+
+                    if (gridView.ItemsPanelRoot is Panel panelRoot)
+                    {
+                        panelRoot.Measure(new Size(gridView.ActualWidth, double.PositiveInfinity));
+                        if (panelRoot.DesiredSize.Height > fullHeight) fullHeight = panelRoot.DesiredSize.Height;
+                    }
+
+                    FactoryAnimation.AnimatePanelExpansion(gridView, true, fullHeight);
+
+                    DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        await Task.Delay(350);
+                        if (btn.IsChecked == true) gridView.ClearValue(FrameworkElement.HeightProperty);
+                    });
                 }
             }
         }
@@ -907,7 +971,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (btn.Parent is Grid headerGrid && headerGrid.Parent is StackPanel panel && panel.Children[1] is GridView gridView)
                 {
-                    FactoryAnimation.AnimatePanelExpansion(gridView, false, 104);
+                    double[] heights = gridView.Tag as double[] ?? new double[] { 104.0, 500.0 };
+                    double baseHeight = heights[0];
+
+                    gridView.MaxHeight = baseHeight;
+                    FactoryAnimation.AnimatePanelExpansion(gridView, false, baseHeight);
                 }
             }
         }
@@ -915,6 +983,7 @@ namespace EvolveOS_ShellEnhancer.Views
         #endregion
 
         #region Context Menu Handlers (Pinning / Actions)
+
         private void ScrollViewer_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             if (e.Handled) return;
@@ -926,40 +995,229 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 MenuFlyout flyout = new MenuFlyout();
 
-                var addGroupItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_AddGroup") ?? "Add Group" };
-                addGroupItem.Icon = new FontIcon { Glyph = "\xE710" };
+                var renameItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_Rename") ?? "Rename", Icon = new FontIcon { Glyph = "\xE8AC" } };
+                renameItem.Click += async (s, args) => { await RenamePageAsync(currentPage); };
+                flyout.Items.Add(renameItem);
+
+                flyout.Items.Add(new MenuFlyoutSeparator());
+
+                var newItem = new MenuFlyoutSubItem { Text = LocalizationService.Instance.GetString("StartMenu_New") ?? "New", Icon = new FontIcon { Glyph = "\xE710" } };
+
+                var addGroupItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_AddGroup") ?? "Add Group", Icon = new FontIcon { Glyph = "\xE8F4" } };
                 addGroupItem.Click += (s, args) =>
                 {
                     currentPage.PinnedCategories.Add(new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" });
-                    ViewModel.SaveStartMenuPins();
+                    SafeSavePins();
                 };
-                flyout.Items.Add(addGroupItem);
+                newItem.Items.Add(addGroupItem);
 
-                var addPageItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_AddPage") ?? "Add Page" };
-                addPageItem.Icon = new FontIcon { Glyph = "\xE7C3" };
+                var addTabbedGroupItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_AddTabbedGroup") ?? "Add Tabbed Group", Icon = new FontIcon { Glyph = "\xE8D2" } };
+                addTabbedGroupItem.Click += (s, args) =>
+                {
+                    var tabCat = new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewTabbedGroup") ?? "New Tabbed Group" };
+
+                    tabCat.IsTabbed = true;
+
+                    tabCat.Tabs.Add(new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewTab") ?? "Tab 1" });
+
+                    currentPage.PinnedCategories.Add(tabCat);
+                    SafeSavePins();
+                };
+                newItem.Items.Add(addTabbedGroupItem);
+
+                var addPageItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_AddPage") ?? "Add Page", Icon = new FontIcon { Glyph = "\xE7C3" } };
                 addPageItem.Click += (s, args) =>
                 {
                     var newPage = new StartMenuPage { PageIndex = Pages.Count };
-                    newPage.PinnedCategories.Add(new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" });
+                    var prop = typeof(StartMenuPage).GetProperty("PageName");
+                    if (prop != null) prop.SetValue(newPage, LocalizationService.Instance.GetString("StartMenu_NewPage") ?? "New Page");
 
+                    newPage.PinnedCategories.Add(new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" });
                     Pages.Add(newPage);
+
                     if (PagesFlipView != null) PagesFlipView.SelectedIndex = Pages.Count - 1;
                     UpdatePageIndicators(Pages.Count - 1);
-
-                    ViewModel.SaveStartMenuPins();
+                    SafeSavePins();
                 };
-                flyout.Items.Add(addPageItem);
+                newItem.Items.Add(addPageItem);
 
-                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
-                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
-                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
-                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
+                newItem.Items.Add(new MenuFlyoutSeparator());
+
+                var pinFileItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_PinFile") ?? "Pin File", Icon = new FontIcon { Glyph = "\xE8E5" } };
+                pinFileItem.Click += async (s, args) => { await PinFileAsync(currentPage); };
+                newItem.Items.Add(pinFileItem);
+
+                var pinFolderItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_PinFolder") ?? "Pin Folder", Icon = new FontIcon { Glyph = "\xE8D5" } };
+                pinFolderItem.Click += async (s, args) => { await PinFolderAsync(currentPage); };
+                newItem.Items.Add(pinFolderItem);
+
+                var pinWebItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_PinWebSite") ?? "Pin WebSite", Icon = new FontIcon { Glyph = "\xE12B" } };
+                pinWebItem.Click += async (s, args) => { await PinWebSiteAsync(currentPage); };
+                newItem.Items.Add(pinWebItem);
+
+                flyout.Items.Add(newItem);
+
+                var removeItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_Remove") ?? "Remove",
+                    Icon = new FontIcon { Glyph = "\xE74D" },
+                    IsEnabled = Pages.IndexOf(currentPage) > 0
+                };
+
+                removeItem.Click += (s, args) =>
+                {
+                    if (Pages.Count > 1 && Pages.IndexOf(currentPage) > 0)
+                    {
+                        Pages.Remove(currentPage);
+
+                        for (int i = 0; i < Pages.Count; i++) Pages[i].PageIndex = i;
+
+                        if (PagesFlipView != null) PagesFlipView.SelectedIndex = Math.Max(0, Pages.Count - 1);
+                        UpdatePageIndicators(Math.Max(0, Pages.Count - 1));
+
+                        SafeSavePins();
+                    }
+                };
+                flyout.Items.Add(removeItem);
 
                 flyout.ShowAt(element, e.GetPosition(element));
                 e.Handled = true;
+            }
+        }
+
+        private async Task RenamePageAsync(StartMenuPage page)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = LocalizationService.Instance.GetString("StartMenu_RenamePage") ?? "Rename Page",
+                PrimaryButtonText = LocalizationService.Instance.GetString("StartMenu_Save") ?? "Save",
+                CloseButtonText = LocalizationService.Instance.GetString("StartMenu_Cancel") ?? "Cancel",
+                XamlRoot = this.Content.XamlRoot,
+                RequestedTheme = this.Content is FrameworkElement fe ? fe.RequestedTheme : ElementTheme.Default
+            };
+
+            var nameBox = new TextBox
+            {
+                Text = (typeof(StartMenuPage).GetProperty("PageName")?.GetValue(page) as string) ?? $"Page {page.PageIndex + 1}",
+                Width = 300
+            };
+            dialog.Content = nameBox;
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(nameBox.Text))
+            {
+                var prop = typeof(StartMenuPage).GetProperty("PageName");
+                if (prop != null)
+                {
+                    prop.SetValue(page, nameBox.Text);
+                    SafeSavePins();
+                }
+            }
+        }
+
+        private async Task PinFileAsync(StartMenuPage page)
+        {
+            string title = LocalizationService.Instance.GetString("StartMenu_PinFile") ?? "Pin File";
+
+            string? filePath = Win32FileDialogHelper.ShowOpenFilePicker(
+                this,
+                title,
+                "All Files",
+                "*.*");
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                var appItem = new AppItem
+                {
+                    Name = Path.GetFileNameWithoutExtension(filePath),
+                    ExecutablePath = filePath,
+                    FallbackGlyph = "\xE8E5",
+                    IsUwp = false,
+                    FolderSize = 1,
+                    IconScale = 1.0
+                };
+
+                _ = ViewModel.ExtractIconsAsync(new[] { appItem });
+
+                var targetCategory = page.PinnedCategories.FirstOrDefault() ?? new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_PinnedCategory") ?? "Pinned" };
+                if (!page.PinnedCategories.Contains(targetCategory)) page.PinnedCategories.Add(targetCategory);
+
+                targetCategory = GetEffectiveTargetCategory(targetCategory);
+                targetCategory?.Apps.Add(appItem);
+                SafeSavePins();
+            }
+
+            await Task.CompletedTask;
+        }
+
+        private async Task PinFolderAsync(StartMenuPage page)
+        {
+            string title = LocalizationService.Instance.GetString("StartMenu_PinFolder") ?? "Pin Folder";
+
+            string? folderPath = Win32FileDialogHelper.ShowFolderPicker(this, title);
+
+            if (!string.IsNullOrEmpty(folderPath))
+            {
+                var appItem = new AppItem
+                {
+                    Name = Path.GetFileName(folderPath),
+                    ExecutablePath = folderPath,
+                    FallbackGlyph = "\xE8D5",
+                    IsUwp = false,
+                    FolderSize = 1,
+                    IconScale = 1.0
+                };
+
+                var targetCategory = page.PinnedCategories.FirstOrDefault() ?? new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_PinnedCategory") ?? "Pinned" };
+                if (!page.PinnedCategories.Contains(targetCategory)) page.PinnedCategories.Add(targetCategory);
+
+                targetCategory = GetEffectiveTargetCategory(targetCategory);
+                targetCategory?.Apps.Add(appItem);
+                SafeSavePins();
+            }
+
+            await Task.CompletedTask;
+        }
+
+        private async Task PinWebSiteAsync(StartMenuPage page)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = LocalizationService.Instance.GetString("StartMenu_PinWebSite") ?? "Pin WebSite",
+                PrimaryButtonText = LocalizationService.Instance.GetString("StartMenu_Save") ?? "Save",
+                CloseButtonText = LocalizationService.Instance.GetString("StartMenu_Cancel") ?? "Cancel",
+                XamlRoot = this.Content.XamlRoot,
+                RequestedTheme = this.Content is FrameworkElement fe ? fe.RequestedTheme : ElementTheme.Default
+            };
+
+            var stack = new StackPanel { Spacing = 12 };
+            var nameBox = new TextBox { PlaceholderText = LocalizationService.Instance.GetString("StartMenu_WebsiteName") ?? "Website Name (e.g. Google)", Width = 300 };
+            var urlBox = new TextBox { PlaceholderText = LocalizationService.Instance.GetString("StartMenu_WebsiteUrl") ?? "URL (e.g. https://google.com)", Width = 300 };
+            stack.Children.Add(nameBox);
+            stack.Children.Add(urlBox);
+            dialog.Content = stack;
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(urlBox.Text))
+            {
+                string url = urlBox.Text.Trim();
+                if (!url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    url = "https://" + url;
+
+                var appItem = new AppItem
+                {
+                    Name = string.IsNullOrWhiteSpace(nameBox.Text) ? "Website" : nameBox.Text,
+                    ExecutablePath = url,
+                    FallbackGlyph = "\xE12B",
+                    IsUwp = false,
+                    FolderSize = 1,
+                    IconScale = 1.0
+                };
+
+                var targetCategory = page.PinnedCategories.FirstOrDefault() ?? new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_PinnedCategory") ?? "Pinned" };
+                if (!page.PinnedCategories.Contains(targetCategory)) page.PinnedCategories.Add(targetCategory);
+
+                targetCategory = GetEffectiveTargetCategory(targetCategory);
+                targetCategory?.Apps.Add(appItem);
+                SafeSavePins();
             }
         }
 
@@ -977,7 +1235,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 MenuFlyout flyout = new MenuFlyout();
 
-                bool isPinnedToStart = Pages.SelectMany(p => p.PinnedCategories).Any(c => c.Apps.Contains(app));
+                bool isPinnedToStart = GetAllCategoriesFlattened().Any(c => c.Apps.Contains(app));
                 var pinStartItem = new MenuFlyoutItem
                 {
                     Text = isPinnedToStart
@@ -989,19 +1247,17 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     if (isPinnedToStart)
                     {
-                        foreach (var page in Pages)
+                        foreach (var cat in GetAllCategoriesFlattened())
                         {
-                            foreach (var cat in page.PinnedCategories)
-                            {
-                                cat.Apps.Remove(app);
-                            }
+                            cat.Apps.Remove(app);
                         }
                     }
                     else
                     {
                         if (Pages.Count > 0 && Pages[0].PinnedCategories.Count > 0)
                         {
-                            Pages[0].PinnedCategories.First().Apps.Add(app);
+                            var targetCategory = GetEffectiveTargetCategory(Pages[0].PinnedCategories.First());
+                            targetCategory?.Apps.Add(app); // Fixed warning here
                         }
                         else
                         {
@@ -1012,7 +1268,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         }
                     }
 
-                    ViewModel.SaveStartMenuPins();
+                    SafeSavePins();
                 };
                 flyout.Items.Add(pinStartItem);
                 flyout.Items.Add(new MenuFlyoutSeparator());
@@ -1059,15 +1315,6 @@ namespace EvolveOS_ShellEnhancer.Views
                     flyout.Items.Add(locItem);
                 }
 
-                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
-
-                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
-                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
-                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
-
                 flyout.ShowAt(element, e.GetPosition(element));
             }
         }
@@ -1079,14 +1326,6 @@ namespace EvolveOS_ShellEnhancer.Views
             if (sender is FrameworkElement element && element.Tag is AppItem recentItem)
             {
                 MenuFlyout flyout = new MenuFlyout();
-                flyout.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
-
-                Style flyoutStyle = new Style(typeof(MenuFlyoutPresenter));
-                flyoutStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Colors.Transparent)));
-                flyoutStyle.Setters.Add(new Setter(Control.CornerRadiusProperty, new CornerRadius(8)));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(30, 255, 255, 255))));
-                flyoutStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-                flyout.MenuFlyoutPresenterStyle = flyoutStyle;
 
                 var adminItem = new MenuFlyoutItem
                 {
@@ -1173,7 +1412,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private readonly AppItem _placeholderItem = new AppItem { Name = "", FallbackGlyph = "" };
 
         private FrameworkElement? _dragGhost;
-        private Windows.Foundation.Point _dragStartPoint;
+        private Point _dragStartPoint;
         private bool _isAppDragging = false;
 
         private void AppCard_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -1208,28 +1447,28 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 _draggedAppItem = app;
                 _sourceFolderItem = null;
-                _sourceCategory = _sourceGrid.DataContext as AppCategory;
+
+                var parentCat = _sourceGrid.DataContext as AppCategory;
+                _sourceCategory = (parentCat != null && parentCat.IsTabbed && parentCat.Tabs.Count > parentCat.SelectedTabIndex)
+                                  ? parentCat.Tabs[parentCat.SelectedTabIndex]
+                                  : parentCat;
 
                 if (_sourceCategory == null)
                 {
-                    _sourceCategory = Pages.SelectMany(p => p.PinnedCategories).FirstOrDefault(c => c.Apps.Contains(app));
+                    _sourceCategory = GetAllCategoriesFlattened().FirstOrDefault(c => c.Apps.Contains(app));
 
                     if (_sourceCategory == null)
                     {
-                        foreach (var page in Pages)
+                        foreach (var cat in GetAllCategoriesFlattened())
                         {
-                            foreach (var cat in page.PinnedCategories)
+                            foreach (var pinnedApp in cat.Apps)
                             {
-                                foreach (var pinnedApp in cat.Apps)
+                                if (pinnedApp.FolderApps.Contains(app))
                                 {
-                                    if (pinnedApp.FolderApps.Contains(app))
-                                    {
-                                        _sourceFolderItem = pinnedApp;
-                                        _sourceCategory = cat;
-                                        break;
-                                    }
+                                    _sourceFolderItem = pinnedApp;
+                                    _sourceCategory = cat;
+                                    break;
                                 }
-                                if (_sourceFolderItem != null) break;
                             }
                             if (_sourceFolderItem != null) break;
                         }
@@ -1278,7 +1517,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (targetGrid != null && targetCategory != null)
                 {
-                    var currentCategory = Pages.SelectMany(p => p.PinnedCategories).FirstOrDefault(c => c.Apps.Contains(_placeholderItem)) ?? _sourceCategory;
+                    var currentCategory = GetAllCategoriesFlattened().FirstOrDefault(c => c.Apps.Contains(_placeholderItem)) ?? _sourceCategory;
 
                     if (mergeTarget == null)
                     {
@@ -1318,7 +1557,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         var pt = e.GetCurrentPoint(MenuContainer).Position;
                         var (targetGrid, targetCategory, targetIndex, mergeTarget) = GetHoveredDropTarget(pt);
 
-                        var placeholderCategory = Pages.SelectMany(p => p.PinnedCategories).FirstOrDefault(c => c.Apps.Contains(_placeholderItem));
+                        var placeholderCategory = GetAllCategoriesFlattened().FirstOrDefault(c => c.Apps.Contains(_placeholderItem));
 
                         if (mergeTarget != null && targetCategory != null && mergeTarget != _draggedAppItem)
                         {
@@ -1373,32 +1612,26 @@ namespace EvolveOS_ShellEnhancer.Views
                             if (_sourceFolderItem.FolderApps.Count == 1)
                             {
                                 var remainingApp = _sourceFolderItem.FolderApps[0];
-                                foreach (var page in Pages)
+                                foreach (var cat in GetAllCategoriesFlattened())
                                 {
-                                    foreach (var cat in page.PinnedCategories)
+                                    int fIdx = cat.Apps.IndexOf(_sourceFolderItem);
+                                    if (fIdx != -1)
                                     {
-                                        int fIdx = cat.Apps.IndexOf(_sourceFolderItem);
-                                        if (fIdx != -1)
-                                        {
-                                            cat.Apps[fIdx] = remainingApp;
-                                            break;
-                                        }
+                                        cat.Apps[fIdx] = remainingApp;
+                                        break;
                                     }
                                 }
                             }
                             else if (_sourceFolderItem.FolderApps.Count == 0)
                             {
-                                foreach (var page in Pages)
+                                foreach (var cat in GetAllCategoriesFlattened())
                                 {
-                                    foreach (var cat in page.PinnedCategories)
-                                    {
-                                        cat.Apps.Remove(_sourceFolderItem);
-                                    }
+                                    cat.Apps.Remove(_sourceFolderItem);
                                 }
                             }
                         }
 
-                        ViewModel.SaveStartMenuPins();
+                        SafeSavePins();
                     }
                     else
                     {
@@ -1432,6 +1665,8 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             foreach (var grid in GetAllCategoryGrids())
             {
+                if (grid.Visibility != Visibility.Visible) continue;
+
                 var transform = grid.TransformToVisual(MenuContainer);
                 var bounds = transform.TransformBounds(new Rect(0, 0, grid.ActualWidth, grid.ActualHeight));
 
@@ -1477,6 +1712,8 @@ namespace EvolveOS_ShellEnhancer.Views
                         if (grid.Name == "ProductivityAppsGrid" && PinnedCategories.Count > 0) cat = PinnedCategories[0];
                         else if (grid.Name == "SecondaryAppsGrid" && PinnedCategories.Count > 1) cat = PinnedCategories[1];
                     }
+
+                    cat = GetEffectiveTargetCategory(cat!);
 
                     return (grid, cat, targetIndex, mergeTarget);
                 }
@@ -1542,23 +1779,100 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void AppGrid_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
         {
-            // The StartMenuWrapPanel handles 2D spatial arrangement natively
+            if (sender is GridView gridView)
+            {
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
+                {
+                    EvaluateChevronVisibility(gridView, gridView.ActualWidth);
+                });
+            }
+        }
+
+        private void EvaluateChevronVisibility(GridView gridView, double width)
+        {
+            if (width <= 0) width = gridView.ActualWidth;
+            if (width <= 0) return;
+
+            if (gridView.Parent is StackPanel panel)
+            {
+                int gridIndex = panel.Children.IndexOf(gridView);
+
+                if (gridIndex == 1 && panel.Children[0] is Grid headerGrid && headerGrid.Children.Count > 1 && headerGrid.Children[1] is ToggleButton chevronBtn)
+                {
+                    int itemsPerRow = (int)(width / 88.0);
+                    if (itemsPerRow < 1) itemsPerRow = 6;
+
+                    bool largeFolderOnFirstRow = false;
+                    int currentSlot = 0;
+
+                    foreach (var item in gridView.Items)
+                    {
+                        bool isLarge = (item is AppItem app && app.ExecutablePath == "PINNED_FOLDER" && app.FolderSize == 2);
+                        int span = isLarge ? 2 : 1;
+
+                        if (currentSlot + span > itemsPerRow)
+                        {
+                            break;
+                        }
+
+                        if (isLarge)
+                        {
+                            largeFolderOnFirstRow = true;
+                            break;
+                        }
+
+                        currentSlot += span;
+                    }
+
+                    double baseHeight = largeFolderOnFirstRow ? 316.0 : 104.0;
+                    double fullHeight = baseHeight;
+
+                    if (gridView.ItemsPanelRoot is Panel panelRoot)
+                    {
+                        panelRoot.Measure(new Size(width, double.PositiveInfinity));
+                        if (panelRoot.DesiredSize.Height > 0)
+                        {
+                            fullHeight = panelRoot.DesiredSize.Height;
+                        }
+                    }
+
+                    gridView.Tag = new double[] { baseHeight, fullHeight };
+
+                    if (fullHeight > baseHeight + 5)
+                    {
+                        chevronBtn.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        chevronBtn.Visibility = Visibility.Collapsed;
+                        if (chevronBtn.IsChecked == true) chevronBtn.IsChecked = false;
+                    }
+
+                    if (chevronBtn.IsChecked != true)
+                    {
+                        gridView.ClearValue(FrameworkElement.HeightProperty);
+                        gridView.MaxHeight = baseHeight;
+                    }
+                }
+                else if (gridIndex == 3)
+                {
+                    gridView.ClearValue(FrameworkElement.HeightProperty);
+                    gridView.ClearValue(FrameworkElement.MaxHeightProperty);
+                }
+            }
         }
 
         public void SetGlobalFolderSize(int newSize)
         {
             SettingsEngine.Shell_StartMenuFolderSize = newSize;
 
-            foreach (var page in ViewModel.Pages)
+            foreach (var cat in GetAllCategoriesFlattened())
             {
-                foreach (var category in page.PinnedCategories)
+                foreach (var app in cat.Apps)
                 {
-                    foreach (var app in category.Apps)
+                    if (app.ExecutablePath == "PINNED_FOLDER")
                     {
-                        if (app.ExecutablePath == "PINNED_FOLDER")
-                        {
-                            app.FolderSize = newSize;
-                        }
+                        app.FolderSize = newSize;
                     }
                 }
             }
@@ -1572,7 +1886,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
             }
 
-            ViewModel.SaveStartMenuPins();
+            SafeSavePins();
         }
 
         private IEnumerable<GridView> GetAllCategoryGrids()
@@ -1613,19 +1927,6 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        private T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
-        {
-            if (parent == null) return null;
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T t) return t;
-                var result = FindVisualChild<T>(child);
-                if (result != null) return result;
-            }
-            return null;
-        }
-
         private T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
         {
             if (child == null) return null;
@@ -1663,7 +1964,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void OverlayFolderNameBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Enter)
+            if (e.Key == VirtualKey.Enter)
             {
                 SaveOverlayFolderName();
 
@@ -1683,7 +1984,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _activeFolderApp.Name = OverlayFolderNameBox.Text;
 
-                ViewModel.SaveStartMenuPins();
+                SafeSavePins();
             }
         }
 
@@ -1698,7 +1999,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
             _isFolderWindowOpen = false;
             _activeFolderApp = null;
-            ViewModel.SaveStartMenuPins();
+            SafeSavePins();
 
             await Task.Delay(150);
 
@@ -1744,7 +2045,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
                 else
                 {
-                    ViewModel.SaveStartMenuPins();
+                    SafeSavePins();
                 }
             }
         }
@@ -1957,7 +2258,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Failed to load folder contents: {ex.Message}");
+                            Debug.WriteLine($"Failed to load folder contents: {ex.Message}");
                         }
                     }
 
@@ -2033,7 +2334,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (!string.IsNullOrEmpty(dir))
                     Process.Start(new ProcessStartInfo("explorer.exe", dir) { UseShellExecute = true });
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); }
+            catch (Exception ex) { Debug.WriteLine(ex.Message); }
             HideMenu();
         }
 
@@ -2106,6 +2407,80 @@ namespace EvolveOS_ShellEnhancer.Views
                 HideMenu();
             }
             catch (Exception ex) { Debug.WriteLine(ex.Message); }
+        }
+
+        private IEnumerable<AppCategory> GetAllCategoriesFlattened()
+        {
+            return Pages.SelectMany(p => p.PinnedCategories)
+                        .SelectMany(c => c.IsTabbed ? (IEnumerable<AppCategory>)c.Tabs : new[] { c });
+        }
+
+        private AppCategory? GetEffectiveTargetCategory(AppCategory? parentCategory)
+        {
+            if (parentCategory == null) return null;
+
+            if (parentCategory.IsTabbed)
+            {
+                if (parentCategory.Tabs.Count == 0)
+                {
+                    parentCategory.Tabs.Add(new AppCategory
+                    {
+                        Name = LocalizationService.Instance.GetString("StartMenu_NewTab") ?? "Tab 1"
+                    });
+                }
+
+                int index = Math.Clamp(parentCategory.SelectedTabIndex, 0, parentCategory.Tabs.Count - 1);
+                return parentCategory.Tabs[index];
+            }
+
+            return parentCategory;
+        }
+
+        private void SafeSavePins()
+        {
+            foreach (var page in Pages)
+            {
+                foreach (var cat in page.PinnedCategories)
+                {
+                    if (cat.IsTabbed)
+                    {
+                        cat.Apps.Clear();
+                        cat.Apps.Add(new AppItem { Name = "TAB_FLAG", ExecutablePath = "TABBED_GROUP_FLAG", FallbackGlyph = "\xE8D5", IsUwp = false });
+
+                        foreach (var tab in cat.Tabs)
+                        {
+                            var tabStorage = new AppItem
+                            {
+                                Name = string.IsNullOrWhiteSpace(tab.Name) ? "Tab" : tab.Name,
+                                ExecutablePath = "TAB_DATA",
+                                FallbackGlyph = "\xE8D5",
+                                IsUwp = false
+                            };
+
+                            foreach (var app in tab.Apps)
+                            {
+                                tabStorage.FolderApps.Add(app);
+                            }
+                            cat.Apps.Add(tabStorage);
+                        }
+                    }
+                }
+            }
+
+            ViewModel.SaveStartMenuPins();
+
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+            {
+                foreach (var grid in GetAllCategoryGrids())
+                {
+                    if (grid.ItemsPanelRoot is Controls.StartMenuWrapPanel wrapPanel)
+                    {
+                        wrapPanel.InvalidateMeasure();
+                        wrapPanel.InvalidateArrange();
+                    }
+                    EvaluateChevronVisibility(grid, grid.ActualWidth);
+                }
+            });
         }
 
         #endregion

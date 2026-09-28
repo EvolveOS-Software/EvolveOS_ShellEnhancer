@@ -165,60 +165,50 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                         string savedPins = SettingsEngine.StartMenuPinnedApps;
                         if (!string.IsNullOrWhiteSpace(savedPins))
                         {
-                            var pageChunks = savedPins.Split(new[] { "---PAGE---" }, StringSplitOptions.RemoveEmptyEntries);
+                            var pageChunks = savedPins.Split(new[] { "---SUPERPAGE---" }, StringSplitOptions.RemoveEmptyEntries);
+
                             foreach (var pageChunk in pageChunks)
                             {
                                 var page = new StartMenuPage { PageIndex = Pages.Count };
-                                var categories = pageChunk.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                                var categories = pageChunk.Split(new[] { "---PAGE---" }, StringSplitOptions.RemoveEmptyEntries);
 
                                 foreach (var catStr in categories)
                                 {
                                     var parts = catStr.Split('|');
                                     if (parts.Length == 2)
                                     {
-                                        var cat = new AppCategory { Name = parts[0] };
-                                        var pinNames = parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
+                                        string groupName = parts[0];
 
-                                        foreach (var name in pinNames)
+                                        if (groupName.StartsWith("[TABBED_GROUP]"))
                                         {
-                                            if (name.StartsWith("[PINNED_FOLDER]"))
+                                            var cat = new AppCategory
                                             {
-                                                var separatorIndex = name.IndexOf("::");
-                                                string folderName = "Map";
-                                                string contents = "";
+                                                Name = groupName.Substring(14),
+                                                IsTabbed = true,
+                                                Tabs = new ObservableCollection<AppCategory>()
+                                            };
 
-                                                if (separatorIndex != -1)
-                                                {
-                                                    folderName = name.Substring(15, separatorIndex - 15);
-                                                    contents = name.Substring(separatorIndex + 2);
-                                                }
-
-                                                var folderItem = new AppItem
-                                                {
-                                                    Name = string.IsNullOrWhiteSpace(folderName) ? "Map" : folderName,
-                                                    ExecutablePath = "PINNED_FOLDER",
-                                                    FallbackGlyph = "",
-                                                    IsUwp = false
-                                                };
-
-                                                if (!string.IsNullOrEmpty(contents))
-                                                {
-                                                    var innerApps = contents.Split('~', StringSplitOptions.RemoveEmptyEntries);
-                                                    foreach (var innerName in innerApps)
-                                                    {
-                                                        var innerMatch = fetchedAllApps.FirstOrDefault(a => a.Name == innerName);
-                                                        if (innerMatch != null) folderItem.FolderApps.Add(innerMatch);
-                                                    }
-                                                }
-                                                cat.Apps.Add(folderItem);
-                                            }
-                                            else
+                                            var tabStrings = parts[1].Split(';', StringSplitOptions.RemoveEmptyEntries);
+                                            foreach (var tabStr in tabStrings)
                                             {
-                                                var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
-                                                if (match != null) cat.Apps.Add(match);
+                                                var tabParts = tabStr.Split(':');
+                                                if (tabParts.Length == 2)
+                                                {
+                                                    var newTab = new AppCategory { Name = tabParts[0] };
+                                                    var pinNames = tabParts[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
+                                                    PopulateApps(newTab, pinNames, fetchedAllApps);
+                                                    cat.Tabs.Add(newTab);
+                                                }
                                             }
+                                            page.PinnedCategories.Add(cat);
                                         }
-                                        page.PinnedCategories.Add(cat);
+                                        else
+                                        {
+                                            var cat = new AppCategory { Name = groupName };
+                                            var pinNames = parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
+                                            PopulateApps(cat, pinNames, fetchedAllApps);
+                                            page.PinnedCategories.Add(cat);
+                                        }
                                     }
                                 }
 
@@ -252,6 +242,49 @@ namespace EvolveOS_ShellEnhancer.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"Failed to load apps: {ex.Message}");
+            }
+        }
+
+        private void PopulateApps(AppCategory cat, string[] pinNames, List<AppItem> fetchedAllApps)
+        {
+            foreach (var name in pinNames)
+            {
+                if (name.StartsWith("[PINNED_FOLDER]"))
+                {
+                    var separatorIndex = name.IndexOf("::");
+                    string folderName = "Map";
+                    string contents = "";
+
+                    if (separatorIndex != -1)
+                    {
+                        folderName = name.Substring(15, separatorIndex - 15);
+                        contents = name.Substring(separatorIndex + 2);
+                    }
+
+                    var folderItem = new AppItem
+                    {
+                        Name = string.IsNullOrWhiteSpace(folderName) ? "Map" : folderName,
+                        ExecutablePath = "PINNED_FOLDER",
+                        FallbackGlyph = "",
+                        IsUwp = false
+                    };
+
+                    if (!string.IsNullOrEmpty(contents))
+                    {
+                        var innerApps = contents.Split('~', StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var innerName in innerApps)
+                        {
+                            var innerMatch = fetchedAllApps.FirstOrDefault(a => a.Name == innerName);
+                            if (innerMatch != null) folderItem.FolderApps.Add(innerMatch);
+                        }
+                    }
+                    cat.Apps.Add(folderItem);
+                }
+                else
+                {
+                    var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
+                    if (match != null) cat.Apps.Add(match);
+                }
             }
         }
 
@@ -386,27 +419,49 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                 var categoryStrings = new List<string>();
                 foreach (var cat in page.PinnedCategories)
                 {
-                    var appStrings = new List<string>();
-                    foreach (var app in cat.Apps)
+                    if (cat.IsTabbed && cat.Tabs != null)
                     {
-                        if (app == null) continue;
+                        string baseName = string.IsNullOrWhiteSpace(cat.Name) ? "Tabbed Group" : cat.Name;
+                        var tabStrings = new List<string>();
 
-                        if (app.ExecutablePath == "PINNED_FOLDER")
+                        foreach (var tab in cat.Tabs)
                         {
-                            var validApps = app.FolderApps?.Where(a => a != null && !string.IsNullOrWhiteSpace(a.Name)).Select(a => a.Name) ?? new List<string>();
-                            var insideApps = string.Join("~", validApps);
-                            appStrings.Add($"[PINNED_FOLDER]{app.Name}::{insideApps}");
+                            string tabName = string.IsNullOrWhiteSpace(tab.Name) ? "Tab" : tab.Name;
+                            var tabApps = SerializeAppList(tab.Apps);
+                            tabStrings.Add($"{tabName}:{string.Join(",", tabApps)}");
                         }
-                        else
-                        {
-                            if (!string.IsNullOrWhiteSpace(app.Name)) appStrings.Add(app.Name);
-                        }
+                        categoryStrings.Add($"[TABBED_GROUP]{baseName}|{string.Join(";", tabStrings)}");
                     }
-                    categoryStrings.Add($"{cat.Name}|{string.Join(",", appStrings)}");
+                    else
+                    {
+                        var appStrings = SerializeAppList(cat.Apps);
+                        categoryStrings.Add($"{cat.Name}|{string.Join(",", appStrings)}");
+                    }
                 }
-                pageStrings.Add(string.Join(";", categoryStrings));
+                pageStrings.Add(string.Join("---PAGE---", categoryStrings));
             }
-            SettingsEngine.StartMenuPinnedApps = string.Join("---PAGE---", pageStrings);
+            SettingsEngine.StartMenuPinnedApps = string.Join("---SUPERPAGE---", pageStrings);
+        }
+
+        private List<string> SerializeAppList(IEnumerable<AppItem> apps)
+        {
+            var appStrings = new List<string>();
+            foreach (var app in apps)
+            {
+                if (app == null) continue;
+
+                if (app.ExecutablePath == "PINNED_FOLDER")
+                {
+                    var validApps = app.FolderApps?.Where(a => a != null && !string.IsNullOrWhiteSpace(a.Name)).Select(a => a.Name) ?? new List<string>();
+                    var insideApps = string.Join("~", validApps);
+                    appStrings.Add($"[PINNED_FOLDER]{app.Name}::{insideApps}");
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(app.Name)) appStrings.Add(app.Name);
+                }
+            }
+            return appStrings;
         }
 
         private string GetTaskbarFolderPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");

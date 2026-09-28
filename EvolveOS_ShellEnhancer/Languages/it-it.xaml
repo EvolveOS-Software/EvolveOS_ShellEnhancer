@@ -97,15 +97,40 @@
     <sys:String x:Key="StartMenu_RemoveList">Rimuovi dall'elenco</sys:String>
     <sys:String x:Key="StartMenu_DefaultFolderName">Cartella</sys:String>
     <sys:String x:Key="StartMenu_Less">Meno</sys:String>
-    <sys:String x:Key="StartMenu_AddGroup">Aggiungi gruppo</sys:String>
-    <sys:String x:Key="StartMenu_AddPage">Aggiungi pagina</sys:String>
-    <sys:String x:Key="StartMenu_NewGroup">Nuovo gruppo</sys:String>
-    <sys:String x:Key="StartMenu_PinnedCategory">Aggiunto</sys:String>
-    <sys:String x:Key="StartMenu_DefaultAppName">App</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Cerca '{0}' nell'intero PC</sys:String>
     <sys:String x:Key="StartMenu_SearchWebPrefix">Cerca '{0}' nel Web</sys:String>
+
+    <!-- Context Menu Options -->
+    <sys:String x:Key="StartMenu_Rename">Rinomina</sys:String>
+    <sys:String x:Key="StartMenu_New">Nuovo</sys:String>
+    <sys:String x:Key="StartMenu_AddGroup">Aggiungi gruppo</sys:String>
+    <sys:String x:Key="StartMenu_AddTabbedGroup">Aggiungi gruppo a schede</sys:String>
+    <sys:String x:Key="StartMenu_AddPage">Aggiungi pagina</sys:String>
+    <sys:String x:Key="StartMenu_PinFile">Aggiungi file</sys:String>
+    <sys:String x:Key="StartMenu_PinFolder">Aggiungi cartella</sys:String>
+    <sys:String x:Key="StartMenu_PinWebSite">Aggiungi sito web</sys:String>
+    <sys:String x:Key="StartMenu_Remove">Rimuovi pagina</sys:String>
+
+    <!-- Dialogs (Rename Page & Pin Website) -->
+    <sys:String x:Key="StartMenu_RenamePage">Rinomina pagina</sys:String>
+    <sys:String x:Key="StartMenu_Save">Salva</sys:String>
+    <sys:String x:Key="StartMenu_Cancel">Annulla</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteName">Nome sito web (es. Google)</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteUrl">URL (es. https://google.com)</sys:String>
+
+    <!-- Default Generated Names -->
+    <sys:String x:Key="StartMenu_NewGroup">Nuovo gruppo</sys:String>
+    <sys:String x:Key="StartMenu_NewTabbedGroup">Nuovo gruppo a schede</sys:String>
+    <sys:String x:Key="StartMenu_NewPage">Nuova pagina</sys:String>
+    <sys:String x:Key="StartMenu_DefaultFolderName">Cartella</sys:String>
+    <sys:String x:Key="StartMenu_DefaultAppName">App</sys:String>
+    <sys:String x:Key="StartMenu_PinnedCategory">Aggiunti</sys:String>
+
+    <!-- Tabbed Group Controls -->
+    <sys:String x:Key="StartMenu_NewTab">Nuova scheda</sys:String>
+    <sys:String x:Key="StartMenu_RenameTab">Rinomina scheda</sys:String>
 
     <!-- endregion StartMenu -->
 

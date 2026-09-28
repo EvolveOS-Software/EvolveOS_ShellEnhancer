@@ -97,15 +97,40 @@
     <sys:String x:Key="StartMenu_RemoveList">Uit lijst verwijderen</sys:String>
     <sys:String x:Key="StartMenu_DefaultFolderName">Map</sys:String>
     <sys:String x:Key="StartMenu_Less">Minder</sys:String>
-    <sys:String x:Key="StartMenu_AddGroup">Groep toevoegen</sys:String>
-    <sys:String x:Key="StartMenu_AddPage">Pagina toevoegen</sys:String>
-    <sys:String x:Key="StartMenu_NewGroup">Nieuwe groep</sys:String>
-    <sys:String x:Key="StartMenu_PinnedCategory">Vastgemaakt</sys:String>
-    <sys:String x:Key="StartMenu_DefaultAppName">App</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Hele pc doorzoeken op '{0}'</sys:String>
     <sys:String x:Key="StartMenu_SearchWebPrefix">Op het web zoeken naar '{0}'</sys:String>
+
+    <!-- Context Menu Options -->
+    <sys:String x:Key="StartMenu_Rename">Naam wijzigen</sys:String>
+    <sys:String x:Key="StartMenu_New">Nieuw</sys:String>
+    <sys:String x:Key="StartMenu_AddGroup">Groep toevoegen</sys:String>
+    <sys:String x:Key="StartMenu_AddTabbedGroup">Tabbladgroep toevoegen</sys:String>
+    <sys:String x:Key="StartMenu_AddPage">Pagina toevoegen</sys:String>
+    <sys:String x:Key="StartMenu_PinFile">Bestand vastmaken</sys:String>
+    <sys:String x:Key="StartMenu_PinFolder">Map vastmaken</sys:String>
+    <sys:String x:Key="StartMenu_PinWebSite">Website vastmaken</sys:String>
+    <sys:String x:Key="StartMenu_Remove">Pagina verwijderen</sys:String>
+
+    <!-- Dialogs (Rename Page & Pin Website) -->
+    <sys:String x:Key="StartMenu_RenamePage">Pagina hernoemen</sys:String>
+    <sys:String x:Key="StartMenu_Save">Opslaan</sys:String>
+    <sys:String x:Key="StartMenu_Cancel">Annuleren</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteName">Websitenaam (bijv. Google)</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteUrl">URL (bijv. https://google.com)</sys:String>
+
+    <!-- Default Generated Names -->
+    <sys:String x:Key="StartMenu_NewGroup">Nieuwe groep</sys:String>
+    <sys:String x:Key="StartMenu_NewTabbedGroup">Nieuwe tabbladgroep</sys:String>
+    <sys:String x:Key="StartMenu_NewPage">Nieuwe pagina</sys:String>
+    <sys:String x:Key="StartMenu_DefaultFolderName">Map</sys:String>
+    <sys:String x:Key="StartMenu_DefaultAppName">App</sys:String>
+    <sys:String x:Key="StartMenu_PinnedCategory">Vastgemaakt</sys:String>
+
+    <!-- Tabbed Group Controls -->
+    <sys:String x:Key="StartMenu_NewTab">Nieuw tabblad</sys:String>
+    <sys:String x:Key="StartMenu_RenameTab">Tabblad hernoemen</sys:String>
 
     <!-- endregion StartMenu -->
 

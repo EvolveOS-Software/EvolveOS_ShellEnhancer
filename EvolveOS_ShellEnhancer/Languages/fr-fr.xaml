@@ -98,15 +98,40 @@
     <sys:String x:Key="StartMenu_RemoveList">Supprimer de la liste</sys:String>
     <sys:String x:Key="StartMenu_DefaultFolderName">Dossier</sys:String>
     <sys:String x:Key="StartMenu_Less">Moins</sys:String>
-    <sys:String x:Key="StartMenu_AddGroup">Ajouter un groupe</sys:String>
-    <sys:String x:Key="StartMenu_AddPage">Ajouter une page</sys:String>
-    <sys:String x:Key="StartMenu_NewGroup">Nouveau groupe</sys:String>
-    <sys:String x:Key="StartMenu_PinnedCategory">Épinglé</sys:String>
-    <sys:String x:Key="StartMenu_DefaultAppName">Application</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Rechercher '{0}' sur tout le PC</sys:String>
     <sys:String x:Key="StartMenu_SearchWebPrefix">Rechercher '{0}' sur le Web</sys:String>
+
+    <!-- Context Menu Options -->
+    <sys:String x:Key="StartMenu_Rename">Renommer</sys:String>
+    <sys:String x:Key="StartMenu_New">Nouveau</sys:String>
+    <sys:String x:Key="StartMenu_AddGroup">Ajouter un groupe</sys:String>
+    <sys:String x:Key="StartMenu_AddTabbedGroup">Ajouter un groupe à onglets</sys:String>
+    <sys:String x:Key="StartMenu_AddPage">Ajouter une page</sys:String>
+    <sys:String x:Key="StartMenu_PinFile">Épingler le fichier</sys:String>
+    <sys:String x:Key="StartMenu_PinFolder">Épingler le dossier</sys:String>
+    <sys:String x:Key="StartMenu_PinWebSite">Épingler le site Web</sys:String>
+    <sys:String x:Key="StartMenu_Remove">Supprimer la page</sys:String>
+
+    <!-- Dialogs (Rename Page & Pin Website) -->
+    <sys:String x:Key="StartMenu_RenamePage">Renommer la page</sys:String>
+    <sys:String x:Key="StartMenu_Save">Enregistrer</sys:String>
+    <sys:String x:Key="StartMenu_Cancel">Annuler</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteName">Nom du site Web (ex. Google)</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteUrl">URL (ex. https://google.com)</sys:String>
+
+    <!-- Default Generated Names -->
+    <sys:String x:Key="StartMenu_NewGroup">Nouveau groupe</sys:String>
+    <sys:String x:Key="StartMenu_NewTabbedGroup">Nouveau groupe à onglets</sys:String>
+    <sys:String x:Key="StartMenu_NewPage">Nouvelle page</sys:String>
+    <sys:String x:Key="StartMenu_DefaultFolderName">Dossier</sys:String>
+    <sys:String x:Key="StartMenu_DefaultAppName">Application</sys:String>
+    <sys:String x:Key="StartMenu_PinnedCategory">Épinglé</sys:String>
+
+    <!-- Tabbed Group Controls -->
+    <sys:String x:Key="StartMenu_NewTab">Nouvel onglet</sys:String>
+    <sys:String x:Key="StartMenu_RenameTab">Renommer l'onglet</sys:String>
 
     <!-- endregion StartMenu -->
 

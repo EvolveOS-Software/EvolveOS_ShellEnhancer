@@ -15,6 +15,16 @@
     <Grid>
 
         <Grid.Resources>
+
+            <Style TargetType="MenuFlyoutPresenter">
+                <Setter Property="Background" Value="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}" />
+                <Setter Property="SystemBackdrop" Value="{x:Null}" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="BorderBrush" Value="{ThemeResource SurfaceStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="4,4,4,4" />
+            </Style>
+
             <DataTemplate x:Key="FlyoutFolderItemTemplate" x:DataType="models:AppItem">
                 <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent"
                             RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed"
@@ -123,8 +133,8 @@
                                                             <DataTemplate x:DataType="models:AppCategory">
                                                                 <StackPanel Margin="0,0,0,16">
 
-                                                                    <!-- Category Header with Chevron -->
-                                                                    <Grid Margin="0,0,0,8">
+                                                                    <!-- 1. STANDARD CATEGORY HEADER -->
+                                                                    <Grid Margin="0,0,0,8" Visibility="{x:Bind StandardVisibility, Mode=OneWay}">
                                                                         <Grid.ColumnDefinitions>
                                                                             <ColumnDefinition Width="*"/>
                                                                             <ColumnDefinition Width="Auto"/>
@@ -155,7 +165,6 @@
                                                                         <ToggleButton Grid.Column="1" Background="Transparent" BorderThickness="0"
                                                                                       Checked="CategoryChevron_Checked" Unchecked="CategoryChevron_Unchecked"
                                                                                       Visibility="Collapsed" Padding="8,6" CornerRadius="4">
-
                                                                             <ToggleButton.Resources>
                                                                                 <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="Transparent" />
                                                                                 <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="Transparent" />
@@ -164,7 +173,6 @@
                                                                                 <StaticResource x:Key="ToggleButtonForegroundCheckedPointerOver" ResourceKey="TextFillColorPrimaryBrush" />
                                                                                 <StaticResource x:Key="ToggleButtonForegroundCheckedPressed" ResourceKey="TextFillColorSecondaryBrush" />
                                                                             </ToggleButton.Resources>
-
                                                                             <FontIcon Glyph="&#xE70D;" FontSize="11" RenderTransformOrigin="0.5,0.5">
                                                                                 <FontIcon.RenderTransform>
                                                                                     <RotateTransform Angle="0" />
@@ -173,14 +181,13 @@
                                                                         </ToggleButton>
                                                                     </Grid>
 
-                                                                    <!-- PINNED APPS GRID -->
-                                                                    <GridView ItemsSource="{x:Bind Apps}" SelectionMode="Single" IsItemClickEnabled="True"
+                                                                    <!-- 1. STANDARD APPS GRID -->
+                                                                    <GridView ItemsSource="{x:Bind Apps}" Visibility="{x:Bind StandardVisibility, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True"
                                                                               ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged"
                                                                               ContainerContentChanging="AppGrid_ContainerContentChanging"
                                                                               MaxHeight="104" SizeChanged="CategoryGrid_SizeChanged"
                                                                               ScrollViewer.VerticalScrollMode="Disabled"
                                                                               ScrollViewer.VerticalScrollBarVisibility="Hidden">
-
                                                                         <GridView.Resources>
                                                                             <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
                                                                             <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
@@ -188,13 +195,11 @@
                                                                             <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
                                                                             <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed" Color="Transparent"/>
                                                                         </GridView.Resources>
-
                                                                         <GridView.ItemsPanel>
                                                                             <ItemsPanelTemplate>
                                                                                 <controls:StartMenuWrapPanel ItemWidth="88" ItemHeight="104" />
                                                                             </ItemsPanelTemplate>
                                                                         </GridView.ItemsPanel>
-
                                                                         <GridView.ItemContainerStyle>
                                                                             <Style TargetType="GridViewItem">
                                                                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -203,39 +208,23 @@
                                                                                 <Setter Property="Padding" Value="0"/>
                                                                             </Style>
                                                                         </GridView.ItemContainerStyle>
-
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" 
-                                                                                            Width="{x:Bind CardWidth, Mode=OneWay}" 
-                                                                                            Height="{x:Bind CardHeight, Mode=OneWay}" 
-                                                                                            Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent"
-                                                                                            RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed"
-                                                                                            PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Height="{x:Bind CardHeight, Mode=OneWay}" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                                     <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" HorizontalAlignment="Center">
-
                                                                                         <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
                                                                                         <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                             <Image.RenderTransform>
                                                                                                 <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                             </Image.RenderTransform>
                                                                                         </Image>
-
-                                                                                        <!-- NATIVE WINDOWS 11 SCALABLE FOLDER SQUARE -->
                                                                                         <Border CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
-
-                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}"
-                                                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                                                      SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled"
-                                                                                                      Padding="0">
-
+                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
                                                                                                 <GridView.ItemsPanel>
                                                                                                     <ItemsPanelTemplate>
                                                                                                         <VariableSizedWrapGrid MaximumRowsOrColumns="2" Orientation="Horizontal" />
                                                                                                     </ItemsPanelTemplate>
                                                                                                 </GridView.ItemsPanel>
-
                                                                                                 <GridView.ItemContainerStyle>
                                                                                                     <Style TargetType="GridViewItem">
                                                                                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -246,7 +235,6 @@
                                                                                                         <Setter Property="MinWidth" Value="0"/>
                                                                                                     </Style>
                                                                                                 </GridView.ItemContainerStyle>
-
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
                                                                                                         <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
@@ -261,13 +249,130 @@
                                                                                                 </GridView.ItemTemplate>
                                                                                             </GridView>
                                                                                         </Border>
-
                                                                                     </Grid>
                                                                                     <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
                                                                         </GridView.ItemTemplate>
                                                                     </GridView>
+
+                                                                    <!-- 2. TABBED CATEGORY HEADER -->
+                                                                    <Grid Margin="0,0,0,8" Visibility="{x:Bind TabbedVisibility, Mode=OneWay}">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <ListView Grid.Column="0" ItemsSource="{x:Bind Tabs}" SelectedIndex="{x:Bind SelectedTabIndex, Mode=TwoWay}" SelectionMode="Single" ScrollViewer.HorizontalScrollMode="Disabled" Background="Transparent" BorderThickness="0" Margin="0" Padding="0">
+                                                                            <ListView.ItemsPanel>
+                                                                                <ItemsPanelTemplate>
+                                                                                    <StackPanel Orientation="Horizontal" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="4" Spacing="4"/>
+                                                                                </ItemsPanelTemplate>
+                                                                            </ListView.ItemsPanel>
+                                                                            <ListView.ItemContainerStyle>
+                                                                                <Style TargetType="ListViewItem">
+                                                                                    <Setter Property="Padding" Value="16,6"/>
+                                                                                    <Setter Property="MinHeight" Value="32"/>
+                                                                                    <Setter Property="CornerRadius" Value="6"/>
+                                                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                                                    <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                                </Style>
+                                                                            </ListView.ItemContainerStyle>
+                                                                            <ListView.ItemTemplate>
+                                                                                <DataTemplate x:DataType="models:AppCategory">
+                                                                                    <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center">
+                                                                                        <TextBlock.ContextFlyout>
+                                                                                            <MenuFlyout>
+                                                                                                <MenuFlyoutItem Text="Rename Tab" Click="RenameTab_Click" Tag="{x:Bind}" />
+                                                                                                <MenuFlyoutItem Text="Delete Tab" Click="DeleteTab_Click" Tag="{x:Bind}" />
+                                                                                                <MenuFlyoutSeparator/>
+                                                                                                <MenuFlyoutItem Text="Delete Entire Group" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red"/>
+                                                                                            </MenuFlyout>
+                                                                                        </TextBlock.ContextFlyout>
+                                                                                    </TextBlock>
+                                                                                </DataTemplate>
+                                                                            </ListView.ItemTemplate>
+                                                                        </ListView>
+
+                                                                        <Button Grid.Column="1" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="8,6" Margin="8,0,0,0" ToolTipService.ToolTip="Add Tab" Click="AddTab_Click" Tag="{x:Bind}">
+                                                                            <FontIcon Glyph="&#xE710;" FontSize="12"/>
+                                                                        </Button>
+                                                                    </Grid>
+
+                                                                    <!-- 2. TABBED APPS GRID -->
+                                                                    <GridView ItemsSource="{x:Bind SelectedTabApps, Mode=OneWay}" Visibility="{x:Bind TabbedVisibility, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True"
+                                                                              ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged"
+                                                                              ContainerContentChanging="AppGrid_ContainerContentChanging"
+                                                                              MaxHeight="220" ScrollViewer.VerticalScrollMode="Disabled"
+                                                                              ScrollViewer.VerticalScrollBarVisibility="Hidden">
+                                                                        <GridView.Resources>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundSelected" Color="Transparent"/>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                                                        </GridView.Resources>
+                                                                        <GridView.ItemsPanel>
+                                                                            <ItemsPanelTemplate>
+                                                                                <controls:StartMenuWrapPanel ItemWidth="88" ItemHeight="104" />
+                                                                            </ItemsPanelTemplate>
+                                                                        </GridView.ItemsPanel>
+                                                                        <GridView.ItemContainerStyle>
+                                                                            <Style TargetType="GridViewItem">
+                                                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                                                                <Setter Property="Margin" Value="0"/>
+                                                                                <Setter Property="Padding" Value="0"/>
+                                                                            </Style>
+                                                                        </GridView.ItemContainerStyle>
+                                                                        <GridView.ItemTemplate>
+                                                                            <DataTemplate x:DataType="models:AppItem">
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Height="{x:Bind CardHeight, Mode=OneWay}" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                                    <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" HorizontalAlignment="Center">
+                                                                                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
+                                                                                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                            <Image.RenderTransform>
+                                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                            </Image.RenderTransform>
+                                                                                        </Image>
+                                                                                        <Border CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+                                                                                                <GridView.ItemsPanel>
+                                                                                                    <ItemsPanelTemplate>
+                                                                                                        <VariableSizedWrapGrid MaximumRowsOrColumns="2" Orientation="Horizontal" />
+                                                                                                    </ItemsPanelTemplate>
+                                                                                                </GridView.ItemsPanel>
+                                                                                                <GridView.ItemContainerStyle>
+                                                                                                    <Style TargetType="GridViewItem">
+                                                                                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                                                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                                                        <Setter Property="Margin" Value="0"/>
+                                                                                                        <Setter Property="Padding" Value="0"/>
+                                                                                                        <Setter Property="MinHeight" Value="0"/>
+                                                                                                        <Setter Property="MinWidth" Value="0"/>
+                                                                                                    </Style>
+                                                                                                </GridView.ItemContainerStyle>
+                                                                                                <GridView.ItemTemplate>
+                                                                                                    <DataTemplate x:DataType="models:AppItem">
+                                                                                                        <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
+                                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                <Image.RenderTransform>
+                                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                                </Image.RenderTransform>
+                                                                                                            </Image>
+                                                                                                        </Grid>
+                                                                                                    </DataTemplate>
+                                                                                                </GridView.ItemTemplate>
+                                                                                            </GridView>
+                                                                                        </Border>
+                                                                                    </Grid>
+                                                                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
+                                                                                </StackPanel>
+                                                                            </DataTemplate>
+                                                                        </GridView.ItemTemplate>
+                                                                    </GridView>
+
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
@@ -288,12 +393,22 @@
 
                                                         <GridView ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" RightTapped="RecentItem_RightTapped" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
                                                                   MaxHeight="116" ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden">
+
+                                                            <GridView.Resources>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundSelected" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                                            </GridView.Resources>
+
                                                             <GridView.ItemContainerStyle>
                                                                 <Style TargetType="GridViewItem">
                                                                     <Setter Property="Margin" Value="0,0,6,6"/>
                                                                     <Setter Property="Padding" Value="0"/>
                                                                 </Style>
                                                             </GridView.ItemContainerStyle>
+                                                            
                                                             <GridView.ItemTemplate>
                                                                 <DataTemplate x:DataType="models:AppItem">
                                                                     <Border Tag="{x:Bind}" Width="210" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent"
@@ -673,8 +788,9 @@
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate x:DataType="models:AppCategory">
                                                                 <StackPanel Margin="0,0,0,16">
-                                                                    <!-- Category Header with Chevron -->
-                                                                    <Grid Margin="0,0,0,8">
+
+                                                                    <!-- 1. STANDARD CATEGORY HEADER -->
+                                                                    <Grid Margin="0,0,0,8" Visibility="{x:Bind StandardVisibility, Mode=OneWay}">
                                                                         <Grid.ColumnDefinitions>
                                                                             <ColumnDefinition Width="*"/>
                                                                             <ColumnDefinition Width="Auto"/>
@@ -720,14 +836,13 @@
                                                                         </ToggleButton>
                                                                     </Grid>
 
-                                                                    <!-- PINNED APPS GRID -->
-                                                                    <GridView ItemsSource="{x:Bind Apps}" SelectionMode="Single" IsItemClickEnabled="True"
+                                                                    <!-- 1. STANDARD APPS GRID -->
+                                                                    <GridView ItemsSource="{x:Bind Apps}" Visibility="{x:Bind StandardVisibility, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True"
                                                                               ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged"
                                                                               ContainerContentChanging="AppGrid_ContainerContentChanging"
                                                                               MaxHeight="104" SizeChanged="CategoryGrid_SizeChanged"
                                                                               ScrollViewer.VerticalScrollMode="Disabled"
                                                                               ScrollViewer.VerticalScrollBarVisibility="Hidden">
-
                                                                         <GridView.Resources>
                                                                             <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
                                                                             <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
@@ -735,13 +850,11 @@
                                                                             <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
                                                                             <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed" Color="Transparent"/>
                                                                         </GridView.Resources>
-
                                                                         <GridView.ItemsPanel>
                                                                             <ItemsPanelTemplate>
                                                                                 <controls:StartMenuWrapPanel ItemWidth="88" ItemHeight="104" />
                                                                             </ItemsPanelTemplate>
                                                                         </GridView.ItemsPanel>
-
                                                                         <GridView.ItemContainerStyle>
                                                                             <Style TargetType="GridViewItem">
                                                                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -750,39 +863,23 @@
                                                                                 <Setter Property="Padding" Value="0"/>
                                                                             </Style>
                                                                         </GridView.ItemContainerStyle>
-
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" 
-                                                                                            Width="{x:Bind CardWidth, Mode=OneWay}" 
-                                                                                            Height="{x:Bind CardHeight, Mode=OneWay}" 
-                                                                                            Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent"
-                                                                                            RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed"
-                                                                                            PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Height="{x:Bind CardHeight, Mode=OneWay}" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                                     <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" HorizontalAlignment="Center">
-
                                                                                         <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
                                                                                         <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                             <Image.RenderTransform>
                                                                                                 <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                             </Image.RenderTransform>
                                                                                         </Image>
-
-                                                                                        <!-- NATIVE WINDOWS 11 SCALABLE FOLDER SQUARE -->
                                                                                         <Border CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
-
-                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}"
-                                                                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                                                      SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled"
-                                                                                                      Padding="0">
-
+                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
                                                                                                 <GridView.ItemsPanel>
                                                                                                     <ItemsPanelTemplate>
                                                                                                         <VariableSizedWrapGrid MaximumRowsOrColumns="2" Orientation="Horizontal" />
                                                                                                     </ItemsPanelTemplate>
                                                                                                 </GridView.ItemsPanel>
-
                                                                                                 <GridView.ItemContainerStyle>
                                                                                                     <Style TargetType="GridViewItem">
                                                                                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -793,7 +890,6 @@
                                                                                                         <Setter Property="MinWidth" Value="0"/>
                                                                                                     </Style>
                                                                                                 </GridView.ItemContainerStyle>
-
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
                                                                                                         <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
@@ -808,7 +904,123 @@
                                                                                                 </GridView.ItemTemplate>
                                                                                             </GridView>
                                                                                         </Border>
+                                                                                    </Grid>
+                                                                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
+                                                                                </StackPanel>
+                                                                            </DataTemplate>
+                                                                        </GridView.ItemTemplate>
+                                                                    </GridView>
 
+                                                                    <!-- 2. TABBED CATEGORY HEADER -->
+                                                                    <Grid Margin="0,0,0,8" Visibility="{x:Bind TabbedVisibility, Mode=OneWay}">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <ListView Grid.Column="0" ItemsSource="{x:Bind Tabs}" SelectedIndex="{x:Bind SelectedTabIndex, Mode=TwoWay}" SelectionMode="Single" ScrollViewer.HorizontalScrollMode="Disabled" Background="Transparent" BorderThickness="0" Margin="0" Padding="0">
+                                                                            <ListView.ItemsPanel>
+                                                                                <ItemsPanelTemplate>
+                                                                                    <StackPanel Orientation="Horizontal" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="4" Spacing="4"/>
+                                                                                </ItemsPanelTemplate>
+                                                                            </ListView.ItemsPanel>
+                                                                            <ListView.ItemContainerStyle>
+                                                                                <Style TargetType="ListViewItem">
+                                                                                    <Setter Property="Padding" Value="16,6"/>
+                                                                                    <Setter Property="MinHeight" Value="32"/>
+                                                                                    <Setter Property="CornerRadius" Value="6"/>
+                                                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                                                    <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                                </Style>
+                                                                            </ListView.ItemContainerStyle>
+                                                                            <ListView.ItemTemplate>
+                                                                                <DataTemplate x:DataType="models:AppCategory">
+                                                                                    <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center">
+                                                                                        <TextBlock.ContextFlyout>
+                                                                                            <MenuFlyout>
+                                                                                                <MenuFlyoutItem Text="Rename Tab" Click="RenameTab_Click" Tag="{x:Bind}" />
+                                                                                                <MenuFlyoutItem Text="Delete Tab" Click="DeleteTab_Click" Tag="{x:Bind}" />
+                                                                                                <MenuFlyoutSeparator/>
+                                                                                                <MenuFlyoutItem Text="Delete Entire Group" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red"/>
+                                                                                            </MenuFlyout>
+                                                                                        </TextBlock.ContextFlyout>
+                                                                                    </TextBlock>
+                                                                                </DataTemplate>
+                                                                            </ListView.ItemTemplate>
+                                                                        </ListView>
+
+                                                                        <Button Grid.Column="1" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="8,6" Margin="8,0,0,0" ToolTipService.ToolTip="Add Tab" Click="AddTab_Click" Tag="{x:Bind}">
+                                                                            <FontIcon Glyph="&#xE710;" FontSize="12"/>
+                                                                        </Button>
+                                                                    </Grid>
+
+                                                                    <!-- 2. TABBED APPS GRID -->
+                                                                    <GridView ItemsSource="{x:Bind SelectedTabApps, Mode=OneWay}" Visibility="{x:Bind TabbedVisibility, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True"
+                                                                              ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged"
+                                                                              ContainerContentChanging="AppGrid_ContainerContentChanging"
+                                                                              MaxHeight="220" ScrollViewer.VerticalScrollMode="Disabled"
+                                                                              ScrollViewer.VerticalScrollBarVisibility="Hidden">
+                                                                        <GridView.Resources>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundSelected" Color="Transparent"/>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                                                            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                                                        </GridView.Resources>
+                                                                        <GridView.ItemsPanel>
+                                                                            <ItemsPanelTemplate>
+                                                                                <controls:StartMenuWrapPanel ItemWidth="88" ItemHeight="104" />
+                                                                            </ItemsPanelTemplate>
+                                                                        </GridView.ItemsPanel>
+                                                                        <GridView.ItemContainerStyle>
+                                                                            <Style TargetType="GridViewItem">
+                                                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                                                <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                                                                <Setter Property="Margin" Value="0"/>
+                                                                                <Setter Property="Padding" Value="0"/>
+                                                                            </Style>
+                                                                        </GridView.ItemContainerStyle>
+                                                                        <GridView.ItemTemplate>
+                                                                            <DataTemplate x:DataType="models:AppItem">
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Height="{x:Bind CardHeight, Mode=OneWay}" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                                    <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" HorizontalAlignment="Center">
+                                                                                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
+                                                                                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                            <Image.RenderTransform>
+                                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                            </Image.RenderTransform>
+                                                                                        </Image>
+                                                                                        <Border CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+                                                                                                <GridView.ItemsPanel>
+                                                                                                    <ItemsPanelTemplate>
+                                                                                                        <VariableSizedWrapGrid MaximumRowsOrColumns="2" Orientation="Horizontal" />
+                                                                                                    </ItemsPanelTemplate>
+                                                                                                </GridView.ItemsPanel>
+                                                                                                <GridView.ItemContainerStyle>
+                                                                                                    <Style TargetType="GridViewItem">
+                                                                                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                                                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                                                                        <Setter Property="Margin" Value="0"/>
+                                                                                                        <Setter Property="Padding" Value="0"/>
+                                                                                                        <Setter Property="MinHeight" Value="0"/>
+                                                                                                        <Setter Property="MinWidth" Value="0"/>
+                                                                                                    </Style>
+                                                                                                </GridView.ItemContainerStyle>
+                                                                                                <GridView.ItemTemplate>
+                                                                                                    <DataTemplate x:DataType="models:AppItem">
+                                                                                                        <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
+                                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                <Image.RenderTransform>
+                                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                                </Image.RenderTransform>
+                                                                                                            </Image>
+                                                                                                        </Grid>
+                                                                                                    </DataTemplate>
+                                                                                                </GridView.ItemTemplate>
+                                                                                            </GridView>
+                                                                                        </Border>
                                                                                     </Grid>
                                                                                     <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
                                                                                 </StackPanel>
@@ -835,12 +1047,22 @@
 
                                                         <GridView ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" RightTapped="RecentItem_RightTapped" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
                                                                   MaxHeight="116" ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden">
+
+                                                            <GridView.Resources>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundSelected" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                                            </GridView.Resources>
+
                                                             <GridView.ItemContainerStyle>
                                                                 <Style TargetType="GridViewItem">
                                                                     <Setter Property="Margin" Value="0,0,6,6"/>
                                                                     <Setter Property="Padding" Value="0"/>
                                                                 </Style>
                                                             </GridView.ItemContainerStyle>
+                                                            
                                                             <GridView.ItemTemplate>
                                                                 <DataTemplate x:DataType="models:AppItem">
                                                                     <Border Tag="{x:Bind}" Width="210" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent"

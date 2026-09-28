@@ -97,15 +97,40 @@
     <sys:String x:Key="StartMenu_RemoveList">Aus Liste entfernen</sys:String>
     <sys:String x:Key="StartMenu_DefaultFolderName">Ordner</sys:String>
     <sys:String x:Key="StartMenu_Less">Weniger</sys:String>
-    <sys:String x:Key="StartMenu_AddGroup">Gruppe hinzufügen</sys:String>
-    <sys:String x:Key="StartMenu_AddPage">Seite hinzufügen</sys:String>
-    <sys:String x:Key="StartMenu_NewGroup">Neue Gruppe</sys:String>
-    <sys:String x:Key="StartMenu_PinnedCategory">Angeheftet</sys:String>
-    <sys:String x:Key="StartMenu_DefaultAppName">App</sys:String>
 
     <!-- We use {0} as a placeholder for the user's search query -->
     <sys:String x:Key="StartMenu_SearchPCPrefix">Gesamten PC nach '{0}' durchsuchen</sys:String>
     <sys:String x:Key="StartMenu_SearchWebPrefix">Im Web nach '{0}' suchen</sys:String>
+
+    <!-- Context Menu Options -->
+    <sys:String x:Key="StartMenu_Rename">Umbenennen</sys:String>
+    <sys:String x:Key="StartMenu_New">Neu</sys:String>
+    <sys:String x:Key="StartMenu_AddGroup">Gruppe hinzufügen</sys:String>
+    <sys:String x:Key="StartMenu_AddTabbedGroup">Registerkartengruppe hinzufügen</sys:String>
+    <sys:String x:Key="StartMenu_AddPage">Seite hinzufügen</sys:String>
+    <sys:String x:Key="StartMenu_PinFile">Datei anheften</sys:String>
+    <sys:String x:Key="StartMenu_PinFolder">Ordner anheften</sys:String>
+    <sys:String x:Key="StartMenu_PinWebSite">Website anheften</sys:String>
+    <sys:String x:Key="StartMenu_Remove">Seite entfernen</sys:String>
+
+    <!-- Dialogs (Rename Page & Pin Website) -->
+    <sys:String x:Key="StartMenu_RenamePage">Seite umbenennen</sys:String>
+    <sys:String x:Key="StartMenu_Save">Speichern</sys:String>
+    <sys:String x:Key="StartMenu_Cancel">Abbrechen</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteName">Website-Name (z. B. Google)</sys:String>
+    <sys:String x:Key="StartMenu_WebsiteUrl">URL (z. B. https://google.com)</sys:String>
+
+    <!-- Default Generated Names -->
+    <sys:String x:Key="StartMenu_NewGroup">Neue Gruppe</sys:String>
+    <sys:String x:Key="StartMenu_NewTabbedGroup">Neue Registerkartengruppe</sys:String>
+    <sys:String x:Key="StartMenu_NewPage">Neue Seite</sys:String>
+    <sys:String x:Key="StartMenu_DefaultFolderName">Ordner</sys:String>
+    <sys:String x:Key="StartMenu_DefaultAppName">App</sys:String>
+    <sys:String x:Key="StartMenu_PinnedCategory">Angeheftet</sys:String>
+
+    <!-- Tabbed Group Controls -->
+    <sys:String x:Key="StartMenu_NewTab">Neuer Tab</sys:String>
+    <sys:String x:Key="StartMenu_RenameTab">Tab umbenennen</sys:String>
 
     <!-- endregion StartMenu -->
 
