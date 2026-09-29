@@ -11,40 +11,7 @@ namespace EvolveOS_ShellEnhancer.Views
 {
     public class LivePreviewWindow : Window
     {
-        #region P/Invokes and Fields
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        private static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool IsWindow(IntPtr hWnd);
-
-        [DllImport("dwmapi.dll", PreserveSig = true)]
-        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
-
-        [DllImport("dwmapi.dll", EntryPoint = "#113")]
-        private static extern int DwmpActivateLivePreview(uint enable, IntPtr hWnd, IntPtr top, uint peekType);
-
-        private const int DWMWA_EXCLUDED_FROM_PEEK = 12;
-
-        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
-        private const uint SWP_NOMOVE = 0x0002;
-        private const uint SWP_NOSIZE = 0x0001;
-        private const uint SWP_NOACTIVATE = 0x0010;
-        private const uint WM_CLOSE = 0x0010;
-
+        #region Fields & Properties
         private readonly IntPtr _hWnd;
         private readonly AppWindow _appWindow;
 
@@ -88,6 +55,8 @@ namespace EvolveOS_ShellEnhancer.Views
         private int _lastCardScreenY;
         private int _lastCardWidth;
         private int _lastCardHeight;
+
+        private DispatcherTimer _validationTimer;
         #endregion
 
         #region Theme & Color Helpers
@@ -182,6 +151,39 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (_peekingHwnd != IntPtr.Zero && IsWindow(_peekingHwnd))
                 {
                     SafeToggleAeroPeek(true, _peekingHwnd);
+                }
+            };
+
+            _validationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            _validationTimer.Tick += (s, e) =>
+            {
+                if (_currentSourceHwnds.Count == 0 || _isRedrawing) return;
+
+                bool changed = false;
+                var remainingWindows = new List<IntPtr>();
+
+                foreach (var hwnd in _currentSourceHwnds)
+                {
+                    if (IsWindow(hwnd))
+                    {
+                        remainingWindows.Add(hwnd);
+                    }
+                    else
+                    {
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    if (remainingWindows.Count > 0)
+                    {
+                        ExecuteShow(remainingWindows, _lastCardScreenX, _lastCardScreenY, _lastCardWidth, _lastCardHeight);
+                    }
+                    else
+                    {
+                        ExecuteHide();
+                    }
                 }
             };
 
@@ -649,6 +651,29 @@ namespace EvolveOS_ShellEnhancer.Views
                         topOffset = SlotMargin + 24;
                     }
 
+                    int slotWidth = ThumbWidth;
+                    int slotHeight = ThumbHeight - 24;
+
+                    int destLeft = leftOffset;
+                    int destTop = topOffset;
+                    int destRight = leftOffset + slotWidth;
+                    int destBottom = topOffset + slotHeight;
+
+                    if (DwmQueryThumbnailSourceSize(thumbHandle, out SIZE sourceSize) == 0 && sourceSize.cx > 0 && sourceSize.cy > 0)
+                    {
+                        double scaleX = (double)slotWidth / sourceSize.cx;
+                        double scaleY = (double)slotHeight / sourceSize.cy;
+                        double scale = Math.Min(scaleX, scaleY);
+
+                        int scaledWidth = (int)(sourceSize.cx * scale);
+                        int scaledHeight = (int)(sourceSize.cy * scale);
+
+                        destLeft = leftOffset + (slotWidth - scaledWidth) / 2;
+                        destTop = topOffset + (slotHeight - scaledHeight) / 2;
+                        destRight = destLeft + scaledWidth;
+                        destBottom = destTop + scaledHeight;
+                    }
+
                     Win32Helper.DWM_THUMBNAIL_PROPERTIES props = new Win32Helper.DWM_THUMBNAIL_PROPERTIES
                     {
                         dwFlags = Win32Helper.DWM_TNP_VISIBLE | Win32Helper.DWM_TNP_RECTDESTINATION | Win32Helper.DWM_TNP_OPACITY,
@@ -656,10 +681,10 @@ namespace EvolveOS_ShellEnhancer.Views
                         opacity = initialOpacity,
                         rcDestination = new Win32Helper.RECT
                         {
-                            Left = leftOffset,
-                            Top = topOffset,
-                            Right = leftOffset + ThumbWidth,
-                            Bottom = topOffset + (ThumbHeight - 24)
+                            Left = destLeft,
+                            Top = destTop,
+                            Right = destRight,
+                            Bottom = destBottom
                         }
                     };
 
@@ -694,6 +719,9 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
                 _isRedrawing = false;
             }
+
+            _validationTimer.Start();
+
         }
 
         private void SafeToggleAeroPeek(bool enable, IntPtr targetHwnd)
@@ -817,6 +845,7 @@ namespace EvolveOS_ShellEnhancer.Views
             StopBoundsAnimation();
             _hideTimer.Stop();
             _peekTimer.Stop();
+            _validationTimer.Stop();
 
             if (_peekingHwnd != IntPtr.Zero)
             {

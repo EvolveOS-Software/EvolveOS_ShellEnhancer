@@ -175,6 +175,13 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("kernel32.dll")]
         public static extern IntPtr LocalFree(IntPtr hMem);
 
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmQueryThumbnailSourceSize(IntPtr hThumbnail, out SIZE pSize);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindow(IntPtr hWnd);
+
         #endregion
 
         #region DWM Thumbnail API
@@ -268,6 +275,13 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             public uint uEdge;
             public RECT rc;
             public int lParam;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SIZE
+        {
+            public int cx;
+            public int cy;
         }
 
         #endregion
