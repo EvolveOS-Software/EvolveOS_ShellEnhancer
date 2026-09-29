@@ -65,6 +65,10 @@ namespace EvolveOS_ShellEnhancer.Views
         private AppItem? _sourceFolderItem;
 
         private int _pageNameAnimationToken = 0;
+
+        public ObservableCollection<FolderDot> FolderDots { get; } = new();
+        private int _currentFolderPage = 0;
+        private readonly int _folderItemsPerPage = 12;
         #endregion
 
         #region Initialization & Data Loading
@@ -1331,7 +1335,7 @@ namespace EvolveOS_ShellEnhancer.Views
                         if (Pages.Count > 0 && Pages[0].PinnedCategories.Count > 0)
                         {
                             var targetCategory = GetEffectiveTargetCategory(Pages[0].PinnedCategories.First());
-                            targetCategory?.Apps.Add(app); // Fixed warning here
+                            targetCategory?.Apps.Add(app);
                         }
                         else
                         {
@@ -1455,7 +1459,7 @@ namespace EvolveOS_ShellEnhancer.Views
                             var recentLinks = Directory.GetFiles(recentFolder, "*.lnk");
                             foreach (var lnkPath in recentLinks)
                             {
-                                string target = Utilities.Helpers.StartMenuHelper.ParseShortcutTarget(lnkPath);
+                                string target = StartMenuHelper.ParseShortcutTarget(lnkPath);
                                 if (!string.IsNullOrEmpty(target) && target.Equals(recentItem.ExecutablePath, StringComparison.OrdinalIgnoreCase))
                                 {
                                     File.Delete(lnkPath);
@@ -1536,9 +1540,9 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             if (sender is StackPanel panel)
-                panel.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                panel.Background = new SolidColorBrush(Colors.Transparent);
             else if (sender is Border border)
-                border.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+                border.Background = new SolidColorBrush(Colors.Transparent);
         }
 
         private void AppCard_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -2008,7 +2012,6 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 foreach (var app in cat.Apps)
                 {
-                    // Folders ALWAYS keep their labels visible!
                     if (app.ExecutablePath == "PINNED_FOLDER")
                     {
                         app.AppNameVisibility = Visibility.Visible;
@@ -2018,7 +2021,6 @@ namespace EvolveOS_ShellEnhancer.Views
                         app.AppNameVisibility = targetVisibility;
                     }
 
-                    // Apps INSIDE the expanded folder flyout ALWAYS keep their labels visible!
                     foreach (var folderApp in app.FolderApps)
                     {
                         folderApp.AppNameVisibility = Visibility.Visible;
@@ -2115,6 +2117,16 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (OverlayFolderGrid != null)
                 OverlayFolderGrid.ItemsSource = app.FolderApps;
+
+            FolderDots.Clear();
+            int pageCount = (int)Math.Ceiling((double)app.FolderApps.Count / _folderItemsPerPage);
+            if (pageCount == 0) pageCount = 1;
+
+            for (int i = 0; i < pageCount; i++)
+            {
+                FolderDots.Add(new FolderDot { PageIndex = i, Opacity = (i == 0) ? 1.0 : 0.4 });
+            }
+            _currentFolderPage = 0;
 
             if (PinnedFolderOverlay != null)
             {
@@ -2213,33 +2225,43 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        private void FolderPageUpBtn_Click(object sender, RoutedEventArgs e)
+        private void FolderPopupCard_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
-            var sv = GetScrollViewer(OverlayFolderGrid);
-            if (sv != null)
-            {
-                sv.ChangeView(null, Math.Max(0, sv.VerticalOffset - sv.ViewportHeight), null);
-            }
-        }
+            var delta = e.GetCurrentPoint(null).Properties.MouseWheelDelta;
 
-        private void FolderPageDownBtn_Click(object sender, RoutedEventArgs e)
-        {
-            var sv = GetScrollViewer(OverlayFolderGrid);
-            if (sv != null)
+            if (delta < 0 && _currentFolderPage < FolderDots.Count - 1)
             {
-                sv.ChangeView(null, sv.VerticalOffset + sv.ViewportHeight, null);
+                ChangeFolderPage(_currentFolderPage + 1);
             }
+            else if (delta > 0 && _currentFolderPage > 0)
+            {
+                ChangeFolderPage(_currentFolderPage - 1);
+            }
+
+            e.Handled = true;
         }
 
         private void FolderPageDotIndicator_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is int pageIndex)
             {
-                var sv = GetScrollViewer(OverlayFolderGrid);
-                if (sv != null)
-                {
-                    sv.ChangeView(null, pageIndex * sv.ViewportHeight, null);
-                }
+                ChangeFolderPage(pageIndex);
+            }
+        }
+
+        private void ChangeFolderPage(int newPageIndex)
+        {
+            _currentFolderPage = newPageIndex;
+
+            foreach (var dot in FolderDots)
+            {
+                dot.Opacity = (dot.PageIndex == _currentFolderPage) ? 1.0 : 0.4;
+            }
+
+            var sv = GetScrollViewer(OverlayFolderGrid);
+            if (sv != null)
+            {
+                sv.ChangeView(null, _currentFolderPage * 288.0, null, false);
             }
         }
 
@@ -2300,7 +2322,7 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (sender is Grid grid && grid.Tag is AppItem app && app.ExecutablePath == "PINNED_FOLDER")
             {
-                grid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
+                grid.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
             }
         }
 
