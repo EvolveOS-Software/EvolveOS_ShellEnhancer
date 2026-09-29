@@ -117,10 +117,16 @@ namespace EvolveOS_ShellEnhancer.Controls
             var visibleChildren = Children.Where(c => c.Visibility != Visibility.Collapsed).ToList();
             if (visibleChildren.Count == 0) return new Size(0, 0);
 
-            int totalColumns = 6;
-            if (!double.IsInfinity(availableSize.Width) && availableSize.Width > 0)
+            double safeWidth = availableSize.Width;
+            if (double.IsNaN(safeWidth) || double.IsInfinity(safeWidth) || safeWidth > 15000 || safeWidth < 0)
             {
-                totalColumns = (int)Math.Floor(availableSize.Width / ItemWidth);
+                safeWidth = 15000;
+            }
+
+            int totalColumns = 6;
+            if (safeWidth > 0 && ItemWidth > 0)
+            {
+                totalColumns = (int)Math.Floor(safeWidth / ItemWidth);
                 if (totalColumns < 2) totalColumns = 6;
             }
 
@@ -140,12 +146,18 @@ namespace EvolveOS_ShellEnhancer.Controls
 
                 double w = ItemWidth * spans.colSpan;
                 double h = ItemHeight * spans.rowSpan;
-                child.Measure(new Size(w, h));
+
+                child.Measure(new Size(Math.Max(0, w), Math.Max(0, h)));
 
                 maxLayoutHeight = Math.Max(maxLayoutHeight, (row + spans.rowSpan) * ItemHeight);
             }
 
-            return new Size(availableSize.Width, maxLayoutHeight);
+            double desiredWidth = totalColumns * ItemWidth;
+
+            if (double.IsNaN(desiredWidth) || double.IsInfinity(desiredWidth) || desiredWidth < 0) desiredWidth = 528;
+            if (double.IsNaN(maxLayoutHeight) || double.IsInfinity(maxLayoutHeight) || maxLayoutHeight < 0) maxLayoutHeight = 104;
+
+            return new Size(desiredWidth, maxLayoutHeight);
         }
 
         protected override Size ArrangeOverride(Size finalSize)
@@ -154,14 +166,24 @@ namespace EvolveOS_ShellEnhancer.Controls
             _rowTypes.Clear();
 
             var visibleChildren = Children.Where(c => c.Visibility != Visibility.Collapsed).ToList();
-            if (visibleChildren.Count == 0) return finalSize;
+
+            double safeWidth = finalSize.Width;
+            double safeHeight = finalSize.Height;
+
+            if (double.IsNaN(safeWidth) || double.IsInfinity(safeWidth) || safeWidth > 15000 || safeWidth < 0) safeWidth = 15000;
+            if (double.IsNaN(safeHeight) || double.IsInfinity(safeHeight) || safeHeight < 0) safeHeight = 0;
+
+            Size safeFinalSize = new Size(safeWidth, safeHeight);
+            if (visibleChildren.Count == 0) return safeFinalSize;
 
             int totalColumns = 6;
-            if (!double.IsInfinity(finalSize.Width) && finalSize.Width > 0)
+            if (safeWidth > 0 && ItemWidth > 0)
             {
-                totalColumns = (int)Math.Floor(finalSize.Width / ItemWidth);
+                totalColumns = (int)Math.Floor(safeWidth / ItemWidth);
                 if (totalColumns < 2) totalColumns = 6;
             }
+
+            double maxLayoutHeight = 0;
 
             foreach (var child in visibleChildren)
             {
@@ -180,12 +202,17 @@ namespace EvolveOS_ShellEnhancer.Controls
                 double w = ItemWidth * spans.colSpan;
                 double h = ItemHeight * spans.rowSpan;
 
-                child.Arrange(new Rect(targetX, targetY, w, h));
+                child.Arrange(new Rect(Math.Max(0, targetX), Math.Max(0, targetY), Math.Max(0, w), Math.Max(0, h)));
 
-                AnimateChild(child, new Point(targetX, targetY));
+                AnimateChild(child, new Point(Math.Max(0, targetX), Math.Max(0, targetY)));
+
+                maxLayoutHeight = Math.Max(maxLayoutHeight, targetY + h);
             }
 
-            return finalSize;
+            double retW = double.IsNaN(finalSize.Width) || double.IsInfinity(finalSize.Width) ? (totalColumns * ItemWidth) : finalSize.Width;
+            double retH = double.IsNaN(finalSize.Height) || double.IsInfinity(finalSize.Height) ? maxLayoutHeight : finalSize.Height;
+
+            return new Size(Math.Max(0, retW), Math.Max(0, retH));
         }
 
         private void AnimateChild(UIElement child, Point newPos)
@@ -216,7 +243,7 @@ namespace EvolveOS_ShellEnhancer.Controls
 
                 child.DispatcherQueue.TryEnqueue(() =>
                 {
-                    child.TranslationTransition = new Microsoft.UI.Xaml.Vector3Transition
+                    child.TranslationTransition = new Vector3Transition
                     {
                         Duration = TimeSpan.FromMilliseconds(400)
                     };

@@ -439,6 +439,14 @@ namespace EvolveOS_ShellEnhancer
                         }
                         break;
 
+                    case "StartMenu_ShowAppLabels":
+                        if (bool.TryParse(value, out bool showLabels))
+                        {
+                            SettingsEngine.Shell_StartMenuShowAppLabels = showLabels;
+                            _startMenuWindow?.SetGlobalAppLabelVisibility(showLabels);
+                        }
+                        break;
+
                     case "Taskbar_Enable":
                         _isTaskbarEnabled = bool.Parse(value);
                         if (_isTaskbarEnabled)

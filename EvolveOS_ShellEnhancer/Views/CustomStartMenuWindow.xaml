@@ -37,7 +37,7 @@
                             </Image.RenderTransform>
                         </Image>
                     </Grid>
-                    <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
             </DataTemplate>
         </Grid.Resources>
@@ -268,13 +268,15 @@
                                                                                         </Border>
                                                                                     </Grid>
 
-                                                                                    <Grid Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
-                                                                                          Background="Transparent" CornerRadius="4" Padding="2,4" MinHeight="35"
-                                                                                          HorizontalAlignment="Stretch" Margin="0,10,0,0"
-                                                                                          DataContextChanged="FolderName_DataContextChanged"
-                                                                                          PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
-                                                                                          PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
-                                                                                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                                                                    <Grid Background="Transparent" CornerRadius="4" Padding="2,4" Height="38"
+      Width="{x:Bind TextGridWidth, Mode=OneWay}"
+      HorizontalAlignment="{x:Bind TextGridAlignment, Mode=OneWay}" Margin="0,10,0,0"
+      PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
+      PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
+
+                                                                                        <TextBlock x:Name="NormalAppName" Text="{x:Bind Name, Mode=OneWay}"
+               Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
+               FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
                                                                                     </Grid>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
@@ -418,13 +420,15 @@
                                                                                         </Border>
                                                                                     </Grid>
 
-                                                                                    <Grid Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
-                                                                                          Background="Transparent" CornerRadius="4" Padding="2,4" MinHeight="35"
-                                                                                          HorizontalAlignment="Stretch" Margin="0,10,0,0"
-                                                                                          DataContextChanged="FolderName_DataContextChanged"
-                                                                                          PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
-                                                                                          PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
-                                                                                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                                                                    <Grid Background="Transparent" CornerRadius="4" Padding="2,4" Height="38"
+      Width="{x:Bind TextGridWidth, Mode=OneWay}"
+      HorizontalAlignment="{x:Bind TextGridAlignment, Mode=OneWay}" Margin="0,10,0,0"
+      PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
+      PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
+
+                                                                                        <TextBlock x:Name="NormalAppName" Text="{x:Bind Name, Mode=OneWay}"
+               Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
+               FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
                                                                                     </Grid>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
@@ -579,36 +583,46 @@
                                     </ListView.ItemTemplate>
                                 </ListView>
 
-                                <!-- Bottom Navigation (< • • • >) -->
-                                <Grid x:Name="BottomNavigationGrid" Grid.Row="2" Margin="0,16,0,0" HorizontalAlignment="Center" PointerWheelChanged="BottomNavigationGrid_PointerWheelChanged">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+                                <!-- Anchored Bottom Section -->
+                                <StackPanel Grid.Row="2" VerticalAlignment="Bottom" Spacing="0" Margin="0,32,0,-12">
 
-                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
-                                        <Button x:Name="PageLeftBtn" FontFamily="Segoe Fluent Icons" Content="&#xE76B;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageLeftBtn_Click"/>
+                                    <!-- Bottom Navigation (< • • • >) -->
+                                    <Grid x:Name="BottomNavigationGrid" HorizontalAlignment="Center" PointerWheelChanged="BottomNavigationGrid_PointerWheelChanged">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                                        <ItemsControl x:Name="PageIndicatorControl" ItemsSource="{x:Bind Pages}" VerticalAlignment="Center">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0"/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="models:StartMenuPage">
-                                                    <Button Background="Transparent" Padding="0" BorderThickness="0" MinWidth="0" MinHeight="0" Click="PageDotIndicator_Click" Tag="{x:Bind PageIndex}">
-                                                        <Ellipse Width="6" Height="6" Fill="{ThemeResource TextFillColorPrimaryBrush}" Opacity="{x:Bind IndicatorOpacity, Mode=OneWay}" x:Name="DotIndicator"/>
-                                                    </Button>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
+                                            <Button x:Name="PageLeftBtn" FontFamily="Segoe Fluent Icons" Content="&#xE76B;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageLeftBtn_Click"/>
 
-                                        <Button x:Name="PageRightBtn" FontFamily="Segoe Fluent Icons" Content="&#xE76C;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageRightBtn_Click"/>
-                                    </StackPanel>
+                                            <ItemsControl x:Name="PageIndicatorControl" ItemsSource="{x:Bind Pages}" VerticalAlignment="Center">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:StartMenuPage">
+                                                        <Button Background="Transparent" Padding="0" BorderThickness="0" MinWidth="0" MinHeight="0" Click="PageDotIndicator_Click" Tag="{x:Bind PageIndex}">
+                                                            <Ellipse Width="6" Height="6" Fill="{ThemeResource TextFillColorPrimaryBrush}" Opacity="{x:Bind IndicatorOpacity, Mode=OneWay}" x:Name="DotIndicator"/>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                    <TextBlock x:Name="PageNameDisplay1" Grid.Row="1" Text="" Opacity="0" HorizontalAlignment="Center" Margin="0,4,0,0" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontFamily="{ThemeResource AppCustomFont}"/>
-                                </Grid>
+                                            <Button x:Name="PageRightBtn" FontFamily="Segoe Fluent Icons" Content="&#xE76C;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageRightBtn_Click"/>
+                                        </StackPanel>
+
+                                        <TextBlock x:Name="PageNameDisplay1" Grid.Row="1" Text="" Opacity="0" HorizontalAlignment="Center" Margin="0,4,0,0" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontFamily="{ThemeResource AppCustomFont}"/>
+                                    </Grid>
+
+                                    <Border x:Name="GlobalHoverBadge1" Opacity="0" IsHitTestVisible="False"
+                                            Style="{StaticResource BadgeDefaultStyle}" HorizontalAlignment="Center" Height="22" Margin="0,-4,0,0">
+                                        <TextBlock x:Name="GlobalHoverText1" Style="{StaticResource BadgeTextStyle}" />
+                                    </Border>
+
+                                </StackPanel>
 
                             </Grid>
                         </Grid>
@@ -988,13 +1002,15 @@
                                                                                         </Border>
                                                                                     </Grid>
 
-                                                                                    <Grid Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
-                                                                                          Background="Transparent" CornerRadius="4" Padding="2,4" MinHeight="35"
-                                                                                          HorizontalAlignment="Stretch" Margin="0,10,0,0"
-                                                                                          DataContextChanged="FolderName_DataContextChanged"
-                                                                                          PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
-                                                                                          PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
-                                                                                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                                                                    <Grid Background="Transparent" CornerRadius="4" Padding="2,4" Height="38"
+      Width="{x:Bind TextGridWidth, Mode=OneWay}"
+      HorizontalAlignment="{x:Bind TextGridAlignment, Mode=OneWay}" Margin="0,10,0,0"
+      PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
+      PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
+
+                                                                                        <TextBlock x:Name="NormalAppName" Text="{x:Bind Name, Mode=OneWay}"
+               Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
+               FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
                                                                                     </Grid>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
@@ -1138,13 +1154,15 @@
                                                                                         </Border>
                                                                                     </Grid>
 
-                                                                                    <Grid Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
-                                                                                          Background="Transparent" CornerRadius="4" Padding="2,4" MinHeight="35"
-                                                                                          HorizontalAlignment="Stretch" Margin="0,10,0,0"
-                                                                                          DataContextChanged="FolderName_DataContextChanged"
-                                                                                          PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
-                                                                                          PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
-                                                                                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                                                                    <Grid Background="Transparent" CornerRadius="4" Padding="2,4" Height="38"
+      Width="{x:Bind TextGridWidth, Mode=OneWay}"
+      HorizontalAlignment="{x:Bind TextGridAlignment, Mode=OneWay}" Margin="0,10,0,0"
+      PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
+      PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
+
+                                                                                        <TextBlock x:Name="NormalAppName" Text="{x:Bind Name, Mode=OneWay}"
+               Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
+               FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
                                                                                     </Grid>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
@@ -1296,36 +1314,46 @@
                                     </ListView.ItemTemplate>
                                 </ListView>
 
-                                <!-- Bottom Navigation (< • • • >) -->
-                                <Grid x:Name="BottomNavigationGrid2" Grid.Row="2" Margin="0,16,0,0" HorizontalAlignment="Center" PointerWheelChanged="BottomNavigationGrid_PointerWheelChanged">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+                                <!-- Anchored Bottom Section -->
+                                <StackPanel Grid.Row="2" VerticalAlignment="Bottom" Spacing="0" Margin="0,32,0,-12">
 
-                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
-                                        <Button x:Name="PageLeftBtn2" FontFamily="Segoe Fluent Icons" Content="&#xE76B;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageLeftBtn_Click"/>
+                                    <!-- Bottom Navigation (< • • • >) -->
+                                    <Grid x:Name="BottomNavigationGrid2" HorizontalAlignment="Center" PointerWheelChanged="BottomNavigationGrid_PointerWheelChanged">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                                        <ItemsControl x:Name="PageIndicatorControl2" ItemsSource="{x:Bind Pages}" VerticalAlignment="Center">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0"/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="models:StartMenuPage">
-                                                    <Button Background="Transparent" Padding="0" BorderThickness="0" MinWidth="0" MinHeight="0" Click="PageDotIndicator_Click" Tag="{x:Bind PageIndex}">
-                                                        <Ellipse Width="6" Height="6" Fill="{ThemeResource TextFillColorPrimaryBrush}" Opacity="{x:Bind IndicatorOpacity, Mode=OneWay}" x:Name="DotIndicator"/>
-                                                    </Button>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
+                                            <Button x:Name="PageLeftBtn2" FontFamily="Segoe Fluent Icons" Content="&#xE76B;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageLeftBtn_Click"/>
 
-                                        <Button x:Name="PageRightBtn2" FontFamily="Segoe Fluent Icons" Content="&#xE76C;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageRightBtn_Click"/>
-                                    </StackPanel>
+                                            <ItemsControl x:Name="PageIndicatorControl2" ItemsSource="{x:Bind Pages}" VerticalAlignment="Center">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:StartMenuPage">
+                                                        <Button Background="Transparent" Padding="0" BorderThickness="0" MinWidth="0" MinHeight="0" Click="PageDotIndicator_Click" Tag="{x:Bind PageIndex}">
+                                                            <Ellipse Width="6" Height="6" Fill="{ThemeResource TextFillColorPrimaryBrush}" Opacity="{x:Bind IndicatorOpacity, Mode=OneWay}" x:Name="DotIndicator"/>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                    <TextBlock x:Name="PageNameDisplay2" Grid.Row="1" Text="" Opacity="0" HorizontalAlignment="Center" Margin="0,4,0,0" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontFamily="{ThemeResource AppCustomFont}"/>
-                                </Grid>
+                                            <Button x:Name="PageRightBtn2" FontFamily="Segoe Fluent Icons" Content="&#xE76C;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageRightBtn_Click"/>
+                                        </StackPanel>
+
+                                        <TextBlock x:Name="PageNameDisplay2" Grid.Row="1" Text="" Opacity="0" HorizontalAlignment="Center" Margin="0,4,0,0" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontFamily="{ThemeResource AppCustomFont}"/>
+                                    </Grid>
+
+                                    <Border x:Name="GlobalHoverBadge2" Opacity="0" IsHitTestVisible="False"
+                                            Style="{StaticResource BadgeDefaultStyle}" HorizontalAlignment="Center" Height="22" Margin="0,-4,0,0">
+                                        <TextBlock x:Name="GlobalHoverText2" Style="{StaticResource BadgeTextStyle}" />
+                                    </Border>
+
+                                </StackPanel>
 
                                 <!-- Dummy Grids to satisfy C# behind-code handlers -->
                                 <GridView x:Name="ProductivityAppsGrid" Visibility="Collapsed"/>

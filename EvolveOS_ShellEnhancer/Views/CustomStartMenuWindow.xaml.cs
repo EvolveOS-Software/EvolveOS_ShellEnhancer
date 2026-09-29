@@ -988,7 +988,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                     if (gridView.ItemsPanelRoot is Panel panelRoot)
                     {
-                        panelRoot.Measure(new Size(gridView.ActualWidth, double.PositiveInfinity));
+                        panelRoot.Measure(new Size(gridView.ActualWidth, 10000.0));
                         if (panelRoot.DesiredSize.Height > fullHeight) fullHeight = panelRoot.DesiredSize.Height;
                     }
 
@@ -1491,10 +1491,29 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void AppCard_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            if (sender is FrameworkElement element)
+            if (sender is FrameworkElement element && (element.Tag as AppItem ?? element.DataContext as AppItem) is AppItem app)
             {
-                var app = element.Tag as AppItem ?? element.DataContext as AppItem;
-                if (app != null && app.ExecutablePath == "PINNED_FOLDER") return;
+                bool isGlobalHidden = !SettingsEngine.Shell_StartMenuShowAppLabels;
+
+                var parentGrid = FindVisualParent<GridView>(element);
+
+                bool isPinnedArea = parentGrid != null &&
+                                    parentGrid.Name != "SearchAndAllAppsGrid" &&
+                                    parentGrid.Name != "SearchAndAllAppsGrid2" &&
+                                    parentGrid.Name != "SearchAndAllAppsGrid3" &&
+                                    parentGrid.Name != "RecentDocsGrid" &&
+                                    parentGrid.Name != "OverlayFolderGrid";
+
+                if (isGlobalHidden && app.ExecutablePath != "PINNED_FOLDER" && isPinnedArea)
+                {
+                    if (GlobalHoverText1 != null) GlobalHoverText1.Text = app.Name;
+                    if (GlobalHoverText2 != null) GlobalHoverText2.Text = app.Name;
+
+                    if (GlobalHoverBadge1 != null) FadeElement(GlobalHoverBadge1, 1.0, 150);
+                    if (GlobalHoverBadge2 != null) FadeElement(GlobalHoverBadge2, 1.0, 150);
+                }
+
+                if (app.ExecutablePath == "PINNED_FOLDER") return;
             }
 
             if (sender is StackPanel panel)
@@ -1505,10 +1524,21 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void AppCard_PointerExited(object sender, PointerRoutedEventArgs e)
         {
+            if (GlobalHoverBadge1 != null && GlobalHoverBadge1.Opacity > 0)
+                FadeElement(GlobalHoverBadge1, 0.0, 250);
+
+            if (GlobalHoverBadge2 != null && GlobalHoverBadge2.Opacity > 0)
+                FadeElement(GlobalHoverBadge2, 0.0, 250);
+
+            if (sender is FrameworkElement element && (element.Tag as AppItem ?? element.DataContext as AppItem) is AppItem app)
+            {
+                if (app.ExecutablePath == "PINNED_FOLDER") return;
+            }
+
             if (sender is StackPanel panel)
-                panel.Background = new SolidColorBrush(Colors.Transparent);
+                panel.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
             else if (sender is Border border)
-                border.Background = new SolidColorBrush(Colors.Transparent);
+                border.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
         }
 
         private void AppCard_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -1909,7 +1939,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                     if (gridView.ItemsPanelRoot is Panel panelRoot)
                     {
-                        panelRoot.Measure(new Size(width, double.PositiveInfinity));
+                        panelRoot.Measure(new Size(width, 10000.0));
                         if (panelRoot.DesiredSize.Height > 0)
                         {
                             fullHeight = panelRoot.DesiredSize.Height;
@@ -1968,6 +1998,59 @@ namespace EvolveOS_ShellEnhancer.Views
 
             SafeSavePins();
         }
+
+        public void SetGlobalAppLabelVisibility(bool showLabels)
+        {
+            SettingsEngine.Shell_StartMenuShowAppLabels = showLabels;
+            var targetVisibility = showLabels ? Visibility.Visible : Visibility.Collapsed;
+
+            foreach (var cat in GetAllCategoriesFlattened())
+            {
+                foreach (var app in cat.Apps)
+                {
+                    // Folders ALWAYS keep their labels visible!
+                    if (app.ExecutablePath == "PINNED_FOLDER")
+                    {
+                        app.AppNameVisibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        app.AppNameVisibility = targetVisibility;
+                    }
+
+                    // Apps INSIDE the expanded folder flyout ALWAYS keep their labels visible!
+                    foreach (var folderApp in app.FolderApps)
+                    {
+                        folderApp.AppNameVisibility = Visibility.Visible;
+                    }
+                }
+            }
+        }
+
+        /*public void SetGlobalAppLabelVisibility(bool showLabels)
+        {
+            SettingsEngine.Shell_StartMenuShowAppLabels = showLabels;
+            var targetVisibility = showLabels ? Visibility.Visible : Visibility.Collapsed;
+
+            foreach (var cat in GetAllCategoriesFlattened())
+            {
+                foreach (var app in cat.Apps)
+                {
+                    app.AppNameVisibility = targetVisibility;
+
+                    foreach (var folderApp in app.FolderApps)
+                    {
+                        folderApp.AppNameVisibility = targetVisibility;
+                    }
+                }
+            }
+
+            // Recent Docs, All Apps, and Search Results
+            foreach (var app in RecentDocsCollection) app.AppNameVisibility = targetVisibility;
+            foreach (var app in AllAppsCollection) app.AppNameVisibility = targetVisibility;
+            foreach (var app in SearchAppsCollection) app.AppNameVisibility = targetVisibility;
+            foreach (var app in SearchSettingsCollection) app.AppNameVisibility = targetVisibility;
+        }*/
 
         private IEnumerable<GridView> GetAllCategoryGrids()
         {

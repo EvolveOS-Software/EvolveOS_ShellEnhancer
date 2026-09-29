@@ -172,7 +172,23 @@ namespace EvolveOS_ShellEnhancer.Models
 
         public IEnumerable<AppItem> PreviewFolderApps => FolderApps.Take(4);
 
-        public Visibility AppNameVisibility => Visibility.Visible;
+        private Visibility _appNameVisibility = SettingsEngine.Shell_StartMenuShowAppLabels ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility AppNameVisibility
+        {
+            get => ExecutablePath == "PINNED_FOLDER" ? Visibility.Visible : _appNameVisibility;
+            set
+            {
+                if (_appNameVisibility != value)
+                {
+                    _appNameVisibility = value;
+                    OnPropertyChanged(nameof(AppNameVisibility));
+                }
+            }
+        }
+
+        public double TextGridWidth => ExecutablePath == "PINNED_FOLDER" ? FolderBoxSize : double.NaN;
+        public HorizontalAlignment TextGridAlignment => ExecutablePath == "PINNED_FOLDER" ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+
         public Visibility PinnedFolderVisibility => ExecutablePath == "PINNED_FOLDER" ? Visibility.Visible : Visibility.Collapsed;
         public Visibility StandardIconVisibility => ExecutablePath == "PINNED_FOLDER" ? Visibility.Collapsed : HasIcon;
         public Visibility StandardNoIconVisibility => ExecutablePath == "PINNED_FOLDER" ? Visibility.Collapsed : HasNoIcon;
