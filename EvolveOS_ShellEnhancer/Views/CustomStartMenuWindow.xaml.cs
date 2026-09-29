@@ -2080,6 +2080,26 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        private void ManageTabs_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.DataContext is AppCategory childTab)
+            {
+                var parentGroup = Pages.SelectMany(p => p.PinnedCategories)
+                                       .FirstOrDefault(c => c.IsTabbed && c.Tabs != null && c.Tabs.Contains(childTab));
+
+                if (parentGroup != null)
+                {
+                    var managerWindow = new TabbedGroupManagerWindow(parentGroup, () =>
+                    {
+                        SafeSavePins();
+                    });
+
+                    managerWindow.Activate();
+                    HideMenu();
+                }
+            }
+        }
+
         private ScrollViewer? GetScrollViewer(DependencyObject depObj)
         {
             if (depObj is ScrollViewer sv) return sv;

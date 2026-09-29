@@ -131,6 +131,17 @@
     <!-- Tabbed Group Controls -->
     <sys:String x:Key="StartMenu_NewTab">Nova guia</sys:String>
     <sys:String x:Key="StartMenu_RenameTab">Renomear guia</sys:String>
+    <sys:String x:Key="StartMenu_RemoveTab">Remover</sys:String>
+    <sys:String x:Key="StartMenu_DeleteEntireGroup">Excluir grupo inteiro</sys:String>
+
+    <!-- Tabbed Group Manager -->
+    <sys:String x:Key="StartMenu_ManageTabsAndColors">Gerenciar guias e cores</sys:String>
+    <sys:String x:Key="StartMenu_TabName">Nome da guia</sys:String>
+    <sys:String x:Key="StartMenu_TabNamePlaceholder">Insira o nome da guia...</sys:String>
+    <sys:String x:Key="StartMenu_TabColor">Cor da guia</sys:String>
+    <sys:String x:Key="StartMenu_CustomHexColor">Cor hex personalizada</sys:String>
+    <sys:String x:Key="StartMenu_ApplyCustomColor">Aplicar cor personalizada</sys:String>
+    <sys:String x:Key="StartMenu_SaveSetup">Salvar configuração</sys:String>
 
     <!-- endregion StartMenu -->
 

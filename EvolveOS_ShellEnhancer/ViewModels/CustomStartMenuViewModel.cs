@@ -192,11 +192,29 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                                             foreach (var tabStr in tabStrings)
                                             {
                                                 var tabParts = tabStr.Split(':');
-                                                if (tabParts.Length == 2)
+                                                if (tabParts.Length >= 1)
                                                 {
-                                                    var newTab = new AppCategory { Name = tabParts[0] };
-                                                    var pinNames = tabParts[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
-                                                    PopulateApps(newTab, pinNames, fetchedAllApps);
+                                                    string rawName = tabParts[0];
+                                                    string extractedColor = "";
+                                                    int colorStart = rawName.LastIndexOf('[');
+
+                                                    if (colorStart != -1 && rawName.EndsWith("]"))
+                                                    {
+                                                        extractedColor = rawName.Substring(colorStart + 1, rawName.Length - colorStart - 2);
+                                                        rawName = rawName.Substring(0, colorStart);
+                                                    }
+
+                                                    var newTab = new AppCategory
+                                                    {
+                                                        Name = rawName,
+                                                        TabColor = (extractedColor == "NONE" || string.IsNullOrEmpty(extractedColor)) ? null : extractedColor
+                                                    };
+
+                                                    if (tabParts.Length == 2)
+                                                    {
+                                                        var pinNames = tabParts[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
+                                                        PopulateApps(newTab, pinNames, fetchedAllApps);
+                                                    }
                                                     cat.Tabs.Add(newTab);
                                                 }
                                             }
@@ -427,8 +445,10 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                         foreach (var tab in cat.Tabs)
                         {
                             string tabName = string.IsNullOrWhiteSpace(tab.Name) ? "Tab" : tab.Name;
+                            string tabColor = string.IsNullOrWhiteSpace(tab.TabColor) ? "NONE" : tab.TabColor;
                             var tabApps = SerializeAppList(tab.Apps);
-                            tabStrings.Add($"{tabName}:{string.Join(",", tabApps)}");
+
+                            tabStrings.Add($"{tabName}[{tabColor}]:{string.Join(",", tabApps)}");
                         }
                         categoryStrings.Add($"[TABBED_GROUP]{baseName}|{string.Join(";", tabStrings)}");
                     }

@@ -131,6 +131,17 @@
     <!-- Tabbed Group Controls -->
     <sys:String x:Key="StartMenu_NewTab">Nieuw tabblad</sys:String>
     <sys:String x:Key="StartMenu_RenameTab">Tabblad hernoemen</sys:String>
+    <sys:String x:Key="StartMenu_RemoveTab">Verwijderen</sys:String>
+    <sys:String x:Key="StartMenu_DeleteEntireGroup">Volledige groep verwijderen</sys:String>
+
+    <!-- Tabbed Group Manager -->
+    <sys:String x:Key="StartMenu_ManageTabsAndColors">Tabbladen &amp; kleuren beheren</sys:String>
+    <sys:String x:Key="StartMenu_TabName">Tabbladnaam</sys:String>
+    <sys:String x:Key="StartMenu_TabNamePlaceholder">Voer tabbladnaam in...</sys:String>
+    <sys:String x:Key="StartMenu_TabColor">Tabbladkleur</sys:String>
+    <sys:String x:Key="StartMenu_CustomHexColor">Aangepaste hex-kleur</sys:String>
+    <sys:String x:Key="StartMenu_ApplyCustomColor">Aangepaste kleur toepassen</sys:String>
+    <sys:String x:Key="StartMenu_SaveSetup">Instellingen opslaan</sys:String>
 
     <!-- endregion StartMenu -->
 

@@ -278,18 +278,26 @@
                                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
                                                                                 </Style>
                                                                             </ListView.ItemContainerStyle>
+
                                                                             <ListView.ItemTemplate>
                                                                                 <DataTemplate x:DataType="models:AppCategory">
-                                                                                    <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center">
-                                                                                        <TextBlock.ContextFlyout>
-                                                                                            <MenuFlyout>
-                                                                                                <MenuFlyoutItem Text="Rename Tab" Click="RenameTab_Click" Tag="{x:Bind}" />
-                                                                                                <MenuFlyoutItem Text="Delete Tab" Click="DeleteTab_Click" Tag="{x:Bind}" />
-                                                                                                <MenuFlyoutSeparator/>
-                                                                                                <MenuFlyoutItem Text="Delete Entire Group" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red"/>
-                                                                                            </MenuFlyout>
-                                                                                        </TextBlock.ContextFlyout>
-                                                                                    </TextBlock>
+                                                                                    <Grid>
+                                                                                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,6">
+                                                                                            <TextBlock.ContextFlyout>
+                                                                                                <MenuFlyout>
+                                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ManageTabsAndColors}" Click="ManageTabs_Click" DataContext="{x:Bind}" Icon="Setting" />
+                                                                                                    <MenuFlyoutSeparator/>
+                                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteEntireGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red" Icon="Delete" />
+                                                                                                </MenuFlyout>
+                                                                                            </TextBlock.ContextFlyout>
+                                                                                        </TextBlock>
+
+                                                                                        <Border Height="3"
+                                                                                                Background="{x:Bind TabColorBrush, Mode=OneWay}"
+                                                                                                VerticalAlignment="Bottom"
+                                                                                                CornerRadius="1.5"
+                                                                                                Margin="0,18,0,0" />
+                                                                                    </Grid>
                                                                                 </DataTemplate>
                                                                             </ListView.ItemTemplate>
                                                                         </ListView>
@@ -933,18 +941,26 @@
                                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
                                                                                 </Style>
                                                                             </ListView.ItemContainerStyle>
+
                                                                             <ListView.ItemTemplate>
                                                                                 <DataTemplate x:DataType="models:AppCategory">
-                                                                                    <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center">
-                                                                                        <TextBlock.ContextFlyout>
-                                                                                            <MenuFlyout>
-                                                                                                <MenuFlyoutItem Text="Rename Tab" Click="RenameTab_Click" Tag="{x:Bind}" />
-                                                                                                <MenuFlyoutItem Text="Delete Tab" Click="DeleteTab_Click" Tag="{x:Bind}" />
-                                                                                                <MenuFlyoutSeparator/>
-                                                                                                <MenuFlyoutItem Text="Delete Entire Group" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red"/>
-                                                                                            </MenuFlyout>
-                                                                                        </TextBlock.ContextFlyout>
-                                                                                    </TextBlock>
+                                                                                    <Grid>
+                                                                                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,6">
+                                                                                            <TextBlock.ContextFlyout>
+                                                                                                <MenuFlyout>
+                                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ManageTabsAndColors}" Click="ManageTabs_Click" DataContext="{x:Bind}" Icon="Setting" />
+                                                                                                    <MenuFlyoutSeparator/>
+                                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteEntireGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red" Icon="Delete" />
+                                                                                                </MenuFlyout>
+                                                                                            </TextBlock.ContextFlyout>
+                                                                                        </TextBlock>
+
+                                                                                        <Border Height="3"
+                                                                                                Background="{x:Bind TabColorBrush, Mode=OneWay}"
+                                                                                                VerticalAlignment="Bottom"
+                                                                                                CornerRadius="1.5"
+                                                                                                Margin="0,18,0,0" />
+                                                                                    </Grid>
                                                                                 </DataTemplate>
                                                                             </ListView.ItemTemplate>
                                                                         </ListView>

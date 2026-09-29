@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using Microsoft.UI;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
@@ -70,6 +71,40 @@ namespace EvolveOS_ShellEnhancer.Models
                     OnPropertyChanged(nameof(SelectedTabIndex));
                     OnPropertyChanged(nameof(SelectedTabApps));
                 }
+            }
+        }
+
+        private string? _tabColor;
+        public string? TabColor
+        {
+            get => _tabColor;
+            set
+            {
+                if (_tabColor != value)
+                {
+                    _tabColor = value;
+                    OnPropertyChanged(nameof(TabColor));
+                    OnPropertyChanged(nameof(TabColorBrush));
+                }
+            }
+        }
+
+        public SolidColorBrush TabColorBrush
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(TabColor)) return new SolidColorBrush(Colors.Transparent);
+                try
+                {
+                    var color = ColorHelper.FromArgb(
+                        255,
+                        Convert.ToByte(TabColor.Substring(3, 2), 16),
+                        Convert.ToByte(TabColor.Substring(5, 2), 16),
+                        Convert.ToByte(TabColor.Substring(7, 2), 16)
+                    );
+                    return new SolidColorBrush(color);
+                }
+                catch { return new SolidColorBrush(Colors.Transparent); }
             }
         }
 

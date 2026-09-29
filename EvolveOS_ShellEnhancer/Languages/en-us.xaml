@@ -132,6 +132,17 @@
     <!-- Tabbed Group Controls -->
     <sys:String x:Key="StartMenu_NewTab">New Tab</sys:String>
     <sys:String x:Key="StartMenu_RenameTab">Rename Tab</sys:String>
+    <sys:String x:Key="StartMenu_RemoveTab">Remove</sys:String>
+    <sys:String x:Key="StartMenu_DeleteEntireGroup">Delete Entire Group</sys:String>
+
+    <!-- Tabbed Group Manager -->
+    <sys:String x:Key="StartMenu_ManageTabsAndColors">Manage Tabs &amp; Colors</sys:String>
+    <sys:String x:Key="StartMenu_TabName">Tab Name</sys:String>
+    <sys:String x:Key="StartMenu_TabNamePlaceholder">Enter tab name...</sys:String>
+    <sys:String x:Key="StartMenu_TabColor">Tab Color</sys:String>
+    <sys:String x:Key="StartMenu_CustomHexColor">Custom Hex Color</sys:String>
+    <sys:String x:Key="StartMenu_ApplyCustomColor">Apply Custom Color</sys:String>
+    <sys:String x:Key="StartMenu_SaveSetup">Save Setup</sys:String>
 
     <!-- endregion StartMenu -->
 

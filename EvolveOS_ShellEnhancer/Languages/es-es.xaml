@@ -131,6 +131,17 @@
     <!-- Tabbed Group Controls -->
     <sys:String x:Key="StartMenu_NewTab">Nueva pestaña</sys:String>
     <sys:String x:Key="StartMenu_RenameTab">Cambiar nombre de pestaña</sys:String>
+    <sys:String x:Key="StartMenu_RemoveTab">Quitar</sys:String>
+    <sys:String x:Key="StartMenu_DeleteEntireGroup">Eliminar todo el grupo</sys:String>
+
+    <!-- Tabbed Group Manager -->
+    <sys:String x:Key="StartMenu_ManageTabsAndColors">Administrar pestañas y colores</sys:String>
+    <sys:String x:Key="StartMenu_TabName">Nombre de la pestaña</sys:String>
+    <sys:String x:Key="StartMenu_TabNamePlaceholder">Ingrese el nombre de la pestaña...</sys:String>
+    <sys:String x:Key="StartMenu_TabColor">Color de la pestaña</sys:String>
+    <sys:String x:Key="StartMenu_CustomHexColor">Color hex personalizado</sys:String>
+    <sys:String x:Key="StartMenu_ApplyCustomColor">Aplicar color personalizado</sys:String>
+    <sys:String x:Key="StartMenu_SaveSetup">Guardar configuración</sys:String>
 
     <!-- endregion StartMenu -->
 
