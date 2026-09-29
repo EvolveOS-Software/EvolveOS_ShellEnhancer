@@ -1661,6 +1661,8 @@ namespace EvolveOS_ShellEnhancer.Views
                 Canvas.SetLeft(_dragGhost, pt.X - 40);
                 Canvas.SetTop(_dragGhost, pt.Y - 48);
 
+                CheckTabHover(pt);
+
                 var (targetGrid, targetCategory, targetIndex, mergeTarget) = GetHoveredDropTarget(pt);
 
                 if (targetGrid != null && targetCategory != null)
@@ -2143,6 +2145,9 @@ namespace EvolveOS_ShellEnhancer.Views
         private bool _isClosingFolderOverlay = false;
         private AppItem? _activeFolderApp;
 
+        private AppCategory? _hoveredTab = null;
+        private DateTime _tabHoverStartTime = DateTime.MinValue;
+
         private void OpenPinnedFolder(AppItem app, FrameworkElement container)
         {
             _activeFolderApp = app;
@@ -2169,6 +2174,93 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             _isFolderWindowOpen = true;
+        }
+
+        private void CheckTabHover(Point pointerPos)
+        {
+            foreach (var listView in GetAllTabListViews())
+            {
+                if (listView.Visibility != Visibility.Visible) continue;
+
+                var transform = listView.TransformToVisual(MenuContainer);
+                var bounds = transform.TransformBounds(new Rect(0, 0, listView.ActualWidth, listView.ActualHeight));
+
+                if (bounds.Contains(pointerPos))
+                {
+                    for (int i = 0; i < listView.Items.Count; i++)
+                    {
+                        if (listView.ContainerFromIndex(i) is FrameworkElement itemContainer)
+                        {
+                            var itemTransform = itemContainer.TransformToVisual(MenuContainer);
+                            var itemBounds = itemTransform.TransformBounds(new Rect(0, 0, itemContainer.ActualWidth, itemContainer.ActualHeight));
+
+                            if (itemBounds.Contains(pointerPos))
+                            {
+                                if (listView.Items[i] is AppCategory targetTab)
+                                {
+                                    if (_hoveredTab != targetTab)
+                                    {
+                                        _hoveredTab = targetTab;
+                                        _tabHoverStartTime = DateTime.Now;
+                                    }
+                                    else if ((DateTime.Now - _tabHoverStartTime).TotalMilliseconds > 350)
+                                    {
+                                        if (listView.DataContext is AppCategory parentCat && parentCat.SelectedTabIndex != i)
+                                        {
+                                            parentCat.SelectedTabIndex = i;
+                                            _hoveredTab = null;
+                                        }
+                                    }
+                                }
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            _hoveredTab = null;
+        }
+
+        private IEnumerable<ListView> GetAllTabListViews()
+        {
+            var listViews = new List<ListView>();
+
+            if (PagesFlipView != null)
+            {
+                for (int i = 0; i < Pages.Count; i++)
+                {
+                    if (PagesFlipView.ContainerFromIndex(i) is FrameworkElement container)
+                        FindAllTabListViewsRecursive(container, listViews);
+                }
+            }
+
+            if (PagesFlipView2 != null)
+            {
+                for (int i = 0; i < Pages.Count; i++)
+                {
+                    if (PagesFlipView2.ContainerFromIndex(i) is FrameworkElement container)
+                        FindAllTabListViewsRecursive(container, listViews);
+                }
+            }
+
+            return listViews.Distinct();
+        }
+
+        private void FindAllTabListViewsRecursive(DependencyObject parent, List<ListView> results)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+
+                // If it's a ListView bound to our Tabs, collect it
+                if (child is ListView lv && lv.ItemsSource is ObservableCollection<AppCategory>)
+                {
+                    results.Add(lv);
+                }
+
+                FindAllTabListViewsRecursive(child, results);
+            }
         }
 
         private void OverlayFolderNameBox_KeyDown(object sender, KeyRoutedEventArgs e)
