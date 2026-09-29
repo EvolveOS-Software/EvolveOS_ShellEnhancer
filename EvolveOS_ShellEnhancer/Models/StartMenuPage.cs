@@ -13,6 +13,13 @@ namespace EvolveOS_ShellEnhancer.Models
         public ObservableCollection<AppCategory> PinnedCategories { get; } = new();
         public ObservableCollection<AppItem> RecentDocsCollection { get; } = new();
 
+        private string _pageName = "";
+        public string PageName
+        {
+            get => _pageName;
+            set { if (_pageName != value) { _pageName = value; OnPropertyChanged(nameof(PageName)); } }
+        }
+
         private int _pageIndex;
         public int PageIndex
         {

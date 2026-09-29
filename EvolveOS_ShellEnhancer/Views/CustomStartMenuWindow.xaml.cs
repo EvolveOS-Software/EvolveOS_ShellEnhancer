@@ -1,16 +1,17 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using EvolveOS_ShellEnhancer.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Animation;
 using System.Collections.ObjectModel;
 using System.IO;
+using Windows.Graphics;
 using Windows.System;
 using WinRT.Interop;
-using EvolveOS_ShellEnhancer.ViewModels;
-using Windows.Graphics;
 
 namespace EvolveOS_ShellEnhancer.Views
 {
@@ -62,6 +63,8 @@ namespace EvolveOS_ShellEnhancer.Views
         private bool _isSearchSettingsExpanded = false;
 
         private AppItem? _sourceFolderItem;
+
+        private int _pageNameAnimationToken = 0;
         #endregion
 
         #region Initialization & Data Loading
@@ -135,6 +138,17 @@ namespace EvolveOS_ShellEnhancer.Views
 
             ViewModel.OnAppsDataLoaded = () =>
             {
+                string savedNames = SettingsEngine.StartMenuPageNames ?? string.Empty;
+                var namesArray = savedNames.Split('|');
+
+                for (int i = 0; i < Math.Min(ViewModel.Pages.Count, namesArray.Length); i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(namesArray[i]))
+                    {
+                        ViewModel.Pages[i].PageName = namesArray[i];
+                    }
+                }
+
                 UpdatePageIndicators(0);
                 int savedSize = SettingsEngine.Shell_StartMenuFolderSize;
                 if (savedSize < 1 || savedSize > 2) savedSize = 1;
@@ -840,6 +854,33 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     PagesFlipView.SelectedIndex = fv.SelectedIndex;
                 }
+
+                if (_isVisible && fv.SelectedIndex >= 0 && fv.SelectedIndex < Pages.Count)
+                {
+                    var page = Pages[fv.SelectedIndex];
+                    string pageName = string.IsNullOrWhiteSpace(page.PageName) ? $"Page {page.PageIndex + 1}" : page.PageName;
+                    ShowPageNameBriefly(pageName);
+                }
+            }
+        }
+
+        private void BottomNavigationGrid_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            var delta = e.GetCurrentPoint(null).Properties.MouseWheelDelta;
+            var activeFlipView = (_currentStyle == "Compact" || _currentStyle == "SplitGrouped") ? PagesFlipView2 : PagesFlipView;
+
+            if (activeFlipView != null)
+            {
+                if (delta < 0 && activeFlipView.SelectedIndex < Pages.Count - 1)
+                {
+                    activeFlipView.SelectedIndex++;
+                }
+                else if (delta > 0 && activeFlipView.SelectedIndex > 0)
+                {
+                    activeFlipView.SelectedIndex--;
+                }
+
+                e.Handled = true;
             }
         }
 
@@ -980,6 +1021,40 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        private void FadeElement(UIElement target, double to, int durationMs)
+        {
+            var storyboard = new Storyboard();
+            var animation = new DoubleAnimation
+            {
+                To = to,
+                Duration = new Duration(TimeSpan.FromMilliseconds(durationMs)),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+            };
+            Storyboard.SetTarget(animation, target);
+            Storyboard.SetTargetProperty(animation, "Opacity");
+            storyboard.Children.Add(animation);
+            storyboard.Begin();
+        }
+
+        private async void ShowPageNameBriefly(string pageName)
+        {
+            if (PageNameDisplay1 != null) PageNameDisplay1.Text = pageName;
+            if (PageNameDisplay2 != null) PageNameDisplay2.Text = pageName;
+
+            int token = ++_pageNameAnimationToken;
+
+            if (PageNameDisplay1 != null) FadeElement(PageNameDisplay1, 1.0, 300);
+            if (PageNameDisplay2 != null) FadeElement(PageNameDisplay2, 1.0, 300);
+
+            await Task.Delay(1500);
+
+            if (token == _pageNameAnimationToken)
+            {
+                if (PageNameDisplay1 != null) FadeElement(PageNameDisplay1, 0.0, 500);
+                if (PageNameDisplay2 != null) FadeElement(PageNameDisplay2, 0.0, 500);
+            }
+        }
+
         #endregion
 
         #region Context Menu Handlers (Pinning / Actions)
@@ -1029,6 +1104,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 addPageItem.Click += (s, args) =>
                 {
                     var newPage = new StartMenuPage { PageIndex = Pages.Count };
+                    newPage.PageName = LocalizationService.Instance.GetString("StartMenu_NewPage") ?? "New Page";
                     var prop = typeof(StartMenuPage).GetProperty("PageName");
                     if (prop != null) prop.SetValue(newPage, LocalizationService.Instance.GetString("StartMenu_NewPage") ?? "New Page");
 
@@ -1098,19 +1174,17 @@ namespace EvolveOS_ShellEnhancer.Views
 
             var nameBox = new TextBox
             {
-                Text = (typeof(StartMenuPage).GetProperty("PageName")?.GetValue(page) as string) ?? $"Page {page.PageIndex + 1}",
+                Text = string.IsNullOrWhiteSpace(page.PageName) ? $"Page {page.PageIndex + 1}" : page.PageName,
                 Width = 300
             };
             dialog.Content = nameBox;
 
             if (await dialog.ShowAsync() == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(nameBox.Text))
             {
-                var prop = typeof(StartMenuPage).GetProperty("PageName");
-                if (prop != null)
-                {
-                    prop.SetValue(page, nameBox.Text);
-                    SafeSavePins();
-                }
+                page.PageName = nameBox.Text;
+                SafeSavePins();
+
+                ShowPageNameBriefly(page.PageName);
             }
         }
 
@@ -2458,6 +2532,11 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void SafeSavePins()
         {
+            var pageNames = string.Join("|", Pages.Select(p =>
+                string.IsNullOrWhiteSpace(p.PageName) ? $"Page {p.PageIndex + 1}" : p.PageName
+            ));
+            SettingsEngine.StartMenuPageNames = pageNames;
+
             foreach (var page in Pages)
             {
                 foreach (var cat in page.PinnedCategories)

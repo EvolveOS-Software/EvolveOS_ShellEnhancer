@@ -32,6 +32,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             ["TaskbarPinnedAppsOrder"] = string.Empty,
             ["StartMenuPinnedApps"] = string.Empty,
             ["Taskbar_FilteredFolders"] = string.Empty,
+            ["StartMenuPageNames"] = string.Empty,
             #endregion
 
             #region Shell Settings
@@ -89,6 +90,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static string TaskbarPinnedAppsOrder { get => (string)_cachedSettings["TaskbarPinnedAppsOrder"]; set => ChangingParameters("TaskbarPinnedAppsOrder", value); }
         internal static string StartMenuPinnedApps { get => (string)_cachedSettings["StartMenuPinnedApps"]; set => ChangingParameters("StartMenuPinnedApps", value); }
         internal static string Taskbar_FilteredFolders { get => (string)_cachedSettings["Taskbar_FilteredFolders"]; set => ChangingParameters("Taskbar_FilteredFolders", value); }
+        internal static string StartMenuPageNames { get => (string)_cachedSettings["StartMenuPageNames"]; set => ChangingParameters("StartMenuPageNames", value); }
         #endregion
 
         #region Shell Settings
@@ -141,7 +143,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #region Registry Engine
         private static string GetRegistryPath(string key)
         {
-            if (key == "TaskbarPinnedAppsOrder" || key == "StartMenuPinnedApps" || key == "Taskbar_FilteredFolders")
+            if (key == "TaskbarPinnedAppsOrder" || key == "StartMenuPinnedApps" || key == "Taskbar_FilteredFolders" || key == "StartMenuPageNames")
             {
                 return RegistryPath.SubKey;
             }
@@ -191,7 +193,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 {
                     try
                     {
-                        RegistryKey? targetKey = (kv.Key == "TaskbarPinnedAppsOrder" || kv.Key == "StartMenuPinnedApps" || kv.Key == "Taskbar_FilteredFolders")
+                        RegistryKey? targetKey = (kv.Key == "TaskbarPinnedAppsOrder" || kv.Key == "StartMenuPinnedApps" || kv.Key == "Taskbar_FilteredFolders" || kv.Key == "StartMenuPageNames")
                             ? enhancerKey
                             : optimizerKey;
 

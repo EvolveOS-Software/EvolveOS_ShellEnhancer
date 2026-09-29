@@ -530,8 +530,13 @@
                                 </ListView>
 
                                 <!-- Bottom Navigation (< • • • >) -->
-                                <Grid x:Name="BottomNavigationGrid" Grid.Row="2" Margin="0,16,0,0" HorizontalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Grid x:Name="BottomNavigationGrid" Grid.Row="2" Margin="0,16,0,0" HorizontalAlignment="Center" PointerWheelChanged="BottomNavigationGrid_PointerWheelChanged">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
                                         <Button x:Name="PageLeftBtn" FontFamily="Segoe Fluent Icons" Content="&#xE76B;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageLeftBtn_Click"/>
 
                                         <ItemsControl x:Name="PageIndicatorControl" ItemsSource="{x:Bind Pages}" VerticalAlignment="Center">
@@ -551,6 +556,8 @@
 
                                         <Button x:Name="PageRightBtn" FontFamily="Segoe Fluent Icons" Content="&#xE76C;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageRightBtn_Click"/>
                                     </StackPanel>
+
+                                    <TextBlock x:Name="PageNameDisplay1" Grid.Row="1" Text="" Opacity="0" HorizontalAlignment="Center" Margin="0,4,0,0" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontFamily="{ThemeResource AppCustomFont}"/>
                                 </Grid>
 
                             </Grid>
@@ -1190,8 +1197,13 @@
                                 </ListView>
 
                                 <!-- Bottom Navigation (< • • • >) -->
-                                <Grid x:Name="BottomNavigationGrid2" Grid.Row="2" Margin="0,16,0,0" HorizontalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Grid x:Name="BottomNavigationGrid2" Grid.Row="2" Margin="0,16,0,0" HorizontalAlignment="Center" PointerWheelChanged="BottomNavigationGrid_PointerWheelChanged">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
                                         <Button x:Name="PageLeftBtn2" FontFamily="Segoe Fluent Icons" Content="&#xE76B;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageLeftBtn_Click"/>
 
                                         <ItemsControl x:Name="PageIndicatorControl2" ItemsSource="{x:Bind Pages}" VerticalAlignment="Center">
@@ -1211,6 +1223,8 @@
 
                                         <Button x:Name="PageRightBtn2" FontFamily="Segoe Fluent Icons" Content="&#xE76C;" Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" Click="PageRightBtn_Click"/>
                                     </StackPanel>
+
+                                    <TextBlock x:Name="PageNameDisplay2" Grid.Row="1" Text="" Opacity="0" HorizontalAlignment="Center" Margin="0,4,0,0" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontFamily="{ThemeResource AppCustomFont}"/>
                                 </Grid>
 
                                 <!-- Dummy Grids to satisfy C# behind-code handlers -->
