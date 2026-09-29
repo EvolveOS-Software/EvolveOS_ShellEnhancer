@@ -2732,6 +2732,16 @@ namespace EvolveOS_ShellEnhancer.Views
                             cat.Apps.Add(tabStorage);
                         }
                     }
+                    else
+                    {
+                        foreach (var app in cat.Apps)
+                        {
+                            if (app.ExecutablePath == "PINNED_FOLDER" && string.IsNullOrWhiteSpace(app.Name))
+                            {
+                                app.Name = " ";
+                            }
+                        }
+                    }
                 }
             }
 

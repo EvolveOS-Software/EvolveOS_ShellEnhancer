@@ -174,7 +174,7 @@ namespace EvolveOS_ShellEnhancer.ViewModels
 
                                 foreach (var catStr in categories)
                                 {
-                                    var parts = catStr.Split('|');
+                                    var parts = catStr.Split(new[] { '|' }, 2);
                                     if (parts.Length == 2)
                                     {
                                         string groupName = parts[0];
@@ -191,7 +191,7 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                                             var tabStrings = parts[1].Split(';', StringSplitOptions.RemoveEmptyEntries);
                                             foreach (var tabStr in tabStrings)
                                             {
-                                                var tabParts = tabStr.Split(':');
+                                                var tabParts = tabStr.Split(new[] { ':' }, 2);
                                                 if (tabParts.Length >= 1)
                                                 {
                                                     string rawName = tabParts[0];
@@ -252,7 +252,20 @@ namespace EvolveOS_ShellEnhancer.ViewModels
 
                         OnAppsDataLoaded?.Invoke();
 
-                        _ = ExtractIconsAsync(Pages.SelectMany(p => p.PinnedCategories).SelectMany(c => c.Apps).ToList());
+                        var allCategories = Pages.SelectMany(p => p.PinnedCategories)
+                            .SelectMany(c => c.IsTabbed ? (IEnumerable<AppCategory>)c.Tabs : new AppCategory[] { c })
+                            .ToList();
+
+                        var topLevelPinnedApps = allCategories.SelectMany(cat => cat.Apps).ToList();
+
+                        var nestedFolderApps = topLevelPinnedApps
+                            .Where(app => app.FolderApps != null)
+                            .SelectMany(app => app.FolderApps)
+                            .ToList();
+
+                        var allPinnedAndFolderApps = topLevelPinnedApps.Concat(nestedFolderApps).ToList();
+
+                        _ = ExtractIconsAsync(allPinnedAndFolderApps);
                         _ = ExtractIconsAsync(AllAppsCollection);
                     });
                 }
@@ -290,10 +303,36 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                     if (!string.IsNullOrEmpty(contents))
                     {
                         var innerApps = contents.Split('~', StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var innerName in innerApps)
+                        foreach (var innerAppStr in innerApps)
                         {
-                            var innerMatch = fetchedAllApps.FirstOrDefault(a => a.Name == innerName);
-                            if (innerMatch != null) folderItem.FolderApps.Add(innerMatch);
+                            string innerName = innerAppStr;
+                            string innerPath = "";
+
+                            var pipeIndex = innerAppStr.IndexOf('|');
+                            if (pipeIndex != -1)
+                            {
+                                innerName = innerAppStr.Substring(0, pipeIndex);
+                                innerPath = innerAppStr.Substring(pipeIndex + 1);
+                            }
+
+                            var innerMatch = fetchedAllApps.FirstOrDefault(a => !string.IsNullOrEmpty(innerPath) && a.ExecutablePath == innerPath)
+                                             ?? fetchedAllApps.FirstOrDefault(a => a.Name == innerName);
+
+                            if (innerMatch != null)
+                            {
+                                folderItem.FolderApps.Add(innerMatch);
+                            }
+                            else if (!string.IsNullOrEmpty(innerPath))
+                            {
+                                folderItem.FolderApps.Add(new AppItem
+                                {
+                                    Name = innerName,
+                                    ExecutablePath = innerPath,
+                                    IsUwp = false,
+                                    FallbackGlyph = "\xE738",
+                                    IconScale = 1.0
+                                });
+                            }
                         }
                     }
                     cat.Apps.Add(folderItem);
@@ -472,7 +511,10 @@ namespace EvolveOS_ShellEnhancer.ViewModels
 
                 if (app.ExecutablePath == "PINNED_FOLDER")
                 {
-                    var validApps = app.FolderApps?.Where(a => a != null && !string.IsNullOrWhiteSpace(a.Name)).Select(a => a.Name) ?? new List<string>();
+                    var validApps = app.FolderApps?
+                        .Where(a => a != null && !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.ExecutablePath))
+                        .Select(a => $"{a.Name}|{a.ExecutablePath}") ?? new List<string>();
+
                     var insideApps = string.Join("~", validApps);
                     appStrings.Add($"[PINNED_FOLDER]{app.Name}::{insideApps}");
                 }

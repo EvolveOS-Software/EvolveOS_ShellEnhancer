@@ -453,7 +453,7 @@
                                                             </Button>
                                                         </Grid>
 
-                                                        <GridView ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" RightTapped="RecentItem_RightTapped" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
+                                                        <GridView x:Name="RecentDocsGrid" ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" RightTapped="RecentItem_RightTapped" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
                                                                   MaxHeight="116" ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden">
 
                                                             <GridView.Resources>
@@ -1186,7 +1186,7 @@
                                                             </Button>
                                                         </Grid>
 
-                                                        <GridView ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" RightTapped="RecentItem_RightTapped" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
+                                                        <GridView x:Name="RecentDocsGrid" ItemsSource="{x:Bind RecentDocsCollection, Mode=OneWay}" SelectionMode="Single" RightTapped="RecentItem_RightTapped" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick"
                                                                   MaxHeight="116" ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden">
 
                                                             <GridView.Resources>
