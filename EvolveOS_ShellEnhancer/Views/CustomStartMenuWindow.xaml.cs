@@ -189,7 +189,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 foreach (var grid in GetAllCategoryGrids())
                 {
-                    if (grid.ItemsPanelRoot is Controls.StartMenuWrapPanel wrapPanel)
+                    if (grid.ItemsPanelRoot is StartMenuWrapPanel wrapPanel)
                     {
                         wrapPanel.InvalidateMeasure();
                         wrapPanel.InvalidateArrange();
@@ -1491,6 +1491,12 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void AppCard_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
+            if (sender is FrameworkElement element)
+            {
+                var app = element.Tag as AppItem ?? element.DataContext as AppItem;
+                if (app != null && app.ExecutablePath == "PINNED_FOLDER") return;
+            }
+
             if (sender is StackPanel panel)
                 panel.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
             else if (sender is Border border)
@@ -1953,7 +1959,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
             foreach (var grid in GetAllCategoryGrids())
             {
-                if (grid.ItemsPanelRoot is Controls.StartMenuWrapPanel wrapPanel)
+                if (grid.ItemsPanelRoot is StartMenuWrapPanel wrapPanel)
                 {
                     wrapPanel.InvalidateMeasure();
                     wrapPanel.InvalidateArrange();
@@ -2185,6 +2191,64 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (result != null) return result;
             }
             return null;
+        }
+
+        private void FolderName_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            if (!e.GetCurrentPoint(sender as UIElement).Properties.IsLeftButtonPressed) return;
+
+            if (sender is Grid grid && grid.Tag is AppItem app)
+            {
+                if (app.ExecutablePath == "PINNED_FOLDER")
+                {
+                    var parentGridView = FindVisualParent<GridView>(grid);
+                    var container = parentGridView?.ContainerFromItem(app) as FrameworkElement;
+                    OpenPinnedFolder(app, container ?? grid);
+                }
+                else
+                {
+                    LaunchApp(app, false);
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void FolderName_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is Grid grid && grid.Tag is AppItem app && app.ExecutablePath == "PINNED_FOLDER")
+            {
+                grid.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
+            }
+        }
+
+        private void FolderName_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
+        {
+            if (sender is Grid grid && args.NewValue is AppItem app)
+            {
+                if (app.ExecutablePath == "PINNED_FOLDER")
+                {
+                    grid.HorizontalAlignment = HorizontalAlignment.Center;
+                    grid.Width = app.FolderBoxSize;
+                }
+                else
+                {
+                    grid.HorizontalAlignment = HorizontalAlignment.Stretch;
+                    grid.Width = double.NaN;
+                }
+            }
+        }
+
+        private void FolderName_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is Grid grid && grid.Tag is AppItem app && app.ExecutablePath == "PINNED_FOLDER")
+            {
+                grid.Background = new SolidColorBrush(Colors.Transparent);
+            }
+        }
+
+        private void InnerFolderApp_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is AppItem app) LaunchApp(app, false);
         }
         #endregion
 
@@ -2572,7 +2636,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 foreach (var grid in GetAllCategoryGrids())
                 {
-                    if (grid.ItemsPanelRoot is Controls.StartMenuWrapPanel wrapPanel)
+                    if (grid.ItemsPanelRoot is StartMenuWrapPanel wrapPanel)
                     {
                         wrapPanel.InvalidateMeasure();
                         wrapPanel.InvalidateArrange();

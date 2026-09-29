@@ -210,47 +210,72 @@
                                                                         </GridView.ItemContainerStyle>
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Height="{x:Bind CardHeight, Mode=OneWay}" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                                                    <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" HorizontalAlignment="Center">
-                                                                                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                                                                                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                                            <Image.RenderTransform>
-                                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                                            </Image.RenderTransform>
-                                                                                        </Image>
-                                                                                        <Border CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
-                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+
+                                                                                    <Grid HorizontalAlignment="Center">
+
+                                                                                        <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}">
+                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
+                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                <Image.RenderTransform>
+                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                </Image.RenderTransform>
+                                                                                            </Image>
+                                                                                        </Grid>
+
+                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="True" IsItemClickEnabled="True" ItemClick="InnerFolderApp_ItemClick" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+
+                                                                                                <GridView.Resources>
+                                                                                                    <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                                                                    <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                                                                                                </GridView.Resources>
+
                                                                                                 <GridView.ItemsPanel>
                                                                                                     <ItemsPanelTemplate>
                                                                                                         <VariableSizedWrapGrid MaximumRowsOrColumns="2" Orientation="Horizontal" />
                                                                                                     </ItemsPanelTemplate>
                                                                                                 </GridView.ItemsPanel>
+
                                                                                                 <GridView.ItemContainerStyle>
                                                                                                     <Style TargetType="GridViewItem">
                                                                                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                                                                                         <Setter Property="VerticalContentAlignment" Value="Center"/>
-                                                                                                        <Setter Property="Margin" Value="0"/>
+                                                                                                        <Setter Property="Margin" Value="1"/>
                                                                                                         <Setter Property="Padding" Value="0"/>
                                                                                                         <Setter Property="MinHeight" Value="0"/>
                                                                                                         <Setter Property="MinWidth" Value="0"/>
                                                                                                     </Style>
                                                                                                 </GridView.ItemContainerStyle>
+
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
-                                                                                                        <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
-                                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                                                                <Image.RenderTransform>
-                                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                                                                </Image.RenderTransform>
-                                                                                                            </Image>
-                                                                                                        </Grid>
+                                                                                                        <Border CornerRadius="4" Background="Transparent"
+                                                                                                                PointerEntered="AppCard_PointerEntered"
+                                                                                                                PointerExited="AppCard_PointerExited">
+                                                                                                            <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
+                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                                                                <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                    <Image.RenderTransform>
+                                                                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                                    </Image.RenderTransform>
+                                                                                                                </Image>
+                                                                                                            </Grid>
+                                                                                                        </Border>
                                                                                                     </DataTemplate>
                                                                                                 </GridView.ItemTemplate>
                                                                                             </GridView>
                                                                                         </Border>
                                                                                     </Grid>
-                                                                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
+
+                                                                                    <Grid Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
+                                                                                          Background="Transparent" CornerRadius="4" Padding="2,4" MinHeight="35"
+                                                                                          HorizontalAlignment="Stretch" Margin="0,10,0,0"
+                                                                                          DataContextChanged="FolderName_DataContextChanged"
+                                                                                          PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
+                                                                                          PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
+                                                                                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                                                                    </Grid>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
                                                                         </GridView.ItemTemplate>
@@ -335,47 +360,72 @@
                                                                         </GridView.ItemContainerStyle>
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Height="{x:Bind CardHeight, Mode=OneWay}" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                                                    <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" HorizontalAlignment="Center">
-                                                                                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                                                                                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                                            <Image.RenderTransform>
-                                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                                            </Image.RenderTransform>
-                                                                                        </Image>
-                                                                                        <Border CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
-                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+
+                                                                                    <Grid HorizontalAlignment="Center">
+
+                                                                                        <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}">
+                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
+                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                <Image.RenderTransform>
+                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                </Image.RenderTransform>
+                                                                                            </Image>
+                                                                                        </Grid>
+
+                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="True" IsItemClickEnabled="True" ItemClick="InnerFolderApp_ItemClick" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+
+                                                                                                <GridView.Resources>
+                                                                                                    <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                                                                    <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                                                                                                </GridView.Resources>
+
                                                                                                 <GridView.ItemsPanel>
                                                                                                     <ItemsPanelTemplate>
                                                                                                         <VariableSizedWrapGrid MaximumRowsOrColumns="2" Orientation="Horizontal" />
                                                                                                     </ItemsPanelTemplate>
                                                                                                 </GridView.ItemsPanel>
+
                                                                                                 <GridView.ItemContainerStyle>
                                                                                                     <Style TargetType="GridViewItem">
                                                                                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                                                                                         <Setter Property="VerticalContentAlignment" Value="Center"/>
-                                                                                                        <Setter Property="Margin" Value="0"/>
+                                                                                                        <Setter Property="Margin" Value="1"/>
                                                                                                         <Setter Property="Padding" Value="0"/>
                                                                                                         <Setter Property="MinHeight" Value="0"/>
                                                                                                         <Setter Property="MinWidth" Value="0"/>
                                                                                                     </Style>
                                                                                                 </GridView.ItemContainerStyle>
+
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
-                                                                                                        <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
-                                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                                                                <Image.RenderTransform>
-                                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                                                                </Image.RenderTransform>
-                                                                                                            </Image>
-                                                                                                        </Grid>
+                                                                                                        <Border CornerRadius="4" Background="Transparent"
+                                                                                                                PointerEntered="AppCard_PointerEntered"
+                                                                                                                PointerExited="AppCard_PointerExited">
+                                                                                                            <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
+                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                                                                <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                    <Image.RenderTransform>
+                                                                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                                    </Image.RenderTransform>
+                                                                                                                </Image>
+                                                                                                            </Grid>
+                                                                                                        </Border>
                                                                                                     </DataTemplate>
                                                                                                 </GridView.ItemTemplate>
                                                                                             </GridView>
                                                                                         </Border>
                                                                                     </Grid>
-                                                                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
+
+                                                                                    <Grid Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
+                                                                                          Background="Transparent" CornerRadius="4" Padding="2,4" MinHeight="35"
+                                                                                          HorizontalAlignment="Stretch" Margin="0,10,0,0"
+                                                                                          DataContextChanged="FolderName_DataContextChanged"
+                                                                                          PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
+                                                                                          PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
+                                                                                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                                                                    </Grid>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
                                                                         </GridView.ItemTemplate>
@@ -880,47 +930,72 @@
                                                                         </GridView.ItemContainerStyle>
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Height="{x:Bind CardHeight, Mode=OneWay}" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                                                    <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" HorizontalAlignment="Center">
-                                                                                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                                                                                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                                            <Image.RenderTransform>
-                                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                                            </Image.RenderTransform>
-                                                                                        </Image>
-                                                                                        <Border CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
-                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+
+                                                                                    <Grid HorizontalAlignment="Center">
+
+                                                                                        <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}">
+                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
+                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                <Image.RenderTransform>
+                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                </Image.RenderTransform>
+                                                                                            </Image>
+                                                                                        </Grid>
+
+                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="True" IsItemClickEnabled="True" ItemClick="InnerFolderApp_ItemClick" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+
+                                                                                                <GridView.Resources>
+                                                                                                    <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                                                                    <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                                                                                                </GridView.Resources>
+
                                                                                                 <GridView.ItemsPanel>
                                                                                                     <ItemsPanelTemplate>
                                                                                                         <VariableSizedWrapGrid MaximumRowsOrColumns="2" Orientation="Horizontal" />
                                                                                                     </ItemsPanelTemplate>
                                                                                                 </GridView.ItemsPanel>
+
                                                                                                 <GridView.ItemContainerStyle>
                                                                                                     <Style TargetType="GridViewItem">
                                                                                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                                                                                         <Setter Property="VerticalContentAlignment" Value="Center"/>
-                                                                                                        <Setter Property="Margin" Value="0"/>
+                                                                                                        <Setter Property="Margin" Value="1"/>
                                                                                                         <Setter Property="Padding" Value="0"/>
                                                                                                         <Setter Property="MinHeight" Value="0"/>
                                                                                                         <Setter Property="MinWidth" Value="0"/>
                                                                                                     </Style>
                                                                                                 </GridView.ItemContainerStyle>
+
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
-                                                                                                        <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
-                                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                                                                <Image.RenderTransform>
-                                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                                                                </Image.RenderTransform>
-                                                                                                            </Image>
-                                                                                                        </Grid>
+                                                                                                        <Border CornerRadius="4" Background="Transparent"
+                                                                                                                PointerEntered="AppCard_PointerEntered"
+                                                                                                                PointerExited="AppCard_PointerExited">
+                                                                                                            <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
+                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                                                                <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                    <Image.RenderTransform>
+                                                                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                                    </Image.RenderTransform>
+                                                                                                                </Image>
+                                                                                                            </Grid>
+                                                                                                        </Border>
                                                                                                     </DataTemplate>
                                                                                                 </GridView.ItemTemplate>
                                                                                             </GridView>
                                                                                         </Border>
                                                                                     </Grid>
-                                                                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
+
+                                                                                    <Grid Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
+                                                                                          Background="Transparent" CornerRadius="4" Padding="2,4" MinHeight="35"
+                                                                                          HorizontalAlignment="Stretch" Margin="0,10,0,0"
+                                                                                          DataContextChanged="FolderName_DataContextChanged"
+                                                                                          PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
+                                                                                          PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
+                                                                                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                                                                    </Grid>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
                                                                         </GridView.ItemTemplate>
@@ -1005,47 +1080,72 @@
                                                                         </GridView.ItemContainerStyle>
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Height="{x:Bind CardHeight, Mode=OneWay}" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                                                    <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" HorizontalAlignment="Center">
-                                                                                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                                                                                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                                            <Image.RenderTransform>
-                                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                                            </Image.RenderTransform>
-                                                                                        </Image>
-                                                                                        <Border CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
-                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="False" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+
+                                                                                    <Grid HorizontalAlignment="Center">
+
+                                                                                        <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}">
+                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
+                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                <Image.RenderTransform>
+                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                </Image.RenderTransform>
+                                                                                            </Image>
+                                                                                        </Grid>
+
+                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                            <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="True" IsItemClickEnabled="True" ItemClick="InnerFolderApp_ItemClick" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
+
+                                                                                                <GridView.Resources>
+                                                                                                    <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                                                                    <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                                                                                                </GridView.Resources>
+
                                                                                                 <GridView.ItemsPanel>
                                                                                                     <ItemsPanelTemplate>
                                                                                                         <VariableSizedWrapGrid MaximumRowsOrColumns="2" Orientation="Horizontal" />
                                                                                                     </ItemsPanelTemplate>
                                                                                                 </GridView.ItemsPanel>
+
                                                                                                 <GridView.ItemContainerStyle>
                                                                                                     <Style TargetType="GridViewItem">
                                                                                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                                                                                         <Setter Property="VerticalContentAlignment" Value="Center"/>
-                                                                                                        <Setter Property="Margin" Value="0"/>
+                                                                                                        <Setter Property="Margin" Value="1"/>
                                                                                                         <Setter Property="Padding" Value="0"/>
                                                                                                         <Setter Property="MinHeight" Value="0"/>
                                                                                                         <Setter Property="MinWidth" Value="0"/>
                                                                                                     </Style>
                                                                                                 </GridView.ItemContainerStyle>
+
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
-                                                                                                        <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
-                                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                                                                <Image.RenderTransform>
-                                                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                                                                </Image.RenderTransform>
-                                                                                                            </Image>
-                                                                                                        </Grid>
+                                                                                                        <Border CornerRadius="4" Background="Transparent"
+                                                                                                                PointerEntered="AppCard_PointerEntered"
+                                                                                                                PointerExited="AppCard_PointerExited">
+                                                                                                            <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
+                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                                                                <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                    <Image.RenderTransform>
+                                                                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                                                    </Image.RenderTransform>
+                                                                                                                </Image>
+                                                                                                            </Grid>
+                                                                                                        </Border>
                                                                                                     </DataTemplate>
                                                                                                 </GridView.ItemTemplate>
                                                                                             </GridView>
                                                                                         </Border>
                                                                                     </Grid>
-                                                                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}" Visibility="{x:Bind AppNameVisibility, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="None"/>
+
+                                                                                    <Grid Visibility="{x:Bind AppNameVisibility, Mode=OneWay}"
+                                                                                          Background="Transparent" CornerRadius="4" Padding="2,4" MinHeight="35"
+                                                                                          HorizontalAlignment="Stretch" Margin="0,10,0,0"
+                                                                                          DataContextChanged="FolderName_DataContextChanged"
+                                                                                          PointerPressed="FolderName_PointerPressed" Tag="{x:Bind}"
+                                                                                          PointerEntered="FolderName_PointerEntered" PointerExited="FolderName_PointerExited">
+                                                                                        <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"/>
+                                                                                    </Grid>
                                                                                 </StackPanel>
                                                                             </DataTemplate>
                                                                         </GridView.ItemTemplate>
