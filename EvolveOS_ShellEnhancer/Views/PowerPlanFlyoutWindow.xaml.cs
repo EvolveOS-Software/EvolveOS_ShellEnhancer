@@ -3,8 +3,8 @@
 
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
-using WinRT.Interop;
 using Windows.Graphics;
+using WinRT.Interop;
 
 namespace EvolveOS_ShellEnhancer.Views
 {

@@ -1,7 +1,6 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.Win32;
 using System.Globalization;

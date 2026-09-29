@@ -5,9 +5,9 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Shapes;
-using WinRT.Interop;
 using System.Collections.ObjectModel;
 using Windows.Graphics;
+using WinRT.Interop;
 
 namespace EvolveOS_ShellEnhancer.Views
 {

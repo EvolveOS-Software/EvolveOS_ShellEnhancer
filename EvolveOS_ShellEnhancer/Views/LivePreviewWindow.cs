@@ -4,7 +4,6 @@
 using Microsoft.UI;
 using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
-using System.Runtime.InteropServices;
 using WinRT.Interop;
 
 namespace EvolveOS_ShellEnhancer.Views

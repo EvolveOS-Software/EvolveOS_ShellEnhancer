@@ -5,7 +5,6 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Input;
 using WinRT.Interop;
-using Windows.Storage.Pickers;
 
 namespace EvolveOS_ShellEnhancer.Views
 {

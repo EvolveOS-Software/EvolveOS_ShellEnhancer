@@ -3,7 +3,6 @@
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using Microsoft.UI.Xaml;
 
 namespace EvolveOS_ShellEnhancer.Models
 {
