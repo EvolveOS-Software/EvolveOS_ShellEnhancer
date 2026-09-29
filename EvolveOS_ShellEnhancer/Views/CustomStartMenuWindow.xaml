@@ -9,6 +9,7 @@
     xmlns:controls="using:EvolveOS_ShellEnhancer.Controls"
     xmlns:models="using:EvolveOS_ShellEnhancer.Models"
     xmlns:views="using:EvolveOS_ShellEnhancer.Views"
+    xmlns:fluentIcons="using:FluentIcons.WinUI"
     mc:Ignorable="d"
     Title="CustomStartMenuWindow">
 
@@ -152,11 +153,27 @@
                                                                             </TextBox.Resources>
                                                                             <TextBox.ContextFlyout>
                                                                                 <MenuFlyout>
+
+                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveUp}" Click="MoveGroupUp_Click" Tag="{x:Bind}">
+                                                                                        <MenuFlyoutItem.Icon>
+                                                                                            <fluentIcons:SymbolIcon Symbol="ChevronUp" />
+                                                                                        </MenuFlyoutItem.Icon>
+                                                                                    </MenuFlyoutItem>
+
+                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveDown}" Click="MoveGroupDown_Click" Tag="{x:Bind}">
+                                                                                        <MenuFlyoutItem.Icon>
+                                                                                            <fluentIcons:SymbolIcon Symbol="ChevronDown" />
+                                                                                        </MenuFlyoutItem.Icon>
+                                                                                    </MenuFlyoutItem>
+
+                                                                                    <MenuFlyoutSeparator/>
+
                                                                                     <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}">
                                                                                         <MenuFlyoutItem.Icon>
                                                                                             <FontIcon Glyph="&#xE74D;"/>
                                                                                         </MenuFlyoutItem.Icon>
                                                                                     </MenuFlyoutItem>
+                                                                                    
                                                                                 </MenuFlyout>
                                                                             </TextBox.ContextFlyout>
                                                                         </TextBox>
@@ -284,7 +301,38 @@
                                                                     </GridView>
 
                                                                     <!-- 2. TABBED CATEGORY HEADER -->
-                                                                    <Grid Margin="0,0,0,8" Visibility="{x:Bind TabbedVisibility, Mode=OneWay}">
+                                                                    <Grid Margin="0,0,0,8" Visibility="{x:Bind TabbedVisibility, Mode=OneWay}" Background="Transparent">
+
+                                                                        <Grid.ContextFlyout>
+                                                                            <MenuFlyout>
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveUp}" Click="MoveGroupUp_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <fluentIcons:SymbolIcon Symbol="ChevronUp" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveDown}" Click="MoveGroupDown_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <fluentIcons:SymbolIcon Symbol="ChevronDown" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+
+                                                                                <MenuFlyoutSeparator/>
+
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ManageTabsAndColors}" Click="ManageTabs_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <fluentIcons:SymbolIcon Symbol="Settings" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+                                                                                <MenuFlyoutSeparator/>
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteEntireGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <fluentIcons:SymbolIcon Symbol="Delete" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+                                                                            </MenuFlyout>
+                                                                        </Grid.ContextFlyout>
+
                                                                         <Grid.ColumnDefinitions>
                                                                             <ColumnDefinition Width="*"/>
                                                                             <ColumnDefinition Width="Auto"/>
@@ -305,25 +353,11 @@
                                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
                                                                                 </Style>
                                                                             </ListView.ItemContainerStyle>
-
                                                                             <ListView.ItemTemplate>
                                                                                 <DataTemplate x:DataType="models:AppCategory">
-                                                                                    <Grid>
-                                                                                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,6">
-                                                                                            <TextBlock.ContextFlyout>
-                                                                                                <MenuFlyout>
-                                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ManageTabsAndColors}" Click="ManageTabs_Click" DataContext="{x:Bind}" Icon="Setting" />
-                                                                                                    <MenuFlyoutSeparator/>
-                                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteEntireGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red" Icon="Delete" />
-                                                                                                </MenuFlyout>
-                                                                                            </TextBlock.ContextFlyout>
-                                                                                        </TextBlock>
-
-                                                                                        <Border Height="3"
-                                                                                                Background="{x:Bind TabColorBrush, Mode=OneWay}"
-                                                                                                VerticalAlignment="Bottom"
-                                                                                                CornerRadius="1.5"
-                                                                                                Margin="0,18,0,0" />
+                                                                                    <Grid Background="Transparent">
+                                                                                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                                                                                        <Border Height="3" Background="{x:Bind TabColorBrush, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="1.5" Margin="0,18,0,0" />
                                                                                     </Grid>
                                                                                 </DataTemplate>
                                                                             </ListView.ItemTemplate>
@@ -886,11 +920,27 @@
                                                                             </TextBox.Resources>
                                                                             <TextBox.ContextFlyout>
                                                                                 <MenuFlyout>
+
+                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveUp}" Click="MoveGroupUp_Click" Tag="{x:Bind}">
+                                                                                        <MenuFlyoutItem.Icon>
+                                                                                            <fluentIcons:SymbolIcon Symbol="ChevronUp" />
+                                                                                        </MenuFlyoutItem.Icon>
+                                                                                    </MenuFlyoutItem>
+
+                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveDown}" Click="MoveGroupDown_Click" Tag="{x:Bind}">
+                                                                                        <MenuFlyoutItem.Icon>
+                                                                                            <fluentIcons:SymbolIcon Symbol="ChevronDown" />
+                                                                                        </MenuFlyoutItem.Icon>
+                                                                                    </MenuFlyoutItem>
+
+                                                                                    <MenuFlyoutSeparator/>
+
                                                                                     <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}">
                                                                                         <MenuFlyoutItem.Icon>
                                                                                             <FontIcon Glyph="&#xE74D;"/>
                                                                                         </MenuFlyoutItem.Icon>
                                                                                     </MenuFlyoutItem>
+                                                                                    
                                                                                 </MenuFlyout>
                                                                             </TextBox.ContextFlyout>
                                                                         </TextBox>
@@ -1018,7 +1068,38 @@
                                                                     </GridView>
 
                                                                     <!-- 2. TABBED CATEGORY HEADER -->
-                                                                    <Grid Margin="0,0,0,8" Visibility="{x:Bind TabbedVisibility, Mode=OneWay}">
+                                                                    <Grid Margin="0,0,0,8" Visibility="{x:Bind TabbedVisibility, Mode=OneWay}" Background="Transparent">
+
+                                                                        <Grid.ContextFlyout>
+                                                                            <MenuFlyout>
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveUp}" Click="MoveGroupUp_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <fluentIcons:SymbolIcon Symbol="ChevronUp" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveDown}" Click="MoveGroupDown_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <fluentIcons:SymbolIcon Symbol="ChevronDown" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+
+                                                                                <MenuFlyoutSeparator/>
+
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ManageTabsAndColors}" Click="ManageTabs_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <fluentIcons:SymbolIcon Symbol="Settings" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+                                                                                <MenuFlyoutSeparator/>
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteEntireGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <fluentIcons:SymbolIcon Symbol="Delete" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+                                                                            </MenuFlyout>
+                                                                        </Grid.ContextFlyout>
+
                                                                         <Grid.ColumnDefinitions>
                                                                             <ColumnDefinition Width="*"/>
                                                                             <ColumnDefinition Width="Auto"/>
@@ -1039,25 +1120,11 @@
                                                                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
                                                                                 </Style>
                                                                             </ListView.ItemContainerStyle>
-
                                                                             <ListView.ItemTemplate>
                                                                                 <DataTemplate x:DataType="models:AppCategory">
-                                                                                    <Grid>
-                                                                                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,6">
-                                                                                            <TextBlock.ContextFlyout>
-                                                                                                <MenuFlyout>
-                                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ManageTabsAndColors}" Click="ManageTabs_Click" DataContext="{x:Bind}" Icon="Setting" />
-                                                                                                    <MenuFlyoutSeparator/>
-                                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteEntireGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red" Icon="Delete" />
-                                                                                                </MenuFlyout>
-                                                                                            </TextBlock.ContextFlyout>
-                                                                                        </TextBlock>
-
-                                                                                        <Border Height="3"
-                                                                                                Background="{x:Bind TabColorBrush, Mode=OneWay}"
-                                                                                                VerticalAlignment="Bottom"
-                                                                                                CornerRadius="1.5"
-                                                                                                Margin="0,18,0,0" />
+                                                                                    <Grid Background="Transparent">
+                                                                                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                                                                                        <Border Height="3" Background="{x:Bind TabColorBrush, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="1.5" Margin="0,18,0,0" />
                                                                                     </Grid>
                                                                                 </DataTemplate>
                                                                             </ListView.ItemTemplate>

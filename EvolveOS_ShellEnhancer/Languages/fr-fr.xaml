@@ -130,6 +130,8 @@
     <sys:String x:Key="StartMenu_DefaultFolderName">Dossier</sys:String>
     <sys:String x:Key="StartMenu_DefaultAppName">Application</sys:String>
     <sys:String x:Key="StartMenu_PinnedCategory">Épinglé</sys:String>
+    <sys:String x:Key="StartMenu_MoveUp">Déplacer vers le haut</sys:String>
+    <sys:String x:Key="StartMenu_MoveDown">Déplacer vers le bas</sys:String>
 
     <!-- Tabbed Group Controls -->
     <sys:String x:Key="StartMenu_NewTab">Nouvel onglet</sys:String>

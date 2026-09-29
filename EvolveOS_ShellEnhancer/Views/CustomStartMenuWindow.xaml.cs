@@ -762,6 +762,40 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        private void MoveGroupUp_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem btn && (btn.Tag as AppCategory ?? btn.DataContext as AppCategory) is AppCategory cat)
+            {
+                var page = Pages.FirstOrDefault(p => p.PinnedCategories.Contains(cat));
+                if (page != null)
+                {
+                    int currentIndex = page.PinnedCategories.IndexOf(cat);
+                    if (currentIndex > 0)
+                    {
+                        page.PinnedCategories.Move(currentIndex, currentIndex - 1);
+                        SafeSavePins();
+                    }
+                }
+            }
+        }
+
+        private void MoveGroupDown_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem btn && (btn.Tag as AppCategory ?? btn.DataContext as AppCategory) is AppCategory cat)
+            {
+                var page = Pages.FirstOrDefault(p => p.PinnedCategories.Contains(cat));
+                if (page != null)
+                {
+                    int currentIndex = page.PinnedCategories.IndexOf(cat);
+                    if (currentIndex >= 0 && currentIndex < page.PinnedCategories.Count - 1)
+                    {
+                        page.PinnedCategories.Move(currentIndex, currentIndex + 1);
+                        SafeSavePins();
+                    }
+                }
+            }
+        }
+
         private void AddTab_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is AppCategory parentCategory)
@@ -2267,10 +2301,9 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void ManageTabs_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is MenuFlyoutItem item && item.DataContext is AppCategory childTab)
+            if (sender is MenuFlyoutItem item && (item.Tag as AppCategory ?? item.DataContext as AppCategory) is AppCategory group)
             {
-                var parentGroup = Pages.SelectMany(p => p.PinnedCategories)
-                                       .FirstOrDefault(c => c.IsTabbed && c.Tabs != null && c.Tabs.Contains(childTab));
+                AppCategory? parentGroup = group.IsTabbed ? group : Pages.SelectMany(p => p.PinnedCategories).FirstOrDefault(c => c.IsTabbed && c.Tabs != null && c.Tabs.Contains(group));
 
                 if (parentGroup != null)
                 {

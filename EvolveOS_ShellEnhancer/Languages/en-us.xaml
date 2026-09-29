@@ -115,6 +115,8 @@
     <sys:String x:Key="StartMenu_PinFolder">Pin Folder</sys:String>
     <sys:String x:Key="StartMenu_PinWebSite">Pin WebSite</sys:String>
     <sys:String x:Key="StartMenu_Remove">Remove Page</sys:String>
+    <sys:String x:Key="StartMenu_MoveUp">Move Up</sys:String>
+    <sys:String x:Key="StartMenu_MoveDown">Move Down</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Rename Page</sys:String>
