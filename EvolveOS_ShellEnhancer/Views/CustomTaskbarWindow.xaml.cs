@@ -114,6 +114,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private DispatcherTimer _previewDelayTimer = new DispatcherTimer();
         private Action? _pendingPreviewAction;
+
+        public static event Action? UpdatePowerPlanVisibilityEvent;
+        public static void TriggerPowerPlanVisibilityUpdate()
+        {
+            UpdatePowerPlanVisibilityEvent?.Invoke();
+        }
+        private PowerPlanFlyoutWindow _powerPlanFlyout;
         #endregion
 
         #region Initialization
@@ -158,6 +165,30 @@ namespace EvolveOS_ShellEnhancer.Views
 
             _previewWindow = new LivePreviewWindow();
 
+            _powerPlanFlyout = new PowerPlanFlyoutWindow();
+
+            if (PowerPlanButton != null)
+            {
+                bool enablePowerMenu = SettingsEngine.Shell_TaskbarPowerPlanMenu;
+                PowerPlanButton.Visibility = enablePowerMenu ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            UpdatePowerPlanVisibilityEvent += () =>
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (PowerPlanButton != null)
+                    {
+                        if (!IsPrimaryMonitor)
+                        {
+                            PowerPlanButton.Visibility = Visibility.Collapsed;
+                            return;
+                        }
+                        PowerPlanButton.Visibility = SettingsEngine.Shell_TaskbarPowerPlanMenu ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                });
+            };
+
             _previewDelayTimer.Tick += (s, e) =>
             {
                 _previewDelayTimer.Stop();
@@ -172,7 +203,6 @@ namespace EvolveOS_ShellEnhancer.Views
                 FadeContent(1.0, 450);
             };
 
-            // Wire up ViewModel System Delegates
             ViewModel.OnNetworkIconUpdated = (glyph) =>
             {
                 if (NetworkIcon != null) NetworkIcon.Glyph = glyph;
@@ -2095,6 +2125,27 @@ namespace EvolveOS_ShellEnhancer.Views
             storyboard.Begin();
 
             try { await Win32Helper.OpenTrayOverflowAsync(); } catch { }
+        }
+
+        private void PowerPlanButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_powerPlanFlyout != null && _powerPlanFlyout.IsCurrentlyVisible())
+            {
+                _powerPlanFlyout.HideMenu();
+                return;
+            }
+
+            var transform = PowerPlanButton.TransformToVisual(null);
+            var point = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
+
+            double scale = this.Content.XamlRoot.RasterizationScale;
+
+            int anchorX = _appWindow.Position.X + (int)((point.X + (PowerPlanButton.ActualWidth / 2)) * scale);
+            int anchorY = _appWindow.Position.Y + (int)((point.Y + (PowerPlanButton.ActualHeight / 2)) * scale);
+
+            string position = SettingsEngine.Shell_TaskbarPosition ?? "Bottom";
+
+            _powerPlanFlyout!.ShowMenu(anchorX, anchorY, position);
         }
         #endregion
     }

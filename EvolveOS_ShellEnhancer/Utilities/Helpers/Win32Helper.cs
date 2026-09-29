@@ -143,6 +143,38 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern bool ReleaseCapture();
 
+        [DllImport("powrprof.dll", CharSet = CharSet.Unicode)]
+        public static extern uint PowerEnumerate(
+            IntPtr RootPowerKey,
+            IntPtr SchemeGuid,
+            IntPtr SubGroupOfPowerSettingsGuid,
+            uint AccessFlags,
+            uint Index,
+            out Guid Buffer,
+            ref uint BufferSize);
+
+        [DllImport("powrprof.dll", CharSet = CharSet.Unicode)]
+        public static extern uint PowerReadFriendlyName(
+            IntPtr RootPowerKey,
+            ref Guid SchemeGuid,
+            IntPtr SubGroupOfPowerSettingsGuid,
+            IntPtr PowerSettingGuid,
+            IntPtr Buffer,
+            ref uint BufferSize);
+
+        [DllImport("powrprof.dll")]
+        public static extern uint PowerGetActiveScheme(
+            IntPtr UserRootPowerKey,
+            out IntPtr ActivePolicyGuid);
+
+        [DllImport("powrprof.dll")]
+        public static extern uint PowerSetActiveScheme(
+            IntPtr UserRootPowerKey,
+            ref Guid SchemeGuid);
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr LocalFree(IntPtr hMem);
+
         #endregion
 
         #region DWM Thumbnail API
@@ -243,6 +275,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         #region Constants
 
         public const int SW_RESTORE = 9;
+
+        public const uint ERROR_SUCCESS = 0;
+        public const uint ERROR_NO_MORE_ITEMS = 259;
+        public const uint ACCESS_SCHEME = 16;
 
         // Base Styles
         public const int GWL_STYLE = -16;

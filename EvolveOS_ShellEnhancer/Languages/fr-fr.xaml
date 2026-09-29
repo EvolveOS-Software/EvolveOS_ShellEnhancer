@@ -46,6 +46,8 @@
     <sys:String x:Key="Taskbar_UnpinTaskbar">Détacher de la barre des tâches</sys:String>
     <sys:String x:Key="Taskbar_EmptyFolder">Dossier vide</sys:String>
 
+    <sys:String x:Key="SystemTray_PowerPlans">Plans d'alimentation</sys:String>
+
     <!-- endregion TaskBar -->
 
     <!-- region StartMenu -->

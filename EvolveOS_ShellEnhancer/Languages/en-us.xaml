@@ -46,6 +46,8 @@
     <sys:String x:Key="Taskbar_UnpinTaskbar">Unpin from taskbar</sys:String>
     <sys:String x:Key="Taskbar_EmptyFolder">Empty Folder</sys:String>
 
+    <sys:String x:Key="SystemTray_PowerPlans">Power Plans</sys:String>
+
     <!-- endregion TaskBar -->
 
     <!-- region StartMenu -->

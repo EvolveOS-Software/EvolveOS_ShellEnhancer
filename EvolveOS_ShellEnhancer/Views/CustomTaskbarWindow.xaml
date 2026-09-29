@@ -3,6 +3,7 @@
     x:Class="EvolveOS_ShellEnhancer.Views.CustomTaskbarWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:EvolveOS_ShellEnhancer.Utilities.Helpers"
     Title="CustomTaskbarWindow">
 
     <Grid Background="#01000000">
@@ -52,6 +53,17 @@
                             </FontIcon.RenderTransform>
                         </FontIcon>
 
+                    </Button>
+
+                    <!-- Power Plan -->
+                    <Button x:Name="PowerPlanButton"
+                            Click="PowerPlanButton_Click"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="8,4"
+                            CornerRadius="4"
+                            ToolTipService.ToolTip="{helpers:ResourceString Key=SystemTray_PowerPlans}">
+                        <FontIcon Glyph="&#xEBB5;" FontSize="16"/>
                     </Button>
 
                     <!-- Combined Quick Settings (Network & Volume) -->

@@ -77,7 +77,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             ["Shell_TaskbarHoverAnimation"] = "Standard",
             ["Shell_TaskbarHoverBackground"] = true,
             ["Shell_TaskbarMonitorAware"] = false,
-            ["Shell_TaskbarUnpinnedMode"] = "Inline"
+            ["Shell_TaskbarUnpinnedMode"] = "Inline",
+            ["Shell_TaskbarPowerPlanMenu"] = false
             #endregion
         };
 
@@ -134,6 +135,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static bool Shell_TaskbarHoverBackground { get => (bool)_cachedSettings["Shell_TaskbarHoverBackground"]; set => ChangingParameters("Shell_TaskbarHoverBackground", value); }
         internal static bool Shell_TaskbarMonitorAware { get => (bool)_cachedSettings["Shell_TaskbarMonitorAware"]; set => ChangingParameters("Shell_TaskbarMonitorAware", value); }
         internal static string Shell_TaskbarUnpinnedMode { get => (string)_cachedSettings["Shell_TaskbarUnpinnedMode"]; set => ChangingParameters("Shell_TaskbarUnpinnedMode", value); }
+        internal static bool Shell_TaskbarPowerPlanMenu { get => (bool)_cachedSettings["Shell_TaskbarPowerPlanMenu"]; set => ChangingParameters("Shell_TaskbarPowerPlanMenu", value); }
         #endregion
 
         #region Registry Engine

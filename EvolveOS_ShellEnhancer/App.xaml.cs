@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.Win32;
 using System.Globalization;
@@ -639,6 +640,13 @@ namespace EvolveOS_ShellEnhancer
                             SettingsEngine.Shell_AcrylicLuminosity = lumVal;
                         TaskbarManager.ReloadAll();
                         _startMenuWindow?.ReloadTheme();
+                        break;
+
+                    case "Taskbar_PowerPlanMenu":
+                        bool isEnabled = bool.TryParse(value, out bool b) && b;
+                        SettingsEngine.Shell_TaskbarPowerPlanMenu = isEnabled;
+
+                        CustomTaskbarWindow.TriggerPowerPlanVisibilityUpdate();
                         break;
                 }
             });

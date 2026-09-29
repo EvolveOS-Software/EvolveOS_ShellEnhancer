@@ -46,6 +46,8 @@
     <sys:String x:Key="Taskbar_UnpinTaskbar">Van taakbalk losmaken</sys:String>
     <sys:String x:Key="Taskbar_EmptyFolder">Lege map</sys:String>
 
+    <sys:String x:Key="SystemTray_PowerPlans">Energieplannen</sys:String>
+
     <!-- endregion TaskBar -->
 
     <!-- region StartMenu -->

@@ -46,6 +46,8 @@
     <sys:String x:Key="Taskbar_UnpinTaskbar">Desanclar de la barra</sys:String>
     <sys:String x:Key="Taskbar_EmptyFolder">Carpeta vacía</sys:String>
 
+    <sys:String x:Key="SystemTray_PowerPlans">Planes de energía</sys:String>
+
     <!-- endregion TaskBar -->
 
     <!-- region StartMenu -->
