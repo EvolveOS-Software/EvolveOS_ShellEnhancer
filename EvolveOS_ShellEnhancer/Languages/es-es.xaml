@@ -115,9 +115,12 @@
     <sys:String x:Key="StartMenu_PinFile">Anclar archivo</sys:String>
     <sys:String x:Key="StartMenu_PinFolder">Anclar carpeta</sys:String>
     <sys:String x:Key="StartMenu_PinWebSite">Anclar sitio web</sys:String>
+    <sys:String x:Key="StartMenu_PinToNewGroup">A un nuevo grupo</sys:String>
+    <sys:String x:Key="StartMenu_PinToNewPage">A una nueva página</sys:String>
     <sys:String x:Key="StartMenu_Remove">Quitar página</sys:String>
     <sys:String x:Key="StartMenu_MoveUp">Mover hacia arriba</sys:String>
     <sys:String x:Key="StartMenu_MoveDown">Mover hacia abajo</sys:String>
+    <sys:String x:Key="StartMenu_MoveToApp">Mover a</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Cambiar nombre de página</sys:String>

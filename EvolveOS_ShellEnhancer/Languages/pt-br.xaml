@@ -115,9 +115,12 @@
     <sys:String x:Key="StartMenu_PinFile">Fixar arquivo</sys:String>
     <sys:String x:Key="StartMenu_PinFolder">Fixar pasta</sys:String>
     <sys:String x:Key="StartMenu_PinWebSite">Fixar site</sys:String>
+    <sys:String x:Key="StartMenu_PinToNewGroup">Para um novo grupo</sys:String>
+    <sys:String x:Key="StartMenu_PinToNewPage">Para uma nova página</sys:String>
     <sys:String x:Key="StartMenu_Remove">Remover página</sys:String>
     <sys:String x:Key="StartMenu_MoveUp">Mover para cima</sys:String>
     <sys:String x:Key="StartMenu_MoveDown">Mover para baixo</sys:String>
+    <sys:String x:Key="StartMenu_MoveToApp">Mover para</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Renomear página</sys:String>

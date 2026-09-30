@@ -2234,6 +2234,15 @@
                               DragItemsCompleted="OverlayFolderGrid_DragItemsCompleted"
                               ScrollViewer.VerticalScrollBarVisibility="Hidden"
                               ScrollViewer.VerticalScrollMode="Disabled">
+
+                        <GridView.Resources>
+                            <SolidColorBrush x:Key="GridViewItemBackgroundPointerOver" Color="Transparent"/>
+                            <SolidColorBrush x:Key="GridViewItemBackgroundPressed" Color="Transparent"/>
+                            <SolidColorBrush x:Key="GridViewItemBackgroundSelected" Color="Transparent"/>
+                            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                            <SolidColorBrush x:Key="GridViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                        </GridView.Resources>
+
                         <GridView.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VariableSizedWrapGrid MaximumRowsOrColumns="4" Orientation="Horizontal"/>

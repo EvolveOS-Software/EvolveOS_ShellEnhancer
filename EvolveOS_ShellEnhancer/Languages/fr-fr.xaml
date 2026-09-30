@@ -116,7 +116,12 @@
     <sys:String x:Key="StartMenu_PinFile">Épingler le fichier</sys:String>
     <sys:String x:Key="StartMenu_PinFolder">Épingler le dossier</sys:String>
     <sys:String x:Key="StartMenu_PinWebSite">Épingler le site Web</sys:String>
+    <sys:String x:Key="StartMenu_PinToNewGroup">Vers un nouveau groupe</sys:String>
+    <sys:String x:Key="StartMenu_PinToNewPage">Vers une nouvelle page</sys:String>
     <sys:String x:Key="StartMenu_Remove">Supprimer la page</sys:String>
+    <sys:String x:Key="StartMenu_MoveUp">Déplacer vers le haut</sys:String>
+    <sys:String x:Key="StartMenu_MoveDown">Déplacer vers le bas</sys:String>
+    <sys:String x:Key="StartMenu_MoveToApp">Déplacer vers</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Renommer la page</sys:String>
@@ -132,8 +137,6 @@
     <sys:String x:Key="StartMenu_DefaultFolderName">Dossier</sys:String>
     <sys:String x:Key="StartMenu_DefaultAppName">Application</sys:String>
     <sys:String x:Key="StartMenu_PinnedCategory">Épinglé</sys:String>
-    <sys:String x:Key="StartMenu_MoveUp">Déplacer vers le haut</sys:String>
-    <sys:String x:Key="StartMenu_MoveDown">Déplacer vers le bas</sys:String>
 
     <!-- Tabbed Group Controls -->
     <sys:String x:Key="StartMenu_NewTab">Nouvel onglet</sys:String>

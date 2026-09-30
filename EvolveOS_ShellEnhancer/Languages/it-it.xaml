@@ -116,8 +116,11 @@
     <sys:String x:Key="StartMenu_PinFolder">Aggiungi cartella</sys:String>
     <sys:String x:Key="StartMenu_PinWebSite">Aggiungi sito web</sys:String>
     <sys:String x:Key="StartMenu_Remove">Rimuovi pagina</sys:String>
+    <sys:String x:Key="StartMenu_PinToNewGroup">In un nuovo gruppo</sys:String>
+    <sys:String x:Key="StartMenu_PinToNewPage">In una nuova pagina</sys:String>
     <sys:String x:Key="StartMenu_MoveUp">Sposta su</sys:String>
     <sys:String x:Key="StartMenu_MoveDown">Sposta giù</sys:String>
+    <sys:String x:Key="StartMenu_MoveToApp">Sposta in</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Rinomina pagina</sys:String>

@@ -1354,41 +1354,174 @@ namespace EvolveOS_ShellEnhancer.Views
                 MenuFlyout flyout = new MenuFlyout();
 
                 bool isPinnedToStart = GetAllCategoriesFlattened().Any(c => c.Apps.Contains(app));
-                var pinStartItem = new MenuFlyoutItem
+
+                if (isPinnedToStart)
                 {
-                    Text = isPinnedToStart
-                        ? LocalizationService.Instance.GetString("StartMenu_ContextUnpinStart")
-                        : LocalizationService.Instance.GetString("StartMenu_ContextPinStart"),
-                    Icon = new FontIcon { Glyph = "\xE141" }
-                };
-                pinStartItem.Click += (s, args) =>
-                {
-                    if (isPinnedToStart)
+                    // 1. Unpin Option
+                    var unpinStartItem = new MenuFlyoutItem
+                    {
+                        Text = LocalizationService.Instance.GetString("StartMenu_ContextUnpinStart") ?? "Unpin from Start",
+                        Icon = new FontIcon { Glyph = "\xE141" }
+                    };
+                    unpinStartItem.Click += (s, args) =>
                     {
                         foreach (var cat in GetAllCategoriesFlattened())
                         {
                             cat.Apps.Remove(app);
                         }
-                    }
-                    else
+                        SafeSavePins();
+                    };
+                    flyout.Items.Add(unpinStartItem);
+
+                    // 2. Move To Option (Cascading Menu)
+                    var moveSubItem = new MenuFlyoutSubItem
                     {
-                        if (Pages.Count > 0 && Pages[0].PinnedCategories.Count > 0)
+                        Text = LocalizationService.Instance.GetString("StartMenu_MoveToApp") ?? "Move to",
+                        Icon = new FontIcon { Glyph = "\xE8DE" }
+                    };
+
+                    // -> Move to new group
+                    var newGroupItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_PinToNewGroup") ?? "To new group" };
+                    newGroupItem.Click += (s, args) =>
+                    {
+                        foreach (var cat in GetAllCategoriesFlattened()) cat.Apps.Remove(app);
+
+                        if (Pages.Count == 0) Pages.Add(new StartMenuPage { PageIndex = 0 });
+                        var newCat = new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" };
+                        newCat.Apps.Add(app);
+                        Pages[0].PinnedCategories.Add(newCat);
+
+                        SafeSavePins();
+                    };
+                    moveSubItem.Items.Add(newGroupItem);
+
+                    // -> Move to new page
+                    var newPageItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_PinToNewPage") ?? "To new page" };
+                    newPageItem.Click += (s, args) =>
+                    {
+                        foreach (var cat in GetAllCategoriesFlattened()) cat.Apps.Remove(app);
+
+                        var newPage = new StartMenuPage { PageIndex = Pages.Count };
+                        newPage.PageName = LocalizationService.Instance.GetString("StartMenu_NewPage") ?? $"Page {Pages.Count + 1}";
+
+                        var newCat = new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" };
+                        newCat.Apps.Add(app);
+
+                        newPage.PinnedCategories.Add(newCat);
+                        Pages.Add(newPage);
+
+                        if (PagesFlipView != null) PagesFlipView.SelectedIndex = Pages.Count - 1;
+                        UpdatePageIndicators(Pages.Count - 1);
+                        SafeSavePins();
+                    };
+                    moveSubItem.Items.Add(newPageItem);
+
+                    // -> Move to existing Groups
+                    if (Pages.Any(p => p.PinnedCategories.Count > 0))
+                    {
+                        moveSubItem.Items.Add(new MenuFlyoutSeparator());
+
+                        foreach (var page in Pages)
                         {
-                            var targetCategory = GetEffectiveTargetCategory(Pages[0].PinnedCategories.First());
-                            targetCategory?.Apps.Add(app);
-                        }
-                        else
-                        {
-                            if (Pages.Count == 0) Pages.Add(new StartMenuPage { PageIndex = 0 });
-                            var defaultCat = new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_PinnedCategory") ?? "Pinned" };
-                            defaultCat.Apps.Add(app);
-                            Pages[0].PinnedCategories.Add(defaultCat);
+                            string displayPageName = string.IsNullOrWhiteSpace(page.PageName)
+                                ? $"Page {page.PageIndex + 1}"
+                                : page.PageName;
+
+                            foreach (var category in page.PinnedCategories)
+                            {
+                                string catName = string.IsNullOrWhiteSpace(category.Name) ? "Group" : category.Name;
+                                var groupItem = new MenuFlyoutItem { Text = $"{catName} ({displayPageName})" };
+
+                                groupItem.Click += (s, args) =>
+                                {
+                                    foreach (var c in GetAllCategoriesFlattened()) c.Apps.Remove(app);
+
+                                    var targetCat = GetEffectiveTargetCategory(category);
+                                    targetCat?.Apps.Add(app);
+                                    SafeSavePins();
+                                };
+
+                                moveSubItem.Items.Add(groupItem);
+                            }
                         }
                     }
 
-                    SafeSavePins();
-                };
-                flyout.Items.Add(pinStartItem);
+                    flyout.Items.Add(moveSubItem);
+                }
+                else
+                {
+                    // Advanced Pin Menu for UNPINNED apps
+                    var pinStartSubItem = new MenuFlyoutSubItem
+                    {
+                        Text = LocalizationService.Instance.GetString("StartMenu_ContextPinStart") ?? "Pin to Start",
+                        Icon = new FontIcon { Glyph = "\xE141" }
+                    };
+
+                    var newGroupItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_PinToNewGroup") ?? "To new group" };
+                    newGroupItem.Click += (s, args) =>
+                    {
+                        if (Pages.Count == 0) Pages.Add(new StartMenuPage { PageIndex = 0 });
+
+                        var newCat = new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" };
+                        newCat.Apps.Add(app);
+
+                        Pages[0].PinnedCategories.Add(newCat);
+                        SafeSavePins();
+                    };
+                    pinStartSubItem.Items.Add(newGroupItem);
+
+                    var newPageItem = new MenuFlyoutItem { Text = LocalizationService.Instance.GetString("StartMenu_PinToNewPage") ?? "To new page" };
+                    newPageItem.Click += (s, args) =>
+                    {
+                        var newPage = new StartMenuPage { PageIndex = Pages.Count };
+                        newPage.PageName = LocalizationService.Instance.GetString("StartMenu_NewPage") ?? $"Page {Pages.Count + 1}";
+
+                        var newCat = new AppCategory { Name = LocalizationService.Instance.GetString("StartMenu_NewGroup") ?? "New Group" };
+                        newCat.Apps.Add(app);
+
+                        newPage.PinnedCategories.Add(newCat);
+                        Pages.Add(newPage);
+
+                        if (PagesFlipView != null) PagesFlipView.SelectedIndex = Pages.Count - 1;
+                        UpdatePageIndicators(Pages.Count - 1);
+                        SafeSavePins();
+                    };
+                    pinStartSubItem.Items.Add(newPageItem);
+
+                    if (Pages.Any(p => p.PinnedCategories.Count > 0))
+                    {
+                        pinStartSubItem.Items.Add(new MenuFlyoutSeparator());
+
+                        foreach (var page in Pages)
+                        {
+                            string displayPageName = string.IsNullOrWhiteSpace(page.PageName)
+                                ? $"Page {page.PageIndex + 1}"
+                                : page.PageName;
+
+                            foreach (var category in page.PinnedCategories)
+                            {
+                                string catName = string.IsNullOrWhiteSpace(category.Name) ? "Group" : category.Name;
+
+                                var groupItem = new MenuFlyoutItem
+                                {
+                                    Text = $"{catName} ({displayPageName})"
+                                };
+
+                                groupItem.Click += (s, args) =>
+                                {
+                                    var targetCat = GetEffectiveTargetCategory(category);
+                                    targetCat?.Apps.Add(app);
+                                    SafeSavePins();
+                                };
+
+                                pinStartSubItem.Items.Add(groupItem);
+                            }
+                        }
+                    }
+
+                    flyout.Items.Add(pinStartSubItem);
+                }
+
                 flyout.Items.Add(new MenuFlyoutSeparator());
 
                 bool isPinnedToTaskbar = ViewModel.IsPinnedToTaskbar(app);
