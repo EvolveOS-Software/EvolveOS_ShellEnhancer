@@ -26,6 +26,18 @@ namespace EvolveOS_ShellEnhancer.Views
         private int _targetX, _targetY, _targetW, _targetH;
         #endregion
 
+        private const int DWMWA_EXCLUDED_FROM_PEEK = 12;
+        private const int HWND_TOPMOST = -1;
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+
+        [System.Runtime.InteropServices.DllImport("dwmapi.dll", PreserveSig = true)]
+        public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        public static extern bool SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
         public PowerPlanFlyoutWindow()
         {
             this.InitializeComponent();
@@ -77,7 +89,23 @@ namespace EvolveOS_ShellEnhancer.Views
             return _appWindow.Position.Y > -32000;
         }
 
-        public void ShowMenu(int anchorX, int anchorY, string taskbarPosition)
+        private string GetTaskbarPosition(int x, int y)
+        {
+            var displayArea = DisplayArea.GetFromPoint(
+                new PointInt32(x, y),
+                DisplayAreaFallback.Primary);
+
+            var workArea = displayArea.WorkArea;
+            var bounds = displayArea.OuterBounds;
+
+            if (workArea.Y > bounds.Y) return "Top";
+            if (workArea.X > bounds.X) return "Left";
+            if (workArea.Width < bounds.Width) return "Right";
+
+            return "Bottom";
+        }
+
+        public void ShowMenu(int anchorX, int anchorY, string _ignoredTaskbarPosition)
         {
             _isClosing = false;
             var plans = PowerPlanManager.GetPowerPlans();
@@ -90,7 +118,12 @@ namespace EvolveOS_ShellEnhancer.Views
             int finalX = anchorX;
             int finalY = anchorY;
 
-            switch (taskbarPosition)
+            string actualTaskbarPos = GetTaskbarPosition(anchorX, anchorY);
+
+            var displayArea = DisplayArea.GetFromPoint(new PointInt32(anchorX, anchorY), DisplayAreaFallback.Primary);
+            var workArea = displayArea.WorkArea;
+
+            switch (actualTaskbarPos)
             {
                 case "Top":
                     finalX = anchorX - (width / 2);
@@ -100,11 +133,19 @@ namespace EvolveOS_ShellEnhancer.Views
                 case "Left":
                     finalX = anchorX + margin;
                     finalY = anchorY - (height / 2);
+
+                    if (finalY + height > workArea.Y + workArea.Height - margin)
+                        finalY = workArea.Y + workArea.Height - height - margin;
+
                     _startX = finalX - width - 20; _startY = finalY;
                     break;
                 case "Right":
                     finalX = anchorX - width - margin;
                     finalY = anchorY - (height / 2);
+
+                    if (finalY + height > workArea.Y + workArea.Height - margin)
+                        finalY = workArea.Y + workArea.Height - height - margin;
+
                     _startX = finalX + width + 20; _startY = finalY;
                     break;
                 case "Bottom":
@@ -119,10 +160,15 @@ namespace EvolveOS_ShellEnhancer.Views
                     break;
             }
 
+            if (finalX < workArea.X + margin)
+                finalX = workArea.X + margin;
+            if (finalX + width > workArea.X + workArea.Width - margin)
+                finalX = workArea.X + workArea.Width - width - margin;
+
             _targetX = finalX;
             _targetY = finalY;
-            _startW = width; _startH = height;
-            _targetW = width; _targetH = height;
+            _targetW = width;
+            _targetH = height;
 
             if (LivePreviewWindow.EnableAnimations)
             {
@@ -156,10 +202,11 @@ namespace EvolveOS_ShellEnhancer.Views
                 _startX = _appWindow.Position.X;
                 _startY = _appWindow.Position.Y;
 
-                string pos = SettingsEngine.Shell_TaskbarPosition ?? "Bottom";
-                if (pos == "Top") _targetY = _startY - _appWindow.Size.Height - 20;
-                else if (pos == "Left") _targetX = _startX - _appWindow.Size.Width - 20;
-                else if (pos == "Right") _targetX = _startX + _appWindow.Size.Width + 20;
+                string actualTaskbarPos = GetTaskbarPosition(_appWindow.Position.X, _appWindow.Position.Y);
+
+                if (actualTaskbarPos == "Top") _targetY = _startY - _appWindow.Size.Height - 20;
+                else if (actualTaskbarPos == "Left") _targetX = _startX - _appWindow.Size.Width - 20;
+                else if (actualTaskbarPos == "Right") _targetX = _startX + _appWindow.Size.Width + 20;
                 else _targetY = _startY + _appWindow.Size.Height + 20;
 
                 StartBoundsAnimation();

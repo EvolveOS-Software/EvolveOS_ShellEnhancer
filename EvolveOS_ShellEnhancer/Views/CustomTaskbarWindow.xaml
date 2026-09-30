@@ -61,9 +61,15 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Padding="8,4"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
                             CornerRadius="4"
                             ToolTipService.ToolTip="{helpers:ResourceString Key=SystemTray_PowerPlans}">
-                        <FontIcon Glyph="&#xEBB5;" FontSize="16"/>
+
+                        <FontIcon Glyph="&#xEBB5;" FontSize="16" />
+
                     </Button>
 
                     <!-- Combined Quick Settings (Network & Volume) -->

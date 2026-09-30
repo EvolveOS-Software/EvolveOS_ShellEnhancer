@@ -1725,7 +1725,7 @@
         </Grid>
 
         <!-- Pinned Folder Overlay (Animated) -->
-        <Grid x:Name="PinnedFolderOverlay" Visibility="Collapsed" Background="#80000000" 
+        <Grid x:Name="PinnedFolderOverlay" Visibility="Collapsed" Background="Transparent" 
               HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Canvas.ZIndex="10000"
               PointerPressed="CloseFolderOverlay_PointerPressed" Opacity="0">
 
@@ -1767,7 +1767,7 @@
                     PointerWheelChanged="FolderPopupCard_PointerWheelChanged">
 
                 <Border.Background>
-                    <AcrylicBrush TintOpacity="0.4" TintColor="{ThemeResource SolidBackgroundFillColorBase}" FallbackColor="{ThemeResource SolidBackgroundFillColorBase}"/>
+                    <SolidColorBrush Color="{ThemeResource SolidBackgroundFillColorBase}" Opacity="0.80"/>
                 </Border.Background>
 
                 <Border.RenderTransform>
@@ -1789,7 +1789,14 @@
                              Background="Transparent" BorderThickness="0" Margin="0,0,0,12"
                              HorizontalAlignment="Center" TextAlignment="Center" MinWidth="200"
                              KeyDown="OverlayFolderNameBox_KeyDown"
-                             LostFocus="OverlayFolderNameBox_LostFocus"/>
+                             LostFocus="OverlayFolderNameBox_LostFocus">
+                        <TextBox.Resources>
+                            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent"/>
+                        </TextBox.Resources>
+                    </TextBox>
 
                     <GridView x:Name="OverlayFolderGrid" Grid.Row="1" Grid.Column="0" SelectionMode="None" IsItemClickEnabled="True"
                               CanDragItems="True" AllowDrop="True" HorizontalAlignment="Center"
@@ -1825,6 +1832,13 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="models:FolderDot">
                                     <Button Background="Transparent" Padding="0" BorderThickness="0" MinWidth="0" MinHeight="0" Click="FolderPageDotIndicator_Click" Tag="{x:Bind PageIndex}">
+                                        <Button.Resources>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent"/>
+                                        </Button.Resources>
+
                                         <Ellipse Width="6" Height="6" Fill="{ThemeResource TextFillColorPrimaryBrush}" Opacity="{x:Bind Opacity, Mode=OneWay}"/>
                                     </Button>
                                 </DataTemplate>

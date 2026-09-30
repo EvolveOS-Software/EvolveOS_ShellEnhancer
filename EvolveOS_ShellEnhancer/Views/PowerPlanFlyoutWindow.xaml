@@ -26,7 +26,7 @@
                         <DataTemplate x:DataType="models:PowerPlan">
                             <StackPanel Orientation="Horizontal" Spacing="12" Padding="4,8">
                                 <RadioButton IsChecked="{x:Bind IsActive, Mode=OneTime}" IsHitTestVisible="False" MinWidth="0"/>
-                                <TextBlock Text="{x:Bind Name, Mode=OneTime}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Bind Name, Mode=OneTime}" VerticalAlignment="Center" IsHitTestVisible="False"/>
                             </StackPanel>
                         </DataTemplate>
                     </ListView.ItemTemplate>
