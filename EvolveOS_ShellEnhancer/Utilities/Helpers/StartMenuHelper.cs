@@ -66,6 +66,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                                 name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
                                 entry.AppUserModelId.Contains(keyword, StringComparison.OrdinalIgnoreCase));
 
+                            DateTime exactInstallDate = pkg.InstalledDate.LocalDateTime;
+
                             apps.Add(new AppItem
                             {
                                 Name = name,
@@ -73,7 +75,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                                 IsUwp = true,
                                 FallbackGlyph = "\xE713",
                                 UwpLogoStreamRef = entry.DisplayInfo.GetLogo(new Windows.Foundation.Size(256, 256)),
-                                IconScale = isUnpadded ? 1.0 : 3.0
+                                IconScale = isUnpadded ? 1.0 : 3.0,
+                                InstallDate = exactInstallDate,
+                                IsNew = exactInstallDate > DateTime.Now.AddDays(-7)
                             });
                         }
                     }
@@ -321,9 +325,11 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                     }
                 }
 
-                if (resultImage != null)
+                string? cacheKey = appItem.ExecutablePath ?? appItem.Name;
+
+                if (resultImage != null && !string.IsNullOrEmpty(cacheKey))
                 {
-                    _iconCache[appItem.ExecutablePath] = resultImage;
+                    _iconCache[cacheKey] = resultImage;
                 }
 
                 return resultImage;

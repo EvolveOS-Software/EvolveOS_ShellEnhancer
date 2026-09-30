@@ -15,6 +15,8 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         public ObservableCollection<AppItem> RecentDocsCollection { get; } = new();
         public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
 
+        public ObservableCollection<AppItem> RecentlyAddedCollection { get; } = new();
+
         public ObservableCollection<AppItem> SearchResultsCollection { get; } = new();
         public ObservableCollection<AppItem> SearchAppsCollection { get; } = new();
         public ObservableCollection<AppItem> SearchSettingsCollection { get; } = new();
@@ -176,7 +178,47 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                     dispatcher.TryEnqueue(() =>
                     {
                         AllAppsCollection.Clear();
-                        foreach (var app in fetchedAllApps) AllAppsCollection.Add(app);
+                        RecentlyAddedCollection.Clear();
+
+                        foreach (var app in fetchedAllApps)
+                        {
+                            try
+                            {
+                                if (app.IsUwp)
+                                {
+                                    if (!string.IsNullOrEmpty(app.ExecutablePath))
+                                    {
+                                        string? dirPath = Path.GetDirectoryName(app.ExecutablePath);
+
+                                        if (!string.IsNullOrEmpty(dirPath) && Directory.Exists(dirPath))
+                                        {
+                                            app.InstallDate = Directory.GetCreationTime(dirPath);
+                                            app.IsNew = app.InstallDate > DateTime.Now.AddDays(-7);
+                                        }
+                                    }
+                                }
+                                else if (!string.IsNullOrEmpty(app.ExecutablePath) && File.Exists(app.ExecutablePath))
+                                {
+                                    app.InstallDate = File.GetCreationTime(app.ExecutablePath);
+                                    app.IsNew = app.InstallDate > DateTime.Now.AddDays(-7);
+                                }
+                            }
+                            catch { }
+
+                            AllAppsCollection.Add(app);
+
+                            if (app.IsNew)
+                            {
+                                RecentlyAddedCollection.Add(app);
+                            }
+                        }
+
+                        var sortedRecent = RecentlyAddedCollection.OrderByDescending(a => a.InstallDate).ToList();
+                        RecentlyAddedCollection.Clear();
+                        foreach (var app in sortedRecent)
+                        {
+                            RecentlyAddedCollection.Add(app);
+                        }
 
                         Pages.Clear();
 

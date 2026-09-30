@@ -84,6 +84,8 @@
     <sys:String x:Key="StartMenu_AppsTitle">Apps</sys:String>
     <sys:String x:Key="StartMenu_SettingsTitle">Einstellungen</sys:String>
     <sys:String x:Key="StartMenu_More">Mehr</sys:String>
+    <sys:String x:Key="StartMenu_NewApp">Neu</sys:String>
+    <sys:String x:Key="StartMenu_RecentlyAdded">Kürzlich installiert</sys:String>
     <sys:String x:Key="StartMenu_AccountSettings">Kontoeinstellungen</sys:String>
     <sys:String x:Key="StartMenu_MyAccount">Mein Konto verwalten</sys:String>
     <sys:String x:Key="StartMenu_Lock">Sperren</sys:String>

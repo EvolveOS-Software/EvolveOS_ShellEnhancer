@@ -52,9 +52,11 @@ namespace EvolveOS_ShellEnhancer.Models
         public bool IsUwp { get; set; }
         internal IRandomAccessStreamReference? UwpLogoStreamRef { get; set; }
 
+        public DateTime InstallDate { get; set; }
+        public bool IsNew { get; set; }
+
         public ObservableCollection<AppItem> FolderApps { get; } = new ObservableCollection<AppItem>();
 
-        // FIX: Now a stable collection instead of a dynamic LINQ query to prevent flickering!
         public ObservableCollection<AppItem> PreviewFolderApps { get; } = new ObservableCollection<AppItem>();
 
         #endregion
@@ -228,6 +230,9 @@ namespace EvolveOS_ShellEnhancer.Models
         public Visibility HasIcon => IconSource != null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility HasNoIcon => IconSource == null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility IsFolderItem => (!string.IsNullOrEmpty(ExecutablePath) && Directory.Exists(ExecutablePath)) ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility NewBadgeVisibility => IsNew ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility InverseNewBadgeVisibility => IsNew ? Visibility.Collapsed : Visibility.Visible;
 
         public Thickness ItemMargin => _isIndented ? new Thickness(28, 0, 0, 0) : new Thickness(12, 0, 0, 0);
 
