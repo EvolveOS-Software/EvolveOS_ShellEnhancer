@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using Windows.Storage.Streams;
@@ -11,6 +12,8 @@ namespace EvolveOS_ShellEnhancer.Models
     [Microsoft.UI.Xaml.Data.Bindable]
     public class AppItem : INotifyPropertyChanged
     {
+        #region Core Properties
+
         private string? _name;
         public string? Name
         {
@@ -47,22 +50,42 @@ namespace EvolveOS_ShellEnhancer.Models
 
         public string? FallbackGlyph { get; set; }
         public bool IsUwp { get; set; }
-
-        public double IconScale { get; set; } = 1.0;
+        internal IRandomAccessStreamReference? UwpLogoStreamRef { get; set; }
 
         public ObservableCollection<AppItem> FolderApps { get; } = new ObservableCollection<AppItem>();
 
+        // FIX: Now a stable collection instead of a dynamic LINQ query to prevent flickering!
+        public ObservableCollection<AppItem> PreviewFolderApps { get; } = new ObservableCollection<AppItem>();
+
+        #endregion
+
+        #region Initialization & Synchronization
+
         public AppItem()
         {
-            FolderApps.CollectionChanged += (s, e) =>
-            {
-                if (e.NewItems != null)
-                {
-                    foreach (AppItem item in e.NewItems) item.ParentFolderSize = this.FolderSize;
-                }
-                OnPropertyChanged(nameof(PreviewFolderApps));
-            };
+            FolderApps.CollectionChanged += SyncPreviewApps;
         }
+
+        private void SyncPreviewApps(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e?.NewItems != null)
+            {
+                foreach (AppItem item in e.NewItems)
+                {
+                    item.ParentFolderSize = this.FolderSize;
+                }
+            }
+
+            PreviewFolderApps.Clear();
+            for (int i = 0; i < Math.Min(4, FolderApps.Count); i++)
+            {
+                PreviewFolderApps.Add(FolderApps[i]);
+            }
+        }
+
+        #endregion
+
+        #region UI & Layout Properties
 
         private ImageSource? _iconSource;
         public ImageSource? IconSource
@@ -81,6 +104,8 @@ namespace EvolveOS_ShellEnhancer.Models
                 }
             }
         }
+
+        public double IconScale { get; set; } = 1.0;
 
         private bool _isRunning;
         public bool IsRunning
@@ -170,7 +195,9 @@ namespace EvolveOS_ShellEnhancer.Models
         public double AppIconSize => FolderSize == 2 ? 88 : 32;
         public double AppFontSize => FolderSize == 2 ? 64 : 32;
 
-        public IEnumerable<AppItem> PreviewFolderApps => FolderApps.Take(4);
+        #endregion
+
+        #region Visibility & Display Configurations
 
         private Visibility _appNameVisibility = SettingsEngine.Shell_StartMenuShowAppLabels ? Visibility.Visible : Visibility.Collapsed;
         public Visibility AppNameVisibility
@@ -198,13 +225,15 @@ namespace EvolveOS_ShellEnhancer.Models
         public double ChevronAngle => _isExpanded ? 180.0 : 0.0;
         public string ChevronGlyph => _isExpanded ? "\xE70E" : "\xE70D";
 
-        internal IRandomAccessStreamReference? UwpLogoStreamRef { get; set; }
-
         public Visibility HasIcon => IconSource != null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility HasNoIcon => IconSource == null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility IsFolderItem => (!string.IsNullOrEmpty(ExecutablePath) && Directory.Exists(ExecutablePath)) ? Visibility.Visible : Visibility.Collapsed;
 
         public Thickness ItemMargin => _isIndented ? new Thickness(28, 0, 0, 0) : new Thickness(12, 0, 0, 0);
+
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -212,5 +241,7 @@ namespace EvolveOS_ShellEnhancer.Models
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        #endregion
     }
 }
