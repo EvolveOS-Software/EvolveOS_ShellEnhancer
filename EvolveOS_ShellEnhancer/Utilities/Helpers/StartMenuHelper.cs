@@ -1,6 +1,7 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -257,60 +258,34 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                 }
                 else
                 {
-                    string target = appItem.ExecutablePath;
+                    string target = appItem.ExecutablePath ?? "";
 
                     if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
                     {
                         string parsed = ParseShortcutTarget(target);
-                        if (!string.IsNullOrEmpty(parsed) && !parsed.Contains("!"))
+                        if (!string.IsNullOrEmpty(parsed) && !parsed.Contains("!") && File.Exists(parsed))
                         {
-                            if (File.Exists(parsed)) target = parsed;
-                            else
-                            {
-                                try
-                                {
-                                    using var icon = System.Drawing.Icon.ExtractAssociatedIcon(target);
-                                    if (icon != null)
-                                    {
-                                        using var bmp = icon.ToBitmap();
-                                        using var ms = new MemoryStream();
-                                        bmp.Save(ms, ImageFormat.Png);
-                                        ms.Position = 0;
-
-                                        using var ras = new InMemoryRandomAccessStream();
-                                        using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
-                                        {
-                                            writer.WriteBytes(ms.ToArray());
-                                            await writer.StoreAsync();
-                                        }
-
-                                        var bitmapImage = new BitmapImage();
-                                        await bitmapImage.SetSourceAsync(ras);
-                                        resultImage = bitmapImage;
-                                    }
-                                }
-                                catch { }
-                            }
+                            target = parsed;
                         }
                     }
 
-                    if (resultImage == null && File.Exists(target) && !target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                    try
                     {
-                        try
-                        {
-                            StorageFile file = await StorageFile.GetFileFromPathAsync(target);
-                            var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.SingleItem, 48);
-                            if (thumbnail == null) thumbnail = await file.GetThumbnailAsync(ThumbnailMode.ListView, 48);
+                        StorageFile file = await StorageFile.GetFileFromPathAsync(target);
 
-                            if (thumbnail != null)
-                            {
-                                var bitmapImage = new BitmapImage();
-                                await bitmapImage.SetSourceAsync(thumbnail);
-                                resultImage = bitmapImage;
-                            }
+                        var thumbnail = await file.GetThumbnailAsync(
+                            Windows.Storage.FileProperties.ThumbnailMode.SingleItem,
+                            64,
+                            Windows.Storage.FileProperties.ThumbnailOptions.UseCurrentScale);
+
+                        if (thumbnail != null)
+                        {
+                            var bitmapImage = new BitmapImage();
+                            await bitmapImage.SetSourceAsync(thumbnail);
+                            resultImage = bitmapImage;
                         }
-                        catch { }
                     }
+                    catch { }
 
                     if (resultImage == null && (File.Exists(target) || Directory.Exists(target)))
                     {
@@ -321,7 +296,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         {
                             try
                             {
-                                using var icon = System.Drawing.Icon.FromHandle(shinfo.hIcon);
+                                using var icon = Icon.FromHandle(shinfo.hIcon);
                                 using var bmp = icon.ToBitmap();
                                 using var ms = new MemoryStream();
                                 bmp.Save(ms, ImageFormat.Png);

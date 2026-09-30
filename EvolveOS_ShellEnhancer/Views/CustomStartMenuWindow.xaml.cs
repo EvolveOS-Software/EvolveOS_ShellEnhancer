@@ -48,6 +48,10 @@ namespace EvolveOS_ShellEnhancer.Views
         public ObservableCollection<AppItem> SearchSettingsCollection => ViewModel.SearchSettingsCollection;
         public ObservableCollection<ShortcutItem> StartMenuShortcuts => ViewModel.StartMenuShortcuts;
 
+        public ObservableCollection<AppItem> SearchBestMatchCollection => ViewModel.SearchBestMatchCollection;
+        public ObservableCollection<AppItem> SearchDocsCollection => ViewModel.SearchDocsCollection;
+        public ObservableCollection<AppItem> SearchFilesCollection => ViewModel.SearchFilesCollection;
+
         private string _currentSearchFilter = "Apps";
         private bool _isShowingAllApps = false;
         private AppItem? _currentSearchItem;
@@ -61,6 +65,8 @@ namespace EvolveOS_ShellEnhancer.Views
         private bool _isRecentDocsExpanded = false;
         private bool _isSearchAppsExpanded = false;
         private bool _isSearchSettingsExpanded = false;
+        private bool _isSearchDocsExpanded = false;
+        private bool _isSearchFilesExpanded = false;
 
         private AppItem? _sourceFolderItem;
 
@@ -1540,6 +1546,9 @@ namespace EvolveOS_ShellEnhancer.Views
                                     parentGrid.Name != "SearchAndAllAppsGrid2" &&
                                     parentGrid.Name != "SearchAndAllAppsGrid3" &&
                                     parentGrid.Name != "RecentDocsGrid" &&
+                                    parentGrid.Name != "SearchBestMatchList" &&
+                                    parentGrid.Name != "SearchDocsGrid" &&
+                                    parentGrid.Name != "SearchFilesGrid" &&
                                     parentGrid.Name != "OverlayFolderGrid";
 
                 if (isGlobalHidden && app.ExecutablePath != "PINNED_FOLDER" && isPinnedArea)
@@ -1588,7 +1597,12 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (!e.GetCurrentPoint(element).Properties.IsLeftButtonPressed) return;
 
-                _sourceGrid = FindVisualParent<GridView>(element);
+                var parentGrid = FindVisualParent<GridView>(element);
+                var parentList = FindVisualParent<ListView>(element);
+
+                if (parentList != null) return;
+
+                _sourceGrid = parentGrid;
 
                 if (_sourceGrid == null || (_sourceGrid.Name != null && _sourceGrid.Name.Contains("Search")) || _sourceGrid.Name == "RecentDocsGrid")
                     return;
@@ -2065,31 +2079,6 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
-        /*public void SetGlobalAppLabelVisibility(bool showLabels)
-        {
-            SettingsEngine.Shell_StartMenuShowAppLabels = showLabels;
-            var targetVisibility = showLabels ? Visibility.Visible : Visibility.Collapsed;
-
-            foreach (var cat in GetAllCategoriesFlattened())
-            {
-                foreach (var app in cat.Apps)
-                {
-                    app.AppNameVisibility = targetVisibility;
-
-                    foreach (var folderApp in app.FolderApps)
-                    {
-                        folderApp.AppNameVisibility = targetVisibility;
-                    }
-                }
-            }
-
-            // Recent Docs, All Apps, and Search Results
-            foreach (var app in RecentDocsCollection) app.AppNameVisibility = targetVisibility;
-            foreach (var app in AllAppsCollection) app.AppNameVisibility = targetVisibility;
-            foreach (var app in SearchAppsCollection) app.AppNameVisibility = targetVisibility;
-            foreach (var app in SearchSettingsCollection) app.AppNameVisibility = targetVisibility;
-        }*/
-
         private IEnumerable<GridView> GetAllCategoryGrids()
         {
             var grids = new List<GridView>();
@@ -2253,7 +2242,6 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
 
-                // If it's a ListView bound to our Tabs, collect it
                 if (child is ListView lv && lv.ItemsSource is ObservableCollection<AppCategory>)
                 {
                     results.Add(lv);
@@ -2534,20 +2522,36 @@ namespace EvolveOS_ShellEnhancer.Views
                 return;
             }
 
+            SearchBestMatchPanel.Visibility = Visibility.Collapsed;
+            SearchAppsPanel.Visibility = Visibility.Collapsed;
+            SearchSettingsPanel.Visibility = Visibility.Collapsed;
+            SearchDocsPanel.Visibility = Visibility.Collapsed;
+            SearchFilesPanel.Visibility = Visibility.Collapsed;
+
             _isSearchAppsExpanded = false;
-            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = LocalizationService.Instance.GetString("StartMenu_More") ?? "More";
-            if (SearchAppsMoreIcon?.RenderTransform is RotateTransform r1) FactoryAnimation.AnimateRotation(r1, 0);
-            if (SearchAppsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, false, 116);
+            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = LocalizationService.Instance.GetString("StartMenu_More") ?? "Meer";
+            if (SearchAppsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, false, 138);
 
             _isSearchSettingsExpanded = false;
-            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = LocalizationService.Instance.GetString("StartMenu_More") ?? "More";
-            if (SearchSettingsMoreIcon?.RenderTransform is RotateTransform r2) FactoryAnimation.AnimateRotation(r2, 0);
-            if (SearchSettingsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, false, 208);
+            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = LocalizationService.Instance.GetString("StartMenu_More") ?? "Meer";
+            if (SearchSettingsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, false, 104);
+
+            _isSearchDocsExpanded = false;
+            if (SearchDocsMoreText != null) SearchDocsMoreText.Text = LocalizationService.Instance.GetString("StartMenu_More") ?? "Meer";
+            if (SearchDocsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchDocsGrid, false, 104);
+
+            _isSearchFilesExpanded = false;
+            if (SearchFilesMoreText != null) SearchFilesMoreText.Text = LocalizationService.Instance.GetString("StartMenu_More") ?? "Meer";
+            if (SearchFilesGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchFilesGrid, false, 104);
 
             if (WebSearchHintText != null) WebSearchHintText.Text = $"{query} - Show web results";
 
             ViewModel.PerformSearch(query, _currentSearchFilter, DispatcherQueue, (fileItem) =>
             {
+                if (SearchDocsCollection.Count > 0) SearchDocsPanel.Visibility = Visibility.Visible;
+                if (SearchFilesCollection.Count > 0) SearchFilesPanel.Visibility = Visibility.Visible;
+                if (SearchBestMatchCollection.Count > 0) SearchBestMatchPanel.Visibility = Visibility.Visible;
+
                 if (SearchResultsCollection.Count == 2)
                 {
                     if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.SelectedIndex = 0;
@@ -2555,6 +2559,10 @@ namespace EvolveOS_ShellEnhancer.Views
                     UpdateSearchDetailsPane(fileItem);
                 }
             });
+
+            if (SearchBestMatchCollection.Count > 0) SearchBestMatchPanel.Visibility = Visibility.Visible;
+            if (SearchAppsCollection.Count > 0) SearchAppsPanel.Visibility = Visibility.Visible;
+            if (SearchSettingsCollection.Count > 0) SearchSettingsPanel.Visibility = Visibility.Visible;
 
             if (_currentStyle == "Standard" || _currentStyle == "SplitStandard")
             {
@@ -2739,19 +2747,33 @@ namespace EvolveOS_ShellEnhancer.Views
         private void SearchAppsMoreBtn_Click(object sender, RoutedEventArgs e)
         {
             _isSearchAppsExpanded = !_isSearchAppsExpanded;
-            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = _isSearchAppsExpanded ? (LocalizationService.Instance.GetString("StartMenu_Less") ?? "Less") : (LocalizationService.Instance.GetString("StartMenu_More") ?? "More");
+            if (SearchAppsMoreText != null) SearchAppsMoreText.Text = _isSearchAppsExpanded ? LocalizationService.Instance.GetString("StartMenu_Less") : LocalizationService.Instance.GetString("StartMenu_More");
 
-            if (SearchAppsMoreIcon?.RenderTransform is RotateTransform r1) FactoryAnimation.AnimateRotation(r1, 0);
-            if (SearchAppsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, false, 116);
+            if (SearchAppsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchAppsGrid, _isSearchAppsExpanded, 138);
         }
 
         private void SearchSettingsMoreBtn_Click(object sender, RoutedEventArgs e)
         {
             _isSearchSettingsExpanded = !_isSearchSettingsExpanded;
-            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = _isSearchSettingsExpanded ? (LocalizationService.Instance.GetString("StartMenu_Less") ?? "Less") : (LocalizationService.Instance.GetString("StartMenu_More") ?? "More");
+            if (SearchSettingsMoreText != null) SearchSettingsMoreText.Text = _isSearchSettingsExpanded ? LocalizationService.Instance.GetString("StartMenu_Less") : LocalizationService.Instance.GetString("StartMenu_More");
 
-            if (SearchSettingsMoreIcon?.RenderTransform is RotateTransform r2) FactoryAnimation.AnimateRotation(r2, 0);
-            if (SearchSettingsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, false, 208);
+            if (SearchSettingsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchSettingsGrid, _isSearchSettingsExpanded, 104);
+        }
+
+        private void SearchDocsMoreBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _isSearchDocsExpanded = !_isSearchDocsExpanded;
+            if (SearchDocsMoreText != null) SearchDocsMoreText.Text = _isSearchDocsExpanded ? LocalizationService.Instance.GetString("StartMenu_Less") : LocalizationService.Instance.GetString("StartMenu_More");
+
+            if (SearchDocsGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchDocsGrid, _isSearchDocsExpanded, 104);
+        }
+
+        private void SearchFilesMoreBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _isSearchFilesExpanded = !_isSearchFilesExpanded;
+            if (SearchFilesMoreText != null) SearchFilesMoreText.Text = _isSearchFilesExpanded ? LocalizationService.Instance.GetString("StartMenu_Less") : LocalizationService.Instance.GetString("StartMenu_More");
+
+            if (SearchFilesGrid != null) FactoryAnimation.AnimatePanelExpansion(SearchFilesGrid, _isSearchFilesExpanded, 104);
         }
 
         private async void LaunchApp(AppItem app, bool runAsAdmin)

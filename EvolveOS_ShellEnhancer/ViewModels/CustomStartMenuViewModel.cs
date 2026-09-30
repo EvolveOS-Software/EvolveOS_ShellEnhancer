@@ -19,6 +19,10 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         public ObservableCollection<AppItem> SearchAppsCollection { get; } = new();
         public ObservableCollection<AppItem> SearchSettingsCollection { get; } = new();
 
+        public ObservableCollection<AppItem> SearchBestMatchCollection { get; } = new();
+        public ObservableCollection<AppItem> SearchDocsCollection { get; } = new();
+        public ObservableCollection<AppItem> SearchFilesCollection { get; } = new();
+
         public ObservableCollection<ShortcutItem> StartMenuShortcuts { get; } = new();
 
         public List<AppItem> AllRecentDocs { get; } = new();
@@ -32,6 +36,20 @@ namespace EvolveOS_ShellEnhancer.ViewModels
 
         public Action<string, ImageSource?, string, string>? OnUserProfileLoaded;
         public Action? OnAppsDataLoaded;
+        #endregion
+
+        #region Core Windows Utilities List
+        private static readonly List<AppItem> KnownSystemApps = new List<AppItem>
+        {
+            new AppItem { Name = "Registry Editor", ExecutablePath = @"C:\Windows\regedit.exe", FallbackGlyph = "\xE74C", IsUwp = false, IconScale = 1.0 },
+            new AppItem { Name = "Command Prompt", ExecutablePath = @"C:\Windows\System32\cmd.exe", FallbackGlyph = "\xE756", IsUwp = false, IconScale = 1.0 },
+            new AppItem { Name = "Task Manager", ExecutablePath = @"C:\Windows\System32\Taskmgr.exe", FallbackGlyph = "\xE9F5", IsUwp = false, IconScale = 1.0 },
+            new AppItem { Name = "Control Panel", ExecutablePath = @"C:\Windows\System32\control.exe", FallbackGlyph = "\xE713", IsUwp = false, IconScale = 1.0 },
+            new AppItem { Name = "Calculator", ExecutablePath = @"C:\Windows\System32\calc.exe", FallbackGlyph = "\xE1D0", IsUwp = false, IconScale = 1.0 },
+            new AppItem { Name = "Notepad", ExecutablePath = @"C:\Windows\notepad.exe", FallbackGlyph = "\xE70B", IsUwp = false, IconScale = 1.0 },
+            new AppItem { Name = "File Explorer", ExecutablePath = @"C:\Windows\explorer.exe", FallbackGlyph = "\xE838", IsUwp = false, IconScale = 1.0 },
+            new AppItem { Name = "Services", ExecutablePath = @"C:\Windows\System32\services.msc", FallbackGlyph = "\xE713", IsUwp = false, IconScale = 1.0 }
+        };
         #endregion
 
         #region Initialization & Data Loading
@@ -604,16 +622,40 @@ namespace EvolveOS_ShellEnhancer.ViewModels
             SearchResultsCollection.Clear();
             SearchAppsCollection.Clear();
             SearchSettingsCollection.Clear();
+            SearchBestMatchCollection.Clear();
+            SearchDocsCollection.Clear();
+            SearchFilesCollection.Clear();
 
             if (string.IsNullOrWhiteSpace(query)) return;
 
-            if (currentSearchFilter == "Apps")
+            bool searchApps = currentSearchFilter == "Apps" || currentSearchFilter == "All";
+            bool searchFiles = currentSearchFilter == "Apps" || currentSearchFilter == "Files" || currentSearchFilter == "All";
+
+            if (searchApps)
             {
-                var appResults = AllAppsCollection
-                    .Where(a => a.Name != null && a.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
-                    .OrderByDescending(a => a.Name!.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-                    .ThenBy(a => a.Name)
+                var combinedApps = AllAppsCollection
+                    .Concat(KnownSystemApps)
+                    .GroupBy(a => a.ExecutablePath ?? a.Name)
+                    .Select(g => g.First());
+
+                var appResults = combinedApps
+                    .Where(a => a.Name != null &&
+                                (a.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                                (a.ExecutablePath != null && Path.GetFileNameWithoutExtension(a.ExecutablePath).Contains(query, StringComparison.OrdinalIgnoreCase))) &&
+                                a.ExecutablePath != "PINNED_FOLDER" &&
+                                a.FallbackGlyph != "\xE8B7" &&
+                                (string.IsNullOrEmpty(a.ExecutablePath) || !Directory.Exists(a.ExecutablePath)))
+                    .OrderByDescending(a => a.Name!.Equals(query, StringComparison.OrdinalIgnoreCase) || (a.ExecutablePath != null && Path.GetFileNameWithoutExtension(a.ExecutablePath).Equals(query, StringComparison.OrdinalIgnoreCase))) // Priority 1: Exact Match
+                    .ThenByDescending(a => a.Name!.StartsWith(query, StringComparison.OrdinalIgnoreCase) || (a.ExecutablePath != null && Path.GetFileNameWithoutExtension(a.ExecutablePath).StartsWith(query, StringComparison.OrdinalIgnoreCase))) // Priority 2: Starts With
+                    .ThenByDescending(a => !string.IsNullOrEmpty(a.ExecutablePath) &&
+                                           (a.ExecutablePath.Contains("regedit", StringComparison.OrdinalIgnoreCase) ||
+                                            a.ExecutablePath.Contains("System32", StringComparison.OrdinalIgnoreCase) ||
+                                            a.ExecutablePath.Contains("Windows Tools", StringComparison.OrdinalIgnoreCase) ||
+                                            a.ExecutablePath.Contains("Administrative Tools", StringComparison.OrdinalIgnoreCase))) // Priority 3: Boost OS Tools
+                    .ThenBy(a => a.Name) // Priority 4: Alphabetical
                     .ToList();
+
+                _ = ExtractIconsAsync(appResults);
 
                 var settingsResults = Helpers.SettingsProvider.KnownSettings
                     .Where(s => s.Name != null && s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
@@ -632,8 +674,18 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                     SearchResultsCollection.Add(setting);
                     SearchSettingsCollection.Add(setting);
                 }
+
+                if (appResults.Count > 0)
+                {
+                    SearchBestMatchCollection.Add(appResults.First());
+                }
+                else if (settingsResults.Count > 0)
+                {
+                    SearchBestMatchCollection.Add(settingsResults.First());
+                }
             }
-            else if (currentSearchFilter == "Files")
+
+            if (searchFiles)
             {
                 SearchResultsCollection.Add(new AppItem
                 {
@@ -645,27 +697,32 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                 Task.Run(() =>
                 {
                     var searchPaths = new List<string>();
+
+                    searchPaths.Add(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+                    searchPaths.Add(Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+                    searchPaths.Add(Environment.GetFolderPath(Environment.SpecialFolder.Recent));
+
                     string userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-                    searchPaths.Add(Path.Combine(userPath, "Desktop"));
-                    searchPaths.Add(Path.Combine(userPath, "Documents"));
                     searchPaths.Add(Path.Combine(userPath, "Downloads"));
-
-                    foreach (var d in DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType == DriveType.Fixed))
-                    {
-                        searchPaths.Add(d.RootDirectory.FullName);
-                    }
 
                     int resultsFound = 0;
                     const int maxResults = 15;
 
                     foreach (var path in searchPaths.Distinct())
                     {
+                        if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) continue;
                         if (token.IsCancellationRequested || resultsFound >= maxResults) break;
 
                         foreach (var file in SafeEnumerateFiles(path, query, token))
                         {
                             if (token.IsCancellationRequested || resultsFound >= maxResults) break;
+
+                            try
+                            {
+                                var attrs = File.GetAttributes(file);
+                                if (attrs.HasFlag(FileAttributes.Hidden) || attrs.HasFlag(FileAttributes.System)) continue;
+                            }
+                            catch { }
 
                             resultsFound++;
 
@@ -673,15 +730,31 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                             {
                                 var fileItem = new AppItem
                                 {
-                                    Name = Path.GetFileName(file),
+                                    Name = Path.GetFileNameWithoutExtension(file),
                                     ExecutablePath = file,
                                     FallbackGlyph = "\xE8A5",
-                                    IsUwp = false
+                                    IsUwp = false,
+                                    IconScale = 1.0
                                 };
 
                                 int insertIndex = SearchResultsCollection.Count > 0 ? SearchResultsCollection.Count - 1 : 0;
                                 SearchResultsCollection.Insert(insertIndex, fileItem);
-                                SearchAppsCollection.Insert(insertIndex, fileItem);
+
+                                string ext = Path.GetExtension(file).ToLowerInvariant();
+
+                                if (ext == ".doc" || ext == ".docx" || ext == ".pdf" || ext == ".txt" || ext == ".md" || ext == ".rtf" || ext == ".csv" || ext == ".xlsx" || ext == ".lnk")
+                                {
+                                    SearchDocsCollection.Add(fileItem);
+                                }
+                                else
+                                {
+                                    SearchFilesCollection.Add(fileItem);
+                                }
+
+                                if (SearchBestMatchCollection.Count == 0)
+                                {
+                                    SearchBestMatchCollection.Add(fileItem);
+                                }
 
                                 _ = ExtractIconsAsync(new[] { fileItem });
                                 onFileFound?.Invoke(fileItem);
