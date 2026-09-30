@@ -182,6 +182,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWindow(IntPtr hWnd);
 
+        [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
+        public static extern int SetWindowLongPtr(IntPtr hWnd, int nIndex, int dwNewLong);
+
         #endregion
 
         #region DWM Thumbnail API
@@ -315,6 +318,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const long WS_EX_TOOLWINDOW_LONG = 0x00000080L;
         public const long WS_EX_TOPMOST_LONG = 0x00000008L;
         public const long WS_EX_TOPMOST = 0x00000008L;
+        public const int WS_EX_APPWINDOW = 0x00040000;
 
         // Window Parent / Index Constants
         public const int GWLP_HWNDPARENT = -8;

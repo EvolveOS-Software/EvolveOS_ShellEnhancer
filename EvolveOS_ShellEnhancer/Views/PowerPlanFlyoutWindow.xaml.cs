@@ -22,7 +22,7 @@ namespace EvolveOS_ShellEnhancer.Views
         private bool _isAnimating = false;
         private DateTime _animStartTime;
         private int _animDuration;
-        private int _startX, _startY, _startW, _startH;
+        private int _startX, _startY;
         private int _targetX, _targetY, _targetW, _targetH;
         #endregion
 
@@ -37,6 +37,9 @@ namespace EvolveOS_ShellEnhancer.Views
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
         public static extern bool SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "GetWindowLong")]
+        private static extern int GetWindowLongPtr(IntPtr hWnd, int nIndex);
 
         public PowerPlanFlyoutWindow()
         {
@@ -54,7 +57,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 presenter.IsResizable = false;
             }
 
-            Win32Helper.RemoveWindowBorders(_hWnd);
+            RemoveWindowBorders(_hWnd);
             this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
             int exclude = 1;
@@ -64,6 +67,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
             string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
             SetTheme(savedTheme);
+
+            int exStyle = GetWindowLongPtr(_hWnd, GWL_EXSTYLE);
+
+            exStyle &= ~WS_EX_APPWINDOW;
+            exStyle |= WS_EX_TOOLWINDOW;
+
+            SetWindowLongPtr(_hWnd, GWL_EXSTYLE, exStyle);
 
             _appWindow.MoveAndResize(new RectInt32(-32000, -32000, 260, 200));
             _appWindow.Show();
