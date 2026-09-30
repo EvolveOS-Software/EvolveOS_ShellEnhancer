@@ -1,0 +1,116 @@
+<#@ template hostspecific="true" language="C#" #>
+<#@ output extension=".cs" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Xml" #>
+<#@ assembly name="System.Xml.Linq" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Xml.Linq" #>
+using System.Reflection;
+using System.Runtime.InteropServices;
+
+<#
+    string displayVersion = "Build: 1.0.0"; 
+    string cleanVersion = displayVersion.Replace("Build:", "").Trim(); 
+    string[] versionParts = cleanVersion.Split('.');
+    
+    string major = versionParts.Length > 0 ? versionParts[0] : "1";
+    string minor = versionParts.Length > 1 ? versionParts[1] : "0";
+    string patch = versionParts.Length > 2 ? versionParts[2] : "0";
+
+    string build = GetBuildNumber();
+    string revision = GetRevisionNumber();
+
+    // Assembly versions (e.g. 1.0.0.0)
+    string numericVersion = $"{major}.{minor}.{patch}.{build}";
+
+    // Store-compliant MSIX package version (4th digit MUST be 0 -> e.g. 1.0.0.0)
+    string storePackageVersion = $"{major}.{minor}.{patch}.0";
+
+    // Automatically synchronize Package.appxmanifest and capture the result
+    string manifestUpdateResult = UpdateAppxManifest(storePackageVersion);
+#>
+
+// =========================================================================
+// T4 Manifest Update Status: <#= manifestUpdateResult #>
+// =========================================================================
+
+[assembly: AssemblyTitle("EvolveOS_ShellEnhancer")]
+[assembly: AssemblyDescription("An advanced Windows shell enhancement utility for custom Start Menus, Taskbars, and UI personalization.")]
+[assembly: AssemblyCompany("EvolveOS Software")]
+[assembly: AssemblyProduct("EvolveOS_ShellEnhancer")]
+[assembly: AssemblyCopyright("© 2026-<#= DateTime.Now.Year #> EvolveOS")]
+[assembly: AssemblyTrademark("EvolveOS Software")]
+
+[assembly: AssemblyInformationalVersion("<#= displayVersion #>.<#= build #>")]
+[assembly: AssemblyVersion("<#= numericVersion #>")]
+[assembly: AssemblyFileVersion("<#= numericVersion #>")]
+
+[assembly: ComVisible(false)]
+
+[assembly: System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
+
+<#+
+    private string GetBuildNumber()
+    {
+        DateTime start = new DateTime(2025, 7, 7);
+        return ((int)(DateTime.UtcNow - start).TotalDays).ToString();
+    }
+    
+    private string GetRevisionNumber()
+    {
+        return ((int)DateTime.UtcNow.TimeOfDay.TotalMinutes).ToString();
+    }
+
+    private string UpdateAppxManifest(string newVersion)
+    {
+        try
+        {
+            string startDir = this.Host.ResolvePath(".");
+            string manifestPath = null;
+            
+            // Search up to 3 directory levels up to guarantee we find the manifest
+            var currentDir = new DirectoryInfo(startDir);
+            for(int i = 0; i < 3 && currentDir != null; i++)
+            {
+                string testPath = Path.Combine(currentDir.FullName, "Package.appxmanifest");
+                if (File.Exists(testPath))
+                {
+                    manifestPath = testPath;
+                    break;
+                }
+                currentDir = currentDir.Parent;
+            }
+
+            if (manifestPath == null)
+            {
+                return "FAILED: Package.appxmanifest not found in project directories.";
+            }
+
+            var doc = XDocument.Load(manifestPath);
+            
+            // Bulletproof: Find Identity tag regardless of which schema XML namespace it uses
+            var identity = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "Identity");
+            
+            if (identity != null)
+            {
+                var currentVersion = identity.Attribute("Version")?.Value;
+                if (currentVersion == newVersion)
+                {
+                    return $"SKIPPED: Manifest is already up-to-date at version {newVersion}.";
+                }
+
+                identity.SetAttributeValue("Version", newVersion);
+                doc.Save(manifestPath);
+                return $"SUCCESS: Updated {manifestPath} to {newVersion}.";
+            }
+            
+            return "FAILED: <Identity> tag not found inside the XML.";
+        }
+        catch (Exception ex)
+        {
+            // Now you will actually see what went wrong!
+            return $"ERROR: {ex.Message}";
+        }
+    }
+#>
