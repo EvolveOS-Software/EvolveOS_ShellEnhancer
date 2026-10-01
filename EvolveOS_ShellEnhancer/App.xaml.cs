@@ -660,12 +660,12 @@ namespace EvolveOS_ShellEnhancer
                         if (bool.TryParse(value, out bool effMode))
                         {
                             SettingsEngine.Shell_EnableEfficiencyMode = effMode;
-                            EvolveOS_Optimizer.Managers.AppLifecycleEngine.IsEfficiencyModeEnabled = effMode;
+                            EvolveOS_ShellEnhancer.Managers.AppLifecycleEngine.IsEfficiencyModeEnabled = effMode;
 
                             if (!effMode)
                             {
-                                EvolveOS_Optimizer.Managers.AppLifecycleEngine.RegisterWakeLock("SettingsOverride");
-                                EvolveOS_Optimizer.Managers.AppLifecycleEngine.ReleaseWakeLock("SettingsOverride");
+                                EvolveOS_ShellEnhancer.Managers.AppLifecycleEngine.RegisterWakeLock("SettingsOverride");
+                                EvolveOS_ShellEnhancer.Managers.AppLifecycleEngine.ReleaseWakeLock("SettingsOverride");
                             }
                         }
                         break;

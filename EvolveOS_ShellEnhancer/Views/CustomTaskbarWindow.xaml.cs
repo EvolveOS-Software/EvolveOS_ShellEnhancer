@@ -1,7 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using EvolveOS_Optimizer.Managers;
+using EvolveOS_ShellEnhancer.Managers;
 using EvolveOS_ShellEnhancer.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Input;

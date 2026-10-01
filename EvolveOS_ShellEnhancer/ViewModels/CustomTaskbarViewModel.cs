@@ -19,7 +19,7 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         {
             "SystemSettings", "ApplicationFrameHost", "SearchHost", "StartMenuExperienceHost",
             "ShellExperienceHost", "TextInputHost", "LockApp", "RuntimeBroker", "dwm", "csrss",
-            "taskhostw", "EvolveOS_ShellEnhancer", "EvolveOS_Optimizer", "Progman", "WorkerW",
+            "taskhostw", "EvolveOS_ShellEnhancer", "EvolveOS_ShellEnhancer", "Progman", "WorkerW",
             "cmd", "conhost", "explorer"
         };
 

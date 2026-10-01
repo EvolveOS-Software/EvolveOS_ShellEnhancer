@@ -2,12 +2,13 @@
 // Licensed under the MIT License.
 
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using Windows.System;
 
 namespace EvolveOS_ShellEnhancer.ViewModels
 {
-    public class CustomStartMenuViewModel
+    public class CustomStartMenuViewModel : INotifyPropertyChanged
     {
         #region Fields & Properties
         public ObservableCollection<StartMenuPage> Pages { get; } = new();
@@ -16,6 +17,7 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         public ObservableCollection<AppItem> AllAppsCollection { get; } = new();
 
         public ObservableCollection<AppItem> RecentlyAddedCollection { get; } = new();
+        public ObservableCollection<AppItem> SuggestedAppsCollection { get; } = new();
 
         public ObservableCollection<AppItem> SearchResultsCollection { get; } = new();
         public ObservableCollection<AppItem> SearchAppsCollection { get; } = new();
@@ -26,6 +28,43 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         public ObservableCollection<AppItem> SearchFilesCollection { get; } = new();
 
         public ObservableCollection<ShortcutItem> StartMenuShortcuts { get; } = new();
+
+        public Visibility SuggestedVisibility => ShowSuggestedApps && SuggestedAppsCollection.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility RecentlyAddedVisibility => ShowRecentlyAdded && RecentlyAddedCollection.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility HasAnyHeaderContent => (SuggestedVisibility == Visibility.Visible || RecentlyAddedVisibility == Visibility.Visible) ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility BothHeadersVisible => (SuggestedVisibility == Visibility.Visible && RecentlyAddedVisibility == Visibility.Visible) ? Visibility.Visible : Visibility.Collapsed;
+
+        private bool _showSuggestedApps = SettingsEngine.Shell_StartMenuShowSuggested;
+        public bool ShowSuggestedApps
+        {
+            get => _showSuggestedApps;
+            set
+            {
+                if (SetProperty(ref _showSuggestedApps, value))
+                {
+                    SettingsEngine.Shell_StartMenuShowSuggested = value;
+                    OnPropertyChanged(nameof(SuggestedVisibility));
+                    OnPropertyChanged(nameof(HasAnyHeaderContent));
+                    OnPropertyChanged(nameof(BothHeadersVisible));
+                }
+            }
+        }
+
+        private bool _showRecentlyAdded = SettingsEngine.Shell_StartMenuShowRecentlyAdded;
+        public bool ShowRecentlyAdded
+        {
+            get => _showRecentlyAdded;
+            set
+            {
+                if (SetProperty(ref _showRecentlyAdded, value))
+                {
+                    SettingsEngine.Shell_StartMenuShowRecentlyAdded = value;
+                    OnPropertyChanged(nameof(RecentlyAddedVisibility));
+                    OnPropertyChanged(nameof(HasAnyHeaderContent));
+                    OnPropertyChanged(nameof(BothHeadersVisible));
+                }
+            }
+        }
 
         public List<AppItem> AllRecentDocs { get; } = new();
 
@@ -310,6 +349,8 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                             Pages.Add(defaultPage);
                         }
 
+                        UpdateSuggestedApps();
+
                         OnAppsDataLoaded?.Invoke();
 
                         var allCategories = Pages.SelectMany(p => p.PinnedCategories)
@@ -404,6 +445,118 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                 }
             }
         }
+
+        public void UpdateSuggestedApps()
+        {
+            SuggestedAppsCollection.Clear();
+
+            if (!ShowSuggestedApps || AllAppsCollection == null || AllAppsCollection.Count == 0)
+                return;
+
+            var userLaunchCounts = GetUserAssistRunCounts();
+
+            var rankedApps = AllAppsCollection
+                .Select(app => new
+                {
+                    App = app,
+                    Count = userLaunchCounts.Where(kvp =>
+                        app.ExecutablePath != null &&
+                        (kvp.Key.Equals(app.ExecutablePath, StringComparison.OrdinalIgnoreCase) ||
+                         kvp.Key.EndsWith(Path.GetFileName(app.ExecutablePath), StringComparison.OrdinalIgnoreCase)))
+                        .Select(kvp => kvp.Value)
+                        .FirstOrDefault()
+                })
+                .Where(x => x.Count > 0 && !x.App.IsNew && x.App.ExecutablePath != "PINNED_FOLDER")
+                .OrderByDescending(x => x.Count)
+                .Select(x => x.App)
+                .Distinct()
+                .Take(4)
+                .ToList();
+
+            if (rankedApps.Count < 4)
+            {
+                var fallbackApps = AllAppsCollection
+                    .Where(a => !a.IsNew && !rankedApps.Contains(a) && a.ExecutablePath != "PINNED_FOLDER")
+                    .OrderBy(x => Guid.NewGuid())
+                    .Take(4 - rankedApps.Count);
+
+                rankedApps.AddRange(fallbackApps);
+            }
+
+            foreach (var app in rankedApps)
+            {
+                SuggestedAppsCollection.Add(app);
+            }
+
+            OnPropertyChanged(nameof(SuggestedVisibility));
+            OnPropertyChanged(nameof(HasAnyHeaderContent));
+            OnPropertyChanged(nameof(BothHeadersVisible));
+        }
+
+        #region Authentic Windows UserAssist Engine
+
+        private Dictionary<string, int> GetUserAssistRunCounts()
+        {
+            var runCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            string[] userAssistKeys = new[]
+            {
+                @"Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\{CEBFF5CD-ACE2-4F4F-9178-9926F41749EA}\Count",
+                @"Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\{F4E57C4B-2036-45F0-A9AB-443BCFE33D9F}\Count",
+                @"Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\{B267E3AD-A825-4A09-82B9-EEC22AA3B847}\Count"
+            };
+
+            using (var hklm = Microsoft.Win32.Registry.CurrentUser)
+            {
+                foreach (var subKeyPath in userAssistKeys)
+                {
+                    using (var key = hklm.OpenSubKey(subKeyPath))
+                    {
+                        if (key == null) continue;
+
+                        foreach (var valueName in key.GetValueNames())
+                        {
+                            var data = key.GetValue(valueName) as byte[];
+
+                            if (data != null && data.Length >= 8)
+                            {
+                                int count = BitConverter.ToInt32(data, 4);
+                                if (count > 0)
+                                {
+                                    string decodedPath = DecodeROT13(valueName);
+
+                                    if (decodedPath.StartsWith("P~")) decodedPath = decodedPath.Substring(2);
+                                    if (decodedPath.Contains("UEME_RUNPATH:")) decodedPath = decodedPath.Replace("UEME_RUNPATH:", "");
+                                    if (decodedPath.Contains("UEME_CTLSESSION:")) continue;
+
+                                    if (runCounts.ContainsKey(decodedPath))
+                                        runCounts[decodedPath] += count;
+                                    else
+                                        runCounts[decodedPath] = count;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return runCounts;
+        }
+
+        private static string DecodeROT13(string input)
+        {
+            char[] array = input.ToCharArray();
+            for (int i = 0; i < array.Length; i++)
+            {
+                int c = array[i];
+                if (c >= 'a' && c <= 'z')
+                    array[i] = (char)(c + 13 > 'z' ? c - 13 : c + 13);
+                else if (c >= 'A' && c <= 'Z')
+                    array[i] = (char)(c + 13 > 'Z' ? c - 13 : c + 13);
+            }
+            return new string(array);
+        }
+
+        #endregion
 
         public async Task ExtractIconsAsync(IEnumerable<AppItem> apps)
         {
@@ -847,5 +1000,18 @@ namespace EvolveOS_ShellEnhancer.ViewModels
             }
         }
         #endregion
+
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+        }
+        protected bool SetProperty<T>(ref T storage, T value, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+        {
+            if (Equals(storage, value)) return false;
+            storage = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
     }
 }

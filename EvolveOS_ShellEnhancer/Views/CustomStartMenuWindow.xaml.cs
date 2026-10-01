@@ -1,7 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using EvolveOS_Optimizer.Managers;
+using EvolveOS_ShellEnhancer.Managers;
 using EvolveOS_ShellEnhancer.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -1570,6 +1570,32 @@ namespace EvolveOS_ShellEnhancer.Views
                     };
                     flyout.Items.Add(locItem);
                 }
+
+                flyout.Items.Add(new MenuFlyoutSeparator());
+
+                var settingsSubItem = new MenuFlyoutSubItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_ListSettings") ?? "List settings",
+                    Icon = new FontIcon { Glyph = "\xE713" } // Settings Icon
+                };
+
+                var toggleRecentItem = new ToggleMenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_ShowRecentlyAdded") ?? "Show recently added apps",
+                    IsChecked = ViewModel.ShowRecentlyAdded
+                };
+                toggleRecentItem.Click += (s, args) => ViewModel.ShowRecentlyAdded = toggleRecentItem.IsChecked;
+                settingsSubItem.Items.Add(toggleRecentItem);
+
+                var toggleSuggestedItem = new ToggleMenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_ShowSuggestedApps") ?? "Show suggested apps",
+                    IsChecked = ViewModel.ShowSuggestedApps
+                };
+                toggleSuggestedItem.Click += (s, args) => ViewModel.ShowSuggestedApps = toggleSuggestedItem.IsChecked;
+                settingsSubItem.Items.Add(toggleSuggestedItem);
+
+                flyout.Items.Add(settingsSubItem);
 
                 flyout.ShowAt(element, e.GetPosition(element));
             }

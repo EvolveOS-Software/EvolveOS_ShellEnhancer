@@ -1,7 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
-using EvolveOS_Optimizer.Managers;
+using EvolveOS_ShellEnhancer.Managers;
 using Microsoft.Win32;
 using System.Globalization;
 
@@ -83,7 +83,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             ["Shell_TaskbarHoverBackground"] = true,
             ["Shell_TaskbarMonitorAware"] = false,
             ["Shell_TaskbarUnpinnedMode"] = "Inline",
-            ["Shell_TaskbarPowerPlanMenu"] = false
+            ["Shell_TaskbarPowerPlanMenu"] = false,
+            ["Shell_StartMenuShowSuggested"] = true,
+            ["Shell_StartMenuShowRecentlyAdded"] = true
             #endregion
         };
 
@@ -144,6 +146,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static bool Shell_TaskbarMonitorAware { get => (bool)_cachedSettings["Shell_TaskbarMonitorAware"]; set => ChangingParameters("Shell_TaskbarMonitorAware", value); }
         internal static string Shell_TaskbarUnpinnedMode { get => (string)_cachedSettings["Shell_TaskbarUnpinnedMode"]; set => ChangingParameters("Shell_TaskbarUnpinnedMode", value); }
         internal static bool Shell_TaskbarPowerPlanMenu { get => (bool)_cachedSettings["Shell_TaskbarPowerPlanMenu"]; set => ChangingParameters("Shell_TaskbarPowerPlanMenu", value); }
+        internal static bool Shell_StartMenuShowSuggested { get => (bool)_cachedSettings["Shell_StartMenuShowSuggested"]; set => ChangingParameters("Shell_StartMenuShowSuggested", value); }
+        internal static bool Shell_StartMenuShowRecentlyAdded { get => (bool)_cachedSettings["Shell_StartMenuShowRecentlyAdded"]; set => ChangingParameters("Shell_StartMenuShowRecentlyAdded", value); }
         #endregion
 
         #region Registry Engine
@@ -154,7 +158,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 return RegistryPath.SubKey;
             }
 
-            return @"Software\EvolveOS_Optimizer";
+            return @"Software\EvolveOS_ShellEnhancer";
         }
 
         private static void ChangingParameters(string key, object value)
@@ -192,7 +196,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         {
             try
             {
-                using RegistryKey? optimizerKey = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                using RegistryKey? optimizerKey = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_ShellEnhancer", false);
                 using RegistryKey? enhancerKey = Registry.CurrentUser.OpenSubKey(RegistryPath.SubKey, false);
 
                 foreach (var kv in _defaultSettings)
@@ -253,7 +257,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #region Registry
         internal static class RegistryPath
         {
-            internal const string SubKey = @"Software\EvolveOS_Optimizer\EvolveOS_ShellEnhancer";
+            internal const string SubKey = @"Software\EvolveOS_ShellEnhancer\EvolveOS_ShellEnhancer";
             internal static readonly string BaseKey = @$"HKEY_CURRENT_USER\{SubKey}";
         }
         #endregion

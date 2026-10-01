@@ -3,7 +3,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace EvolveOS_Optimizer.Managers
+namespace EvolveOS_ShellEnhancer.Managers
 {
     public static class AppLifecycleEngine
     {

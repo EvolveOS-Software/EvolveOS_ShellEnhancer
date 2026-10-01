@@ -130,6 +130,11 @@
     <sys:String x:Key="StartMenu_MoveUp">Move Up</sys:String>
     <sys:String x:Key="StartMenu_MoveDown">Move Down</sys:String>
     <sys:String x:Key="StartMenu_MoveToApp">Move to</sys:String>
+    <sys:String x:Key="StartMenu_SuggestedAndRecent">Suggestions &amp; Recent</sys:String>
+    <sys:String x:Key="StartMenu_Suggested">Suggested</sys:String>
+    <sys:String x:Key="StartMenu_ShowRecentlyAdded">Show recently added apps</sys:String>
+    <sys:String x:Key="StartMenu_ShowSuggestedApps">Show suggested apps</sys:String>
+    <sys:String x:Key="StartMenu_ListSettings">List settings</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Rename Page</sys:String>
