@@ -6,7 +6,9 @@
     xmlns:helpers="using:EvolveOS_ShellEnhancer.Utilities.Helpers"
     Title="CustomTaskbarWindow">
 
-    <Grid Background="#01000000">
+    <Grid Background="#01000000"
+          PointerEntered="TaskbarGrid_PointerEntered"
+          PointerExited="TaskbarGrid_PointerExited">
         <Border x:Name="TaskbarBorder"
             Background="#20000000" 
             BorderBrush="Transparent"

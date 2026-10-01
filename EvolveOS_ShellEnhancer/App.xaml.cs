@@ -655,6 +655,20 @@ namespace EvolveOS_ShellEnhancer
 
                         CustomTaskbarWindow.TriggerPowerPlanVisibilityUpdate();
                         break;
+
+                    case "Shell_EnableEfficiencyMode":
+                        if (bool.TryParse(value, out bool effMode))
+                        {
+                            SettingsEngine.Shell_EnableEfficiencyMode = effMode;
+                            EvolveOS_Optimizer.Managers.AppLifecycleEngine.IsEfficiencyModeEnabled = effMode;
+
+                            if (!effMode)
+                            {
+                                EvolveOS_Optimizer.Managers.AppLifecycleEngine.RegisterWakeLock("SettingsOverride");
+                                EvolveOS_Optimizer.Managers.AppLifecycleEngine.ReleaseWakeLock("SettingsOverride");
+                            }
+                        }
+                        break;
                 }
             });
         }

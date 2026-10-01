@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using EvolveOS_Optimizer.Managers;
 using EvolveOS_ShellEnhancer.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Input;
@@ -2146,6 +2147,16 @@ namespace EvolveOS_ShellEnhancer.Views
             string position = SettingsEngine.Shell_TaskbarPosition ?? "Bottom";
 
             _powerPlanFlyout!.ShowMenu(anchorX, anchorY, position);
+        }
+
+        private void TaskbarGrid_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            AppLifecycleEngine.RegisterWakeLock("Taskbar");
+        }
+
+        private void TaskbarGrid_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            AppLifecycleEngine.ReleaseWakeLock("Taskbar");
         }
         #endregion
     }

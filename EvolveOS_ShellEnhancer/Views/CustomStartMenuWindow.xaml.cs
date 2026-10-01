@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using EvolveOS_Optimizer.Managers;
 using EvolveOS_ShellEnhancer.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -393,6 +394,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private void ShowMenu()
         {
+            AppLifecycleEngine.RegisterWakeLock("StartMenu");
+
             var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
 
             UpdatePowerMenuVisibility();
@@ -525,6 +528,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
                         _activeAccountCardWindow?.Close();
                         _activeAccountCardWindow = null;
+
+                        AppLifecycleEngine.ReleaseWakeLock("StartMenu");
                     });
             }
             else

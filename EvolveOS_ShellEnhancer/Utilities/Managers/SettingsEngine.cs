@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using EvolveOS_Optimizer.Managers;
 using Microsoft.Win32;
 using System.Globalization;
 
@@ -14,6 +15,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             try
             {
                 SettingsEngine.CheckingParameters();
+                AppLifecycleEngine.IsEfficiencyModeEnabled = SettingsEngine.Shell_EnableEfficiencyMode;
             }
             catch (Exception e)
             {
@@ -38,6 +40,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             #region Shell Settings
             ["Shell_MasterEnabled"] = false,
             ["Shell_RunOnStartup"] = false,
+            ["Shell_EnableEfficiencyMode"] = false,
             ["Shell_AppTheme"] = "Default",
             ["Shell_AcrylicStyle"] = "Acrylic",
             ["Shell_AcrylicOpacity"] = 0.65,
@@ -97,6 +100,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #region Shell Settings
         internal static bool Shell_MasterEnabled { get => (bool)_cachedSettings["Shell_MasterEnabled"]; set => ChangingParameters("Shell_MasterEnabled", value); }
         internal static bool Shell_RunOnStartup { get => (bool)_cachedSettings["Shell_RunOnStartup"]; set => ChangingParameters("Shell_RunOnStartup", value); }
+        internal static bool Shell_EnableEfficiencyMode { get => (bool)_cachedSettings["Shell_EnableEfficiencyMode"]; set => ChangingParameters("Shell_EnableEfficiencyMode", value); }
         internal static string Shell_AppTheme { get => _cachedSettings["Shell_AppTheme"]?.ToString() ?? "Default"; set => ChangingParameters("Shell_AppTheme", value); }
         internal static string Shell_AcrylicStyle { get => (string)_cachedSettings["Shell_AcrylicStyle"]; set => ChangingParameters("Shell_AcrylicStyle", value); }
         internal static double Shell_AcrylicOpacity { get => Convert.ToDouble(_cachedSettings["Shell_AcrylicOpacity"]); set => ChangingParameters("Shell_AcrylicOpacity", value); }

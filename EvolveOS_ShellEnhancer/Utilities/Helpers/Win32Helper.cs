@@ -185,6 +185,21 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll", EntryPoint = "SetWindowLong")]
         public static extern int SetWindowLongPtr(IntPtr hWnd, int nIndex, int dwNewLong);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetPriorityClass(IntPtr hProcess, uint dwPriorityClass);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetProcessInformation(IntPtr hProcess, int processInformationClass, ref PROCESS_POWER_THROTTLING_STATE processInformation, uint processInformationSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetProcessWorkingSetSize(IntPtr hProcess, IntPtr dwMinimumWorkingSetSize, IntPtr dwMaximumWorkingSetSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool CloseHandle(IntPtr hObject);
+
         #endregion
 
         #region DWM Thumbnail API
@@ -285,6 +300,14 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         {
             public int cx;
             public int cy;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct PROCESS_POWER_THROTTLING_STATE
+        {
+            public uint Version;
+            public uint ControlMask;
+            public uint StateMask;
         }
 
         #endregion
@@ -388,6 +411,12 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const uint GW_OWNER = 4;
         public const uint WM_CLOSE = 0x0010;
         public const int DWMWA_CLOAKED = 14;
+
+        // App Lifecycle Engine
+        public const uint PROCESS_SET_QUOTA = 0x0100;
+        public const uint PROCESS_SET_INFORMATION = 0x0200;
+        public const uint IDLE_PRIORITY_CLASS = 0x00000040;
+        public const uint NORMAL_PRIORITY_CLASS = 0x00000020;
 
         #endregion
 
