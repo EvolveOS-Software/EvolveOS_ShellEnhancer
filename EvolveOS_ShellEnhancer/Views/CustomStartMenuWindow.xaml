@@ -535,7 +535,7 @@
 
                                                             <GridView.ItemTemplate>
                                                                 <DataTemplate x:DataType="models:AppItem">
-                                                                    <Border Tag="{x:Bind}" Width="210" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent"
+                                                                    <Border Tag="{x:Bind}" Width="264" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent"
                                                                             RightTapped="RecentItem_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                         <Grid ColumnSpacing="12">
                                                                             <Grid.ColumnDefinitions>
@@ -546,7 +546,22 @@
                                                                             <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}"/>
                                                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                                                 <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
-                                                                                <TextBlock Text="{x:Bind ExecutablePath}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
+
+                                                                                <Grid Margin="0,2,0,0">
+                                                                                    <Grid.ColumnDefinitions>
+                                                                                        <ColumnDefinition Width="*"/>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                    </Grid.ColumnDefinitions>
+
+                                                                                    <TextBlock Grid.Column="0" Text="{x:Bind DisplayDirectory, Mode=OneWay}"
+                                                                                               FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+
+                                                                                    <TextBlock Grid.Column="1" Text="{x:Bind DisplayFileName, Mode=OneWay}"
+                                                                                               FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                                               MaxLines="1" />
+                                                                                </Grid>
+
                                                                             </StackPanel>
                                                                         </Grid>
                                                                     </Border>
@@ -1400,7 +1415,7 @@
 
                                                             <GridView.ItemTemplate>
                                                                 <DataTemplate x:DataType="models:AppItem">
-                                                                    <Border Tag="{x:Bind}" Width="210" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent"
+                                                                    <Border Tag="{x:Bind}" Width="264" Height="52" Padding="8,0" CornerRadius="6" Background="Transparent"
                                                                             RightTapped="RecentItem_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                         <Grid ColumnSpacing="12">
                                                                             <Grid.ColumnDefinitions>
@@ -1411,7 +1426,22 @@
                                                                             <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}"/>
                                                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                                                 <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
-                                                                                <TextBlock Text="{x:Bind ExecutablePath}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
+
+                                                                                <Grid Margin="0,2,0,0">
+                                                                                    <Grid.ColumnDefinitions>
+                                                                                        <ColumnDefinition Width="*"/>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                    </Grid.ColumnDefinitions>
+
+                                                                                    <TextBlock Grid.Column="0" Text="{x:Bind DisplayDirectory, Mode=OneWay}"
+                                                                                               FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+
+                                                                                    <TextBlock Grid.Column="1" Text="{x:Bind DisplayFileName, Mode=OneWay}"
+                                                                                               FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                                               MaxLines="1" />
+                                                                                </Grid>
+
                                                                             </StackPanel>
                                                                         </Grid>
                                                                     </Border>
@@ -1711,7 +1741,7 @@
                                                     <StackPanel>
                                                         <!-- 1. Folder Header / App Card -->
                                                         <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
-                RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                             <Grid ColumnSpacing="12" Padding="8,0">
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="32"/>

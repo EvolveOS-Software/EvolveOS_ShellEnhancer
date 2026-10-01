@@ -48,6 +48,30 @@ namespace EvolveOS_ShellEnhancer.Models
             }
         }
 
+        public string DisplayDirectory
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(ExecutablePath)) return string.Empty;
+                try
+                {
+                    string? dir = System.IO.Path.GetDirectoryName(ExecutablePath);
+                    return string.IsNullOrEmpty(dir) ? string.Empty : dir + "\\";
+                }
+                catch { return string.Empty; }
+            }
+        }
+
+        public string DisplayFileName
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(ExecutablePath)) return string.Empty;
+                try { return System.IO.Path.GetFileName(ExecutablePath); }
+                catch { return ExecutablePath; }
+            }
+        }
+
         public string? FallbackGlyph { get; set; }
         public bool IsUwp { get; set; }
         internal IRandomAccessStreamReference? UwpLogoStreamRef { get; set; }

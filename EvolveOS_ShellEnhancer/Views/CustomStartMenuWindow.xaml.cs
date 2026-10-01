@@ -1674,6 +1674,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 var parentGrid = FindVisualParent<GridView>(element);
 
+                bool isRecentArea = parentGrid != null && parentGrid.Name == "RecentDocsGrid";
+
                 bool isPinnedArea = parentGrid != null &&
                                     parentGrid.Name != "SearchAndAllAppsGrid" &&
                                     parentGrid.Name != "SearchAndAllAppsGrid2" &&
@@ -1683,6 +1685,18 @@ namespace EvolveOS_ShellEnhancer.Views
                                     parentGrid.Name != "SearchDocsGrid" &&
                                     parentGrid.Name != "SearchFilesGrid" &&
                                     parentGrid.Name != "OverlayFolderGrid";
+
+                if (isRecentArea)
+                {
+                    if (!string.IsNullOrEmpty(app.ExecutablePath))
+                    {
+                        if (GlobalHoverText1 != null) GlobalHoverText1.Text = app.ExecutablePath;
+                        if (GlobalHoverText2 != null) GlobalHoverText2.Text = app.ExecutablePath;
+
+                        if (GlobalHoverBadge1 != null) FadeElement(GlobalHoverBadge1, 1.0, 150);
+                        if (GlobalHoverBadge2 != null) FadeElement(GlobalHoverBadge2, 1.0, 150);
+                    }
+                }
 
                 if (isGlobalHidden && app.ExecutablePath != "PINNED_FOLDER" && isPinnedArea)
                 {

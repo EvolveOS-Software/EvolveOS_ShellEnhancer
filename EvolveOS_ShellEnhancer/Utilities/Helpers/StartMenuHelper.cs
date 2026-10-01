@@ -246,7 +246,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             {
                 if (string.IsNullOrEmpty(appItem.ExecutablePath)) return null;
 
-                if (_iconCache.TryGetValue(appItem.ExecutablePath, out var cachedIcon))
+                string? cacheKey = appItem.ExecutablePath ?? appItem.Name;
+
+                if (!string.IsNullOrEmpty(cacheKey) && _iconCache.TryGetValue(cacheKey, out var cachedIcon))
                 {
                     return cachedIcon;
                 }
@@ -255,7 +257,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
                 if (appItem.IsUwp && appItem.UwpLogoStreamRef != null)
                 {
-                    using IRandomAccessStreamWithContentType stream = await appItem.UwpLogoStreamRef.OpenReadAsync();
+                    IRandomAccessStreamWithContentType stream = await appItem.UwpLogoStreamRef.OpenReadAsync();
                     var bitmap = new BitmapImage();
                     await bitmap.SetSourceAsync(stream);
                     resultImage = bitmap;
@@ -278,9 +280,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         StorageFile file = await StorageFile.GetFileFromPathAsync(target);
 
                         var thumbnail = await file.GetThumbnailAsync(
-                            Windows.Storage.FileProperties.ThumbnailMode.SingleItem,
+                            ThumbnailMode.SingleItem,
                             64,
-                            Windows.Storage.FileProperties.ThumbnailOptions.UseCurrentScale);
+                            ThumbnailOptions.UseCurrentScale);
 
                         if (thumbnail != null)
                         {
@@ -306,7 +308,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                                 bmp.Save(ms, ImageFormat.Png);
                                 ms.Position = 0;
 
-                                using var ras = new InMemoryRandomAccessStream();
+                                // FIX 2: Removed 'using' on ras to prevent disposal before rendering
+                                var ras = new InMemoryRandomAccessStream();
                                 using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
                                 {
                                     writer.WriteBytes(ms.ToArray());
@@ -324,8 +327,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         }
                     }
                 }
-
-                string? cacheKey = appItem.ExecutablePath ?? appItem.Name;
 
                 if (resultImage != null && !string.IsNullOrEmpty(cacheKey))
                 {
