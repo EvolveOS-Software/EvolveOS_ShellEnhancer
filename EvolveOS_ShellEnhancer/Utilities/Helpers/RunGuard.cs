@@ -73,8 +73,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
             string exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
             string optimizerPath = Path.Combine(exeDir, "EvolveOS_Optimizer.exe");
+            string studioPath = Path.Combine(exeDir, "EvolveOS_ShellStudio.exe");
 
-            if (!File.Exists(optimizerPath))
+            if (!File.Exists(optimizerPath) && !File.Exists(studioPath))
             {
                 var msgWindow = new MessageWindow(MessageWindowState.MissingOptimizer);
                 msgWindow.Activate();
@@ -94,6 +95,21 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
             return true;
         }
+
+        // Check active memory processes instead of physical file paths
+        /*internal static bool ValidateRunningEnvironment()
+        {
+            bool isStudioRunning = Process.GetProcessesByName("EvolveOS_ShellStudio").Length > 0;
+            bool isOptimizerRunning = Process.GetProcessesByName("EvolveOS_Optimizer").Length > 0;
+
+            if (!isStudioRunning && !isOptimizerRunning)
+            {
+                var msgWindow = new MessageWindow(MessageWindowState.MissingOptimizer);
+                msgWindow.Activate();
+                return false;
+            }
+            return true;
+        }*/
 
         #endregion
 
