@@ -196,48 +196,52 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         {
             try
             {
-                using RegistryKey? optimizerKey = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_ShellEnhancer", false);
+                using RegistryKey? optimizerKey = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_Optimizer", false);
+                using RegistryKey? studioKey = Registry.CurrentUser.OpenSubKey(@"Software\EvolveOS_ShellStudio", false);
                 using RegistryKey? enhancerKey = Registry.CurrentUser.OpenSubKey(RegistryPath.SubKey, false);
 
                 foreach (var kv in _defaultSettings)
                 {
                     try
                     {
-                        RegistryKey? targetKey = (kv.Key == "TaskbarPinnedAppsOrder" || kv.Key == "StartMenuPinnedApps" || kv.Key == "Taskbar_FilteredFolders" || kv.Key == "StartMenuPageNames")
-                            ? enhancerKey
-                            : optimizerKey;
+                        object? rawVal = null;
 
-                        if (targetKey != null)
+                        if (kv.Key == "TaskbarPinnedAppsOrder" || kv.Key == "StartMenuPinnedApps" || kv.Key == "Taskbar_FilteredFolders" || kv.Key == "StartMenuPageNames")
                         {
-                            object? rawVal = targetKey.GetValue(kv.Key);
-                            if (rawVal != null)
-                            {
-                                string strVal = rawVal.ToString() ?? "";
+                            rawVal = enhancerKey?.GetValue(kv.Key);
+                        }
+                        else
+                        {
+                            rawVal = studioKey?.GetValue(kv.Key) ?? optimizerKey?.GetValue(kv.Key);
+                        }
 
-                                if (kv.Value is bool)
-                                {
-                                    if (int.TryParse(strVal, out int intBool))
-                                        _cachedSettings[kv.Key] = intBool != 0;
-                                    else if (bool.TryParse(strVal, out bool bVal))
-                                        _cachedSettings[kv.Key] = bVal;
-                                    else
-                                        _cachedSettings[kv.Key] = (strVal == "1");
-                                }
-                                else if (kv.Value is int)
-                                {
-                                    if (int.TryParse(strVal, out int iVal))
-                                        _cachedSettings[kv.Key] = iVal;
-                                }
-                                else if (kv.Value is double)
-                                {
-                                    string safeDouble = strVal.Replace(',', '.');
-                                    if (double.TryParse(safeDouble, NumberStyles.Any, CultureInfo.InvariantCulture, out double dVal))
-                                        _cachedSettings[kv.Key] = dVal;
-                                }
+                        if (rawVal != null)
+                        {
+                            string strVal = rawVal.ToString() ?? "";
+
+                            if (kv.Value is bool)
+                            {
+                                if (int.TryParse(strVal, out int intBool))
+                                    _cachedSettings[kv.Key] = intBool != 0;
+                                else if (bool.TryParse(strVal, out bool bVal))
+                                    _cachedSettings[kv.Key] = bVal;
                                 else
-                                {
-                                    _cachedSettings[kv.Key] = strVal;
-                                }
+                                    _cachedSettings[kv.Key] = (strVal == "1");
+                            }
+                            else if (kv.Value is int)
+                            {
+                                if (int.TryParse(strVal, out int iVal))
+                                    _cachedSettings[kv.Key] = iVal;
+                            }
+                            else if (kv.Value is double)
+                            {
+                                string safeDouble = strVal.Replace(',', '.');
+                                if (double.TryParse(safeDouble, NumberStyles.Any, CultureInfo.InvariantCulture, out double dVal))
+                                    _cachedSettings[kv.Key] = dVal;
+                            }
+                            else
+                            {
+                                _cachedSettings[kv.Key] = strVal;
                             }
                         }
                     }
