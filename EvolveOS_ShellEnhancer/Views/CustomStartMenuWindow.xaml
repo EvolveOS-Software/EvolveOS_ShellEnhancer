@@ -1100,15 +1100,15 @@
                                                                                 <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent"/>
                                                                             </TextBox.Resources>
                                                                             <TextBox.ContextFlyout>
-                                                                                <MenuFlyout>
+                                                                                <MenuFlyout Opening="GroupContextFlyout_Opening">
 
-                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveUp}" Click="MoveGroupUp_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem x:Name="MenuMoveUp" Text="{helpers:ResourceString Key=StartMenu_MoveUp}" Click="MoveGroupUp_Click" Tag="{x:Bind}">
                                                                                         <MenuFlyoutItem.Icon>
                                                                                             <fluentIcons:SymbolIcon Symbol="ChevronUp" />
                                                                                         </MenuFlyoutItem.Icon>
                                                                                     </MenuFlyoutItem>
 
-                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_MoveDown}" Click="MoveGroupDown_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem x:Name="MenuMoveDown" Text="{helpers:ResourceString Key=StartMenu_MoveDown}" Click="MoveGroupDown_Click" Tag="{x:Bind}">
                                                                                         <MenuFlyoutItem.Icon>
                                                                                             <fluentIcons:SymbolIcon Symbol="ChevronDown" />
                                                                                         </MenuFlyoutItem.Icon>
@@ -1116,7 +1116,7 @@
 
                                                                                     <MenuFlyoutSeparator/>
 
-                                                                                    <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem x:Name="MenuDeleteGroup" Text="{helpers:ResourceString Key=StartMenu_DeleteGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}">
                                                                                         <MenuFlyoutItem.Icon>
                                                                                             <FontIcon Glyph="&#xE74D;"/>
                                                                                         </MenuFlyoutItem.Icon>

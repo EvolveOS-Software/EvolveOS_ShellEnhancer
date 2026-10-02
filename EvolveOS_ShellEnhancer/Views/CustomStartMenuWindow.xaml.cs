@@ -1210,6 +1210,31 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        private void GroupContextFlyout_Opening(object sender, object e)
+        {
+            if (sender is MenuFlyout flyout)
+            {
+                foreach (var item in flyout.Items)
+                {
+                    if (item is MenuFlyoutItem menuFlyoutItem)
+                    {
+                        if (menuFlyoutItem.Name == "MenuMoveUp")
+                        {
+                            menuFlyoutItem.Text = LocalizationService.Instance.GetString("StartMenu_MoveUp") ?? "Move Up";
+                        }
+                        else if (menuFlyoutItem.Name == "MenuMoveDown")
+                        {
+                            menuFlyoutItem.Text = LocalizationService.Instance.GetString("StartMenu_MoveDown") ?? "Move Down";
+                        }
+                        else if (menuFlyoutItem.Name == "MenuDeleteGroup")
+                        {
+                            menuFlyoutItem.Text = LocalizationService.Instance.GetString("StartMenu_DeleteGroup") ?? "Delete group";
+                        }
+                    }
+                }
+            }
+        }
+
         private async Task RenamePageAsync(StartMenuPage page)
         {
             var dialog = new ContentDialog

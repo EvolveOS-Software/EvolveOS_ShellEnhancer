@@ -325,7 +325,10 @@ namespace EvolveOS_ShellEnhancer.Views
             if (GetWindow(hWnd, GW_OWNER) != IntPtr.Zero) return false;
 
             long exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE).ToInt64();
+
             if ((exStyle & WS_EX_TOOLWINDOW) != 0) return false;
+
+            if ((exStyle & 0x00040000) != 0) return true;
 
             if (DwmGetWindowAttribute(hWnd, DWMWA_CLOAKED, out int cloaked, sizeof(int)) == 0 && cloaked != 0)
             {

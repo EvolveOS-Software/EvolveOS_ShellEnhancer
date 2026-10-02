@@ -606,6 +606,8 @@ namespace EvolveOS_ShellEnhancer
 
                     case "Shell_Language":
                         LocalizationService.Instance.SetLanguage(value);
+
+                        TaskbarManager.ReloadAll();
                         break;
 
                     case "Shell_HighPriority":
