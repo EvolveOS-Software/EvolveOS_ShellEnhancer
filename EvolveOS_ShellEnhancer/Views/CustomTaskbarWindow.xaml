@@ -21,7 +21,7 @@
                 <!-- Left Panel -->
                 <StackPanel x:Name="LeftPanel" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left" VerticalAlignment="Center">
                     <Button Width="40" Height="40" Padding="0" Background="Transparent" BorderThickness="0" CornerRadius="4" x:Name="BtnStart" Click="BtnStart_Click">
-                        <Image x:Name="StartIconImage" Source="ms-appx:///Assets/StartMenuLogo.png" Width="24" Height="24"/>
+                        <Image x:Name="StartIconImage" Source="ms-appx:///Resources/Windows11Start.png" Width="24" Height="24"/>
                     </Button>
                 </StackPanel>
 
