@@ -22,11 +22,13 @@
         <ResourceDictionary x:Key="Default">
             <SolidColorBrush x:Key="Brush_TextBlock_Inactivity" Color="#DFDFDF"/>
             <SolidColorBrush x:Key="Brush_Inactive" Color="#808080"/>
+            <SolidColorBrush x:Key="StartMenuGlassBrush" Color="#0FFFFFFF" />
         </ResourceDictionary>
 
         <ResourceDictionary x:Key="Light">
             <SolidColorBrush x:Key="Brush_TextBlock_Inactivity" Color="#333333"/>
             <SolidColorBrush x:Key="Brush_Inactive" Color="#666666"/>
+            <SolidColorBrush x:Key="StartMenuGlassBrush" Color="#66FFFFFF" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 

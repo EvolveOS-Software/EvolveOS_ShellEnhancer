@@ -244,7 +244,7 @@
                                                                                             </Image>
                                                                                         </Grid>
 
-                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource StartMenuGlassBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
                                                                                             <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="True" IsItemClickEnabled="True" ItemClick="InnerFolderApp_ItemClick" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
 
                                                                                                 <GridView.Resources>
@@ -357,7 +357,7 @@
                                                                         <ListView Grid.Column="0" ItemsSource="{x:Bind Tabs}" SelectedIndex="{x:Bind SelectedTabIndex, Mode=TwoWay}" SelectionMode="Single" ScrollViewer.HorizontalScrollMode="Disabled" Background="Transparent" BorderThickness="0" Margin="0" Padding="0">
                                                                             <ListView.ItemsPanel>
                                                                                 <ItemsPanelTemplate>
-                                                                                    <StackPanel Orientation="Horizontal" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="4" Spacing="4"/>
+                                                                                    <StackPanel Orientation="Horizontal" Background="{ThemeResource StartMenuGlassBrush}" CornerRadius="8" Padding="4" Spacing="4"/>
                                                                                 </ItemsPanelTemplate>
                                                                             </ListView.ItemsPanel>
                                                                             <ListView.ItemContainerStyle>
@@ -425,7 +425,7 @@
                                                                                             </Image>
                                                                                         </Grid>
 
-                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource StartMenuGlassBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
                                                                                             <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="True" IsItemClickEnabled="True" ItemClick="InnerFolderApp_ItemClick" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
 
                                                                                                 <GridView.Resources>
@@ -843,7 +843,7 @@
                         </Grid>
 
                         <!-- Right Pane -->
-                        <Border Grid.Column="1" Background="{ThemeResource LayerFillColorAltBrush}" CornerRadius="0,12,12,0" 
+                        <Border Grid.Column="1" Background="{ThemeResource StartMenuGlassBrush}" CornerRadius="0,12,12,0" 
                                 BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1,0,0,0">
                             <Grid Padding="24">
 
@@ -966,7 +966,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Header (User Profile & Actions) -->
-                        <Border Grid.Row="0" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+                        <Border Grid.Row="0" Background="{ThemeResource StartMenuGlassBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
                             <Grid Padding="24,12,24,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1188,7 +1188,7 @@
                                                                                             </Image>
                                                                                         </Grid>
 
-                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource StartMenuGlassBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
                                                                                             <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="True" IsItemClickEnabled="True" ItemClick="InnerFolderApp_ItemClick" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
 
                                                                                                 <GridView.Resources>
@@ -1301,7 +1301,7 @@
                                                                         <ListView Grid.Column="0" ItemsSource="{x:Bind Tabs}" SelectedIndex="{x:Bind SelectedTabIndex, Mode=TwoWay}" SelectionMode="Single" ScrollViewer.HorizontalScrollMode="Disabled" Background="Transparent" BorderThickness="0" Margin="0" Padding="0">
                                                                             <ListView.ItemsPanel>
                                                                                 <ItemsPanelTemplate>
-                                                                                    <StackPanel Orientation="Horizontal" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="4" Spacing="4"/>
+                                                                                    <StackPanel Orientation="Horizontal" Background="{ThemeResource StartMenuGlassBrush}" CornerRadius="8" Padding="4" Spacing="4"/>
                                                                                 </ItemsPanelTemplate>
                                                                             </ListView.ItemsPanel>
                                                                             <ListView.ItemContainerStyle>
@@ -1369,7 +1369,7 @@
                                                                                             </Image>
                                                                                         </Grid>
 
-                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource LayerFillColorAltBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
+                                                                                        <Border Margin="0,14,0,0" CornerRadius="6" Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}" Background="{ThemeResource StartMenuGlassBrush}" BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind PinnedFolderVisibility, Mode=OneWay}">
                                                                                             <GridView ItemsSource="{x:Bind PreviewFolderApps, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" SelectionMode="None" IsHitTestVisible="True" IsItemClickEnabled="True" ItemClick="InnerFolderApp_ItemClick" ScrollViewer.VerticalScrollMode="Disabled" Padding="0">
 
                                                                                                 <GridView.Resources>
