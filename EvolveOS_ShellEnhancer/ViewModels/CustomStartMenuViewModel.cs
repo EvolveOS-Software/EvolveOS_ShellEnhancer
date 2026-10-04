@@ -379,18 +379,18 @@ namespace EvolveOS_ShellEnhancer.ViewModels
 
         private void PopulateApps(AppCategory cat, string[] pinNames, List<AppItem> fetchedAllApps)
         {
-            foreach (var name in pinNames)
+            foreach (var pinString in pinNames)
             {
-                if (name.StartsWith("[PINNED_FOLDER]"))
+                if (pinString.StartsWith("[PINNED_FOLDER]"))
                 {
-                    var separatorIndex = name.IndexOf("::");
+                    var separatorIndex = pinString.IndexOf("::");
                     string folderName = "Map";
                     string contents = "";
 
                     if (separatorIndex != -1)
                     {
-                        folderName = name.Substring(15, separatorIndex - 15);
-                        contents = name.Substring(separatorIndex + 2);
+                        folderName = pinString.Substring(15, separatorIndex - 15);
+                        contents = pinString.Substring(separatorIndex + 2);
                     }
 
                     var folderItem = new AppItem
@@ -408,31 +408,48 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                         {
                             string innerName = innerAppStr;
                             string innerPath = "";
+                            string innerImg = "";
+                            string innerTint = "";
 
-                            var pipeIndex = innerAppStr.IndexOf('|');
-                            if (pipeIndex != -1)
-                            {
-                                innerName = innerAppStr.Substring(0, pipeIndex);
-                                innerPath = innerAppStr.Substring(pipeIndex + 1);
-                            }
+                            var pipeParts = innerAppStr.Split('|');
+                            if (pipeParts.Length >= 1) innerName = pipeParts[0];
+                            if (pipeParts.Length >= 2) innerPath = pipeParts[1];
+                            if (pipeParts.Length >= 3) innerImg = pipeParts[2] == "NONE" ? "" : pipeParts[2];
+                            if (pipeParts.Length >= 4) innerTint = pipeParts[3] == "NONE" ? "" : pipeParts[3];
 
                             var innerMatch = fetchedAllApps.FirstOrDefault(a => !string.IsNullOrEmpty(innerPath) && a.ExecutablePath == innerPath)
                                              ?? fetchedAllApps.FirstOrDefault(a => a.Name == innerName);
 
                             if (innerMatch != null)
                             {
+                                if (!string.IsNullOrEmpty(innerImg))
+                                {
+                                    innerMatch.CustomImagePath = innerImg;
+                                    innerMatch.IconSource = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(innerImg));
+                                }
+                                if (!string.IsNullOrEmpty(innerTint)) innerMatch.TintColor = innerTint;
+
                                 folderItem.FolderApps.Add(innerMatch);
                             }
                             else if (!string.IsNullOrEmpty(innerPath))
                             {
-                                folderItem.FolderApps.Add(new AppItem
+                                var fallbackApp = new AppItem
                                 {
                                     Name = innerName,
                                     ExecutablePath = innerPath,
                                     IsUwp = false,
                                     FallbackGlyph = "\xE738",
                                     IconScale = 1.0
-                                });
+                                };
+
+                                if (!string.IsNullOrEmpty(innerImg))
+                                {
+                                    fallbackApp.CustomImagePath = innerImg;
+                                    fallbackApp.IconSource = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(innerImg));
+                                }
+                                if (!string.IsNullOrEmpty(innerTint)) fallbackApp.TintColor = innerTint;
+
+                                folderItem.FolderApps.Add(fallbackApp);
                             }
                         }
                     }
@@ -440,8 +457,30 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                 }
                 else
                 {
-                    var match = fetchedAllApps.FirstOrDefault(a => a.Name == name);
-                    if (match != null) cat.Apps.Add(match);
+                    string appName = pinString;
+                    string customImg = "";
+                    string customTint = "";
+
+                    var parts = pinString.Split('|');
+                    if (parts.Length >= 1) appName = parts[0];
+                    if (parts.Length >= 2) customImg = parts[1] == "NONE" ? "" : parts[1];
+                    if (parts.Length >= 3) customTint = parts[2] == "NONE" ? "" : parts[2];
+
+                    var match = fetchedAllApps.FirstOrDefault(a => a.Name == appName);
+                    if (match != null)
+                    {
+                        if (!string.IsNullOrEmpty(customImg))
+                        {
+                            match.CustomImagePath = customImg;
+                            match.IconSource = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(customImg));
+                        }
+                        if (!string.IsNullOrEmpty(customTint))
+                        {
+                            match.TintColor = customTint;
+                        }
+
+                        cat.Apps.Add(match);
+                    }
                 }
             }
         }
@@ -726,14 +765,24 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                 {
                     var validApps = app.FolderApps?
                         .Where(a => a != null && !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.ExecutablePath))
-                        .Select(a => $"{a.Name}|{a.ExecutablePath}") ?? new List<string>();
+                        .Select(a => {
+                            string cImg = string.IsNullOrEmpty(a.CustomImagePath) ? "NONE" : a.CustomImagePath;
+                            string cTint = string.IsNullOrEmpty(a.TintColor) ? "NONE" : a.TintColor;
+                            return $"{a.Name}|{a.ExecutablePath}|{cImg}|{cTint}";
+                        }) ?? new List<string>();
 
                     var insideApps = string.Join("~", validApps);
                     appStrings.Add($"[PINNED_FOLDER]{app.Name}::{insideApps}");
                 }
                 else
                 {
-                    if (!string.IsNullOrWhiteSpace(app.Name)) appStrings.Add(app.Name);
+                    if (!string.IsNullOrWhiteSpace(app.Name))
+                    {
+                        string cImg = string.IsNullOrEmpty(app.CustomImagePath) ? "NONE" : app.CustomImagePath;
+                        string cTint = string.IsNullOrEmpty(app.TintColor) ? "NONE" : app.TintColor;
+
+                        appStrings.Add($"{app.Name}|{cImg}|{cTint}");
+                    }
                 }
             }
             return appStrings;

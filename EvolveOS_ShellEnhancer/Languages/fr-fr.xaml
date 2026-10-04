@@ -153,6 +153,19 @@
     <sys:String x:Key="StartMenu_ApplyCustomColor">Appliquer la couleur</sys:String>
     <sys:String x:Key="StartMenu_SaveSetup">Enregistrer la configuration</sys:String>
 
+    <sys:String x:Key="StartMenu_ContextPictogram">Éditeur d'icône</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTargetScope">Portée cible</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeSingle">Application sélectionnée uniquement</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeGroup">Groupe entier</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeAll">Toutes les applications épinglées</sys:String>
+    <sys:String x:Key="StartMenu_PictogramCustomImage">Image personnalisée</sys:String>
+    <sys:String x:Key="StartMenu_PictogramBrowseImage">Parcourir les images...</sys:String>
+    <sys:String x:Key="StartMenu_PictogramResetIcon">Rétablir l'icône par défaut</sys:String>
+    <sys:String x:Key="StartMenu_PictogramEnableTint">Activer la teinte personnalisée de l'icône</sys:String>
+    <sys:String x:Key="StartMenu_PictogramSelectTint">Sélectionner la couleur de teinte</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintTile">Teinter la tuile</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintIcon">Teinter l'icône</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

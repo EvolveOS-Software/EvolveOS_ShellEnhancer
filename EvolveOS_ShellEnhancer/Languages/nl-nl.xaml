@@ -152,6 +152,19 @@
     <sys:String x:Key="StartMenu_ApplyCustomColor">Aangepaste kleur toepassen</sys:String>
     <sys:String x:Key="StartMenu_SaveSetup">Instellingen opslaan</sys:String>
 
+    <sys:String x:Key="StartMenu_ContextPictogram">Pictogram-editor</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTargetScope">Doelbereik</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeSingle">Alleen geselecteerde app</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeGroup">Volledige groep</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeAll">Alle vastgemaakte apps</sys:String>
+    <sys:String x:Key="StartMenu_PictogramCustomImage">Aangepaste afbeelding</sys:String>
+    <sys:String x:Key="StartMenu_PictogramBrowseImage">Bladeren naar afbeelding...</sys:String>
+    <sys:String x:Key="StartMenu_PictogramResetIcon">Terugzetten naar standaardpictogram</sys:String>
+    <sys:String x:Key="StartMenu_PictogramEnableTint">Aangepaste pictogramkleur inschakelen</sys:String>
+    <sys:String x:Key="StartMenu_PictogramSelectTint">Selecteer tintkleur</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintTile">Tegel kleuren</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintIcon">Pictogram kleuren</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

@@ -80,7 +80,6 @@ namespace EvolveOS_ShellEnhancer.Models
         public bool IsNew { get; set; }
 
         public ObservableCollection<AppItem> FolderApps { get; } = new ObservableCollection<AppItem>();
-
         public ObservableCollection<AppItem> PreviewFolderApps { get; } = new ObservableCollection<AppItem>();
 
         #endregion
@@ -113,6 +112,154 @@ namespace EvolveOS_ShellEnhancer.Models
 
         #region UI & Layout Properties
 
+        private string? _customImagePath;
+        public string? CustomImagePath
+        {
+            get => _customImagePath;
+            set
+            {
+                if (_customImagePath != value)
+                {
+                    _customImagePath = value;
+                    OnPropertyChanged(nameof(CustomImagePath));
+                }
+            }
+        }
+
+        private string? _tintColor;
+        public string? TintColor
+        {
+            get => _tintColor;
+            set
+            {
+                if (_tintColor != value)
+                {
+                    _tintColor = value;
+
+                    if (!string.IsNullOrEmpty(_tintColor) && _tintColor.Contains("_"))
+                    {
+                        var parts = _tintColor.Split('_');
+                        if (parts.Length >= 3)
+                        {
+                            _isTileTinted = parts[1] == "1";
+                            _isIconTinted = parts[2] == "1";
+                            OnPropertyChanged(nameof(IsTileTinted));
+                            OnPropertyChanged(nameof(IsIconTinted));
+                        }
+                    }
+
+                    OnPropertyChanged(nameof(TintColor));
+                    OnPropertyChanged(nameof(TileBrush));
+                    OnPropertyChanged(nameof(TintBrush));
+                    OnPropertyChanged(nameof(ActiveIconSource));
+
+                    if (_isIconTinted && !string.IsNullOrEmpty(_tintColor) && _tintColor != "NONE")
+                    {
+                        _ = Utilities.Helpers.StartMenuHelper.ApplyTintAsync(this);
+                    }
+                }
+            }
+        }
+
+        private bool _isTileTinted = true;
+        public bool IsTileTinted
+        {
+            get => _isTileTinted;
+            set
+            {
+                if (_isTileTinted != value)
+                {
+                    _isTileTinted = value;
+                    UpdateTintColorFlags();
+                    OnPropertyChanged(nameof(IsTileTinted));
+                    OnPropertyChanged(nameof(TileBrush));
+                }
+            }
+        }
+
+        private bool _isIconTinted = false;
+        public bool IsIconTinted
+        {
+            get => _isIconTinted;
+            set
+            {
+                if (_isIconTinted != value)
+                {
+                    _isIconTinted = value;
+                    UpdateTintColorFlags();
+                    OnPropertyChanged(nameof(IsIconTinted));
+                    OnPropertyChanged(nameof(TintBrush));
+                    OnPropertyChanged(nameof(ActiveIconSource));
+                }
+            }
+        }
+
+        private void UpdateTintColorFlags()
+        {
+            if (string.IsNullOrEmpty(_tintColor) || _tintColor == "NONE") return;
+
+            var baseColor = _tintColor.Split('_')[0];
+            string tileFlag = _isTileTinted ? "1" : "0";
+            string iconFlag = _isIconTinted ? "1" : "0";
+
+            _tintColor = $"{baseColor}_{tileFlag}_{iconFlag}";
+            OnPropertyChanged(nameof(TintColor));
+        }
+
+        public SolidColorBrush TileBrush
+        {
+            get
+            {
+                if (ExecutablePath == "PINNED_FOLDER" || ExecutablePath == "TAB_DATA")
+                    return new SolidColorBrush(Colors.Transparent);
+
+                if (!IsTileTinted || string.IsNullOrEmpty(_tintColor) || _tintColor == "NONE")
+                    return new SolidColorBrush(Colors.Transparent);
+
+                return GetBrushFromHex(_tintColor);
+            }
+        }
+
+        public SolidColorBrush? TintBrush
+        {
+            get
+            {
+                if (!IsIconTinted || string.IsNullOrEmpty(_tintColor) || _tintColor == "NONE")
+                    return null;
+
+                return GetBrushFromHex(_tintColor);
+            }
+        }
+
+        private SolidColorBrush GetBrushFromHex(string hexColor)
+        {
+            try
+            {
+                string hex = hexColor.Split('_')[0].Replace("#", "");
+                byte a = 255, r = 0, g = 0, b = 0;
+
+                if (hex.Length == 8)
+                {
+                    a = Convert.ToByte(hex.Substring(0, 2), 16);
+                    r = Convert.ToByte(hex.Substring(2, 2), 16);
+                    g = Convert.ToByte(hex.Substring(4, 2), 16);
+                    b = Convert.ToByte(hex.Substring(6, 2), 16);
+                }
+                else if (hex.Length == 6)
+                {
+                    r = Convert.ToByte(hex.Substring(0, 2), 16);
+                    g = Convert.ToByte(hex.Substring(2, 2), 16);
+                    b = Convert.ToByte(hex.Substring(4, 2), 16);
+                }
+
+                return new SolidColorBrush(Color.FromArgb(a, r, g, b));
+            }
+            catch
+            {
+                return new SolidColorBrush(Microsoft.UI.Colors.Transparent);
+            }
+        }
+
         private ImageSource? _iconSource;
         public ImageSource? IconSource
         {
@@ -123,6 +270,7 @@ namespace EvolveOS_ShellEnhancer.Models
                 {
                     _iconSource = value;
                     OnPropertyChanged(nameof(IconSource));
+                    OnPropertyChanged(nameof(ActiveIconSource));
                     OnPropertyChanged(nameof(HasIcon));
                     OnPropertyChanged(nameof(HasNoIcon));
                     OnPropertyChanged(nameof(StandardIconVisibility));
@@ -130,6 +278,23 @@ namespace EvolveOS_ShellEnhancer.Models
                 }
             }
         }
+
+        private ImageSource? _tintedIconSource;
+        public ImageSource? TintedIconSource
+        {
+            get => _tintedIconSource;
+            set
+            {
+                if (_tintedIconSource != value)
+                {
+                    _tintedIconSource = value;
+                    OnPropertyChanged(nameof(TintedIconSource));
+                    OnPropertyChanged(nameof(ActiveIconSource));
+                }
+            }
+        }
+
+        public ImageSource? ActiveIconSource => (IsIconTinted && TintedIconSource != null) ? TintedIconSource : IconSource;
 
         public double IconScale { get; set; } = 1.0;
 
@@ -243,8 +408,10 @@ namespace EvolveOS_ShellEnhancer.Models
         public HorizontalAlignment TextGridAlignment => ExecutablePath == "PINNED_FOLDER" ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
 
         public Visibility PinnedFolderVisibility => ExecutablePath == "PINNED_FOLDER" ? Visibility.Visible : Visibility.Collapsed;
+
         public Visibility StandardIconVisibility => ExecutablePath == "PINNED_FOLDER" ? Visibility.Collapsed : HasIcon;
         public Visibility StandardNoIconVisibility => ExecutablePath == "PINNED_FOLDER" ? Visibility.Collapsed : HasNoIcon;
+
         public Visibility AllAppsChevronVisibility => (FallbackGlyph == "\xE8B7" || (!string.IsNullOrEmpty(ExecutablePath) && Directory.Exists(ExecutablePath))) ? Visibility.Visible : Visibility.Collapsed;
 
         public string? DisplayToolTip => IsRunning ? null : Name;

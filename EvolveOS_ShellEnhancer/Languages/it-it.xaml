@@ -152,6 +152,19 @@
     <sys:String x:Key="StartMenu_ApplyCustomColor">Applica colore personalizzato</sys:String>
     <sys:String x:Key="StartMenu_SaveSetup">Salva configurazione</sys:String>
 
+    <sys:String x:Key="StartMenu_ContextPictogram">Editor di icone</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTargetScope">Ambito di destinazione</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeSingle">Solo l'app selezionata</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeGroup">Intero gruppo</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeAll">Tutte le app aggiunte</sys:String>
+    <sys:String x:Key="StartMenu_PictogramCustomImage">Immagine personalizzata</sys:String>
+    <sys:String x:Key="StartMenu_PictogramBrowseImage">Sfoglia immagine...</sys:String>
+    <sys:String x:Key="StartMenu_PictogramResetIcon">Ripristina l'icona predefinita</sys:String>
+    <sys:String x:Key="StartMenu_PictogramEnableTint">Abilita tinta personalizzata icona</sys:String>
+    <sys:String x:Key="StartMenu_PictogramSelectTint">Seleziona colore tinta</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintTile">Tinta riquadro</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintIcon">Tinta icona</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

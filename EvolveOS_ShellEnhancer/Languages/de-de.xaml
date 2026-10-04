@@ -152,6 +152,19 @@
     <sys:String x:Key="StartMenu_ApplyCustomColor">Eigene Farbe anwenden</sys:String>
     <sys:String x:Key="StartMenu_SaveSetup">Setup speichern</sys:String>
 
+    <sys:String x:Key="StartMenu_ContextPictogram">Symbol-Editor</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTargetScope">Zielbereich</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeSingle">Nur ausgewählte App</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeGroup">Gesamte Gruppe</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeAll">Alle angehefteten Apps</sys:String>
+    <sys:String x:Key="StartMenu_PictogramCustomImage">Benutzerdefiniertes Bild</sys:String>
+    <sys:String x:Key="StartMenu_PictogramBrowseImage">Bild durchsuchen...</sys:String>
+    <sys:String x:Key="StartMenu_PictogramResetIcon">Auf Standardsymbol zurücksetzen</sys:String>
+    <sys:String x:Key="StartMenu_PictogramEnableTint">Benutzerdefinierte Symbolfärbung aktivieren</sys:String>
+    <sys:String x:Key="StartMenu_PictogramSelectTint">Tönungsfarbe auswählen</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintTile">Kachel färben</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintIcon">Symbol färben</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

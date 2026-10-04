@@ -1598,6 +1598,21 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 flyout.Items.Add(new MenuFlyoutSeparator());
 
+                var pictogramItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_ContextPictogram") ?? "Pictogram",
+                    Icon = new FontIcon { Glyph = "\xE7B5" }
+                };
+                pictogramItem.Click += (s, args) =>
+                {
+                    var parentCat = GetAllCategoriesFlattened().FirstOrDefault(c => c.Apps.Contains(app));
+                    var editor = new PictogramEditorWindow(app, parentCat, GetAllCategoriesFlattened(), () => { SafeSavePins(); });
+                    editor.Activate();
+                    HideMenu();
+                };
+                flyout.Items.Add(pictogramItem);
+                flyout.Items.Add(new MenuFlyoutSeparator());
+
                 var settingsSubItem = new MenuFlyoutSubItem
                 {
                     Text = LocalizationService.Instance.GetString("StartMenu_ListSettings") ?? "List settings",
@@ -1660,6 +1675,20 @@ namespace EvolveOS_ShellEnhancer.Views
                 };
                 flyout.Items.Add(locItem);
 
+                flyout.Items.Add(new MenuFlyoutSeparator());
+
+                var pictogramItem = new MenuFlyoutItem
+                {
+                    Text = LocalizationService.Instance.GetString("StartMenu_ContextPictogram") ?? "Pictogram",
+                    Icon = new FontIcon { Glyph = "\xE7B5" }
+                };
+                pictogramItem.Click += (s, args) =>
+                {
+                    var editor = new PictogramEditorWindow(recentItem, null, null, () => { LoadRecentDocuments(); });
+                    editor.Activate();
+                    HideMenu();
+                };
+                flyout.Items.Add(pictogramItem);
                 flyout.Items.Add(new MenuFlyoutSeparator());
 
                 var removeItem = new MenuFlyoutItem
@@ -1727,8 +1756,8 @@ namespace EvolveOS_ShellEnhancer.Views
             if (sender is FrameworkElement element && (element.Tag as AppItem ?? element.DataContext as AppItem) is AppItem app)
             {
                 bool isGlobalHidden = !SettingsEngine.Shell_StartMenuShowAppLabels;
-
                 var parentGrid = FindVisualParent<GridView>(element);
+                var parentList = FindVisualParent<ListView>(element);
 
                 bool isRecentArea = parentGrid != null && parentGrid.Name == "RecentDocsGrid";
 
@@ -1742,16 +1771,15 @@ namespace EvolveOS_ShellEnhancer.Views
                                     parentGrid.Name != "SearchFilesGrid" &&
                                     parentGrid.Name != "OverlayFolderGrid";
 
-                if (isRecentArea)
-                {
-                    if (!string.IsNullOrEmpty(app.ExecutablePath))
-                    {
-                        if (GlobalHoverText1 != null) GlobalHoverText1.Text = app.ExecutablePath;
-                        if (GlobalHoverText2 != null) GlobalHoverText2.Text = app.ExecutablePath;
+                bool isAllAppsOrSearch = (parentGrid != null && parentGrid.Name.Contains("Search")) || parentList != null || isRecentArea;
 
-                        if (GlobalHoverBadge1 != null) FadeElement(GlobalHoverBadge1, 1.0, 150);
-                        if (GlobalHoverBadge2 != null) FadeElement(GlobalHoverBadge2, 1.0, 150);
-                    }
+                if (isRecentArea && !string.IsNullOrEmpty(app.ExecutablePath))
+                {
+                    if (GlobalHoverText1 != null) GlobalHoverText1.Text = app.ExecutablePath;
+                    if (GlobalHoverText2 != null) GlobalHoverText2.Text = app.ExecutablePath;
+
+                    if (GlobalHoverBadge1 != null) FadeElement(GlobalHoverBadge1, 1.0, 150);
+                    if (GlobalHoverBadge2 != null) FadeElement(GlobalHoverBadge2, 1.0, 150);
                 }
 
                 if (isGlobalHidden && app.ExecutablePath != "PINNED_FOLDER" && isPinnedArea)
@@ -1764,12 +1792,25 @@ namespace EvolveOS_ShellEnhancer.Views
                 }
 
                 if (app.ExecutablePath == "PINNED_FOLDER") return;
-            }
 
-            if (sender is StackPanel panel)
-                panel.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
-            else if (sender is Border border)
-                border.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
+                var hoverColor = Color.FromArgb(40, 255, 255, 255);
+
+                bool allowTint = !isAllAppsOrSearch;
+
+                if (allowTint && app.TileBrush != null && app.TileBrush.Color.A != 0)
+                {
+                    var c = app.TileBrush.Color;
+                    hoverColor = Color.FromArgb(c.A,
+                        (byte)Math.Min(255, c.R + 40),
+                        (byte)Math.Min(255, c.G + 40),
+                        (byte)Math.Min(255, c.B + 40));
+                }
+
+                if (sender is Panel panel)
+                    panel.Background = new SolidColorBrush(hoverColor);
+                else if (sender is Border border)
+                    border.Background = new SolidColorBrush(hoverColor);
+            }
         }
 
         private void AppCard_PointerExited(object sender, PointerRoutedEventArgs e)
@@ -1783,12 +1824,20 @@ namespace EvolveOS_ShellEnhancer.Views
             if (sender is FrameworkElement element && (element.Tag as AppItem ?? element.DataContext as AppItem) is AppItem app)
             {
                 if (app.ExecutablePath == "PINNED_FOLDER") return;
-            }
 
-            if (sender is StackPanel panel)
-                panel.Background = new SolidColorBrush(Colors.Transparent);
-            else if (sender is Border border)
-                border.Background = new SolidColorBrush(Colors.Transparent);
+                var parentGrid = FindVisualParent<GridView>(element);
+                var parentList = FindVisualParent<ListView>(element);
+
+                bool isRecentArea = parentGrid != null && parentGrid.Name == "RecentDocsGrid";
+                bool isAllAppsOrSearch = (parentGrid != null && parentGrid.Name.Contains("Search")) || parentList != null || isRecentArea;
+
+                var bgBrush = isAllAppsOrSearch ? new SolidColorBrush(Colors.Transparent) : (app.TileBrush ?? new SolidColorBrush(Colors.Transparent));
+
+                if (sender is Panel panel)
+                    panel.Background = bgBrush;
+                else if (sender is Border border)
+                    border.Background = bgBrush;
+            }
         }
 
         private void AppCard_PointerPressed(object sender, PointerRoutedEventArgs e)

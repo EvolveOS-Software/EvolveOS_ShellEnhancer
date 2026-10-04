@@ -166,6 +166,20 @@
     <sys:String x:Key="StartMenu_ApplyCustomColor">Apply Custom Color</sys:String>
     <sys:String x:Key="StartMenu_SaveSetup">Save Setup</sys:String>
 
+
+    <sys:String x:Key="StartMenu_ContextPictogram">Pictogram Editor</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTargetScope">Target Scope</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeSingle">Selected App Only</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeGroup">Entire Group</sys:String>
+    <sys:String x:Key="StartMenu_PictogramScopeAll">All Pinned Apps</sys:String>
+    <sys:String x:Key="StartMenu_PictogramCustomImage">Custom Image</sys:String>
+    <sys:String x:Key="StartMenu_PictogramBrowseImage">Browse image...</sys:String>
+    <sys:String x:Key="StartMenu_PictogramResetIcon">Reset to default icon</sys:String>
+    <sys:String x:Key="StartMenu_PictogramEnableTint">Enable Custom Icon Tint</sys:String>
+    <sys:String x:Key="StartMenu_PictogramSelectTint">Select Tint Color</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintTile">Tint Tile</sys:String>
+    <sys:String x:Key="StartMenu_PictogramTintIcon">Tint Icon</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

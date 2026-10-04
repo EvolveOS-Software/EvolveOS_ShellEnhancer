@@ -31,12 +31,12 @@
             </Style>
 
             <DataTemplate x:Key="FlyoutFolderItemTemplate" x:DataType="models:AppItem">
-                <StackPanel Width="80" Height="96" Spacing="4" Padding="4,8" CornerRadius="8" Background="Transparent"
+                <StackPanel Width="76" Height="92" Margin="2" Spacing="4" Padding="2,2" CornerRadius="8" Background="{x:Bind TileBrush, Mode=OneWay}"
                             RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed"
                             PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                     <Grid Width="48" Height="48" HorizontalAlignment="Center">
-                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                        <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                        <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                        <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                             <Image.RenderTransform>
                                 <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                             </Image.RenderTransform>
@@ -231,13 +231,12 @@
                                                                         </GridView.ItemContainerStyle>
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="{x:Bind TileBrush, Mode=OneWay}" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                                    
                                                                                     <Grid HorizontalAlignment="Center">
 
                                                                                         <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}">
-                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                            <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                                 <Image.RenderTransform>
                                                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                                 </Image.RenderTransform>
@@ -271,12 +270,12 @@
 
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
-                                                                                                        <Border CornerRadius="4" Background="Transparent"
+                                                                                                        <Border CornerRadius="4" Background="{x:Bind TileBrush, Mode=OneWay}"
                                                                                                                 PointerEntered="AppCard_PointerEntered"
                                                                                                                 PointerExited="AppCard_PointerExited">
                                                                                                             <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
-                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                                                                <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                                                                <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                                                     <Image.RenderTransform>
                                                                                                                         <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                                                     </Image.RenderTransform>
@@ -412,13 +411,13 @@
                                                                         </GridView.ItemContainerStyle>
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="{x:Bind TileBrush, Mode=OneWay}" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                                    
                                                                                     <Grid HorizontalAlignment="Center">
 
                                                                                         <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}">
-                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                                            <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                                 <Image.RenderTransform>
                                                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                                 </Image.RenderTransform>
@@ -452,12 +451,12 @@
 
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
-                                                                                                        <Border CornerRadius="4" Background="Transparent"
+                                                                                                        <Border CornerRadius="4" Background="{x:Bind TileBrush, Mode=OneWay}"
                                                                                                                 PointerEntered="AppCard_PointerEntered"
                                                                                                                 PointerExited="AppCard_PointerExited">
                                                                                                             <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
-                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                                                                <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                                                                <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                                                     <Image.RenderTransform>
                                                                                                                         <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                                                     </Image.RenderTransform>
@@ -542,8 +541,12 @@
                                                                                 <ColumnDefinition Width="32"/>
                                                                                 <ColumnDefinition Width="*"/>
                                                                             </Grid.ColumnDefinitions>
-                                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="24" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                            <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}"/>
+                                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="24" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                            <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                <Image.RenderTransform>
+                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                </Image.RenderTransform>
+                                                                            </Image>
                                                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                                                 <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
 
@@ -635,7 +638,7 @@
                                                                     <ColumnDefinition Width="Auto"/>
                                                                 </Grid.ColumnDefinitions>
 
-                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" />
                                                                 <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                     <Image.RenderTransform>
                                                                         <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
@@ -687,7 +690,7 @@
                                                                         <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                     </Image.RenderTransform>
                                                                 </Image>
-
+                                                                
                                                                 <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
 
                                                                 <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_NewApp}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
@@ -760,7 +763,7 @@
                                                               MaxHeight="0">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate x:DataType="models:AppItem">
-                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="Transparent"
+                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
                                                                     RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                 <Grid ColumnSpacing="12" Padding="8,0">
                                                                     <Grid.ColumnDefinitions>
@@ -1175,13 +1178,13 @@
                                                                         </GridView.ItemContainerStyle>
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="{x:Bind TileBrush, Mode=OneWay}" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                                    
                                                                                     <Grid HorizontalAlignment="Center">
 
                                                                                         <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}">
-                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                                            <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                                 <Image.RenderTransform>
                                                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                                 </Image.RenderTransform>
@@ -1215,12 +1218,12 @@
 
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
-                                                                                                        <Border CornerRadius="4" Background="Transparent"
+                                                                                                        <Border CornerRadius="4" Background="{x:Bind TileBrush, Mode=OneWay}"
                                                                                                                 PointerEntered="AppCard_PointerEntered"
                                                                                                                 PointerExited="AppCard_PointerExited">
                                                                                                             <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
-                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                                                                <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                                                                <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                                                     <Image.RenderTransform>
                                                                                                                         <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                                                     </Image.RenderTransform>
@@ -1356,13 +1359,12 @@
                                                                         </GridView.ItemContainerStyle>
                                                                         <GridView.ItemTemplate>
                                                                             <DataTemplate x:DataType="models:AppItem">
-                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="Transparent" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-
+                                                                                <StackPanel Tag="{x:Bind}" Width="{x:Bind CardWidth, Mode=OneWay}" Spacing="0" Padding="4,0" CornerRadius="8" Background="{x:Bind TileBrush, Mode=OneWay}" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                                     <Grid HorizontalAlignment="Center">
 
                                                                                         <Grid Width="{x:Bind FolderBoxSize, Mode=OneWay}" Height="{x:Bind FolderBoxSize, Mode=OneWay}">
-                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}"/>
-                                                                                            <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind AppFontSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardNoIconVisibility, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                                            <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="{x:Bind AppIconSize, Mode=OneWay}" Height="{x:Bind AppIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind StandardIconVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                                 <Image.RenderTransform>
                                                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                                 </Image.RenderTransform>
@@ -1396,12 +1398,12 @@
 
                                                                                                 <GridView.ItemTemplate>
                                                                                                     <DataTemplate x:DataType="models:AppItem">
-                                                                                                        <Border CornerRadius="4" Background="Transparent"
+                                                                                                        <Border CornerRadius="4" Background="{x:Bind TileBrush, Mode=OneWay}"
                                                                                                                 PointerEntered="AppCard_PointerEntered"
                                                                                                                 PointerExited="AppCard_PointerExited">
                                                                                                             <Grid Width="{x:Bind FolderInnerCellSize, Mode=OneWay}" Height="{x:Bind FolderInnerCellSize, Mode=OneWay}">
-                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                                                                <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                                                <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="{x:Bind FolderInnerIconSize, Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                                                                <Image Source="{x:Bind ActiveIconSource, Mode=OneWay}" Width="{x:Bind FolderInnerIconSize, Mode=OneWay}" Height="{x:Bind FolderInnerIconSize, Mode=OneWay}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                                                     <Image.RenderTransform>
                                                                                                                         <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                                                     </Image.RenderTransform>
@@ -1486,8 +1488,12 @@
                                                                                 <ColumnDefinition Width="32"/>
                                                                                 <ColumnDefinition Width="*"/>
                                                                             </Grid.ColumnDefinitions>
-                                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="24" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                            <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}"/>
+                                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="24" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
+                                                                            <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                <Image.RenderTransform>
+                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                </Image.RenderTransform>
+                                                                            </Image>
                                                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                                                 <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1"/>
 
@@ -1706,7 +1712,7 @@
                                                               MaxHeight="0">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate x:DataType="models:AppItem">
-                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="Transparent"
+                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
                                                                     RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                 <Grid ColumnSpacing="12" Padding="8,0">
                                                                     <Grid.ColumnDefinitions>
@@ -1948,7 +1954,7 @@
                                                                         <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                     </Image.RenderTransform>
                                                                 </Image>
-
+                                                                
                                                                 <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
 
                                                                 <Border Grid.Column="2"
@@ -1978,7 +1984,7 @@
                                                                       MaxHeight="0">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate x:DataType="models:AppItem">
-                                                                    <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="Transparent"
+                                                                    <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
                                                                             RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                         <Grid ColumnSpacing="12" Padding="8,0">
                                                                             <Grid.ColumnDefinitions>
@@ -2077,7 +2083,7 @@
                                                                 <ColumnDefinition Width="*"/>
                                                             </Grid.ColumnDefinitions>
 
-                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
                                                             <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                 <Image.RenderTransform>
                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
@@ -2133,7 +2139,7 @@
                                                 <DataTemplate x:DataType="models:AppItem">
                                                     <StackPanel Tag="{x:Bind}" Width="104" Height="124" Spacing="8" Background="Transparent" CornerRadius="8" RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                         <Grid Width="72" Height="72" HorizontalAlignment="Center">
-                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                            <FontIcon Glyph="{x:Bind FallbackGlyph}" FontSize="40" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
                                                             <Image Source="{x:Bind IconSource, Mode=OneWay}" Width="64" Height="64" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                 <Image.RenderTransform>
                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
@@ -2180,7 +2186,7 @@
                                                                 <ColumnDefinition Width="32"/>
                                                                 <ColumnDefinition Width="*"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
                                                             <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                 <Image.RenderTransform>
                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
@@ -2229,7 +2235,7 @@
                                                                 <ColumnDefinition Width="32"/>
                                                                 <ColumnDefinition Width="*"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
                                                             <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                 <Image.RenderTransform>
                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
@@ -2279,7 +2285,7 @@
                                                                 <ColumnDefinition Width="32"/>
                                                                 <ColumnDefinition Width="*"/>
                                                             </Grid.ColumnDefinitions>
-                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" Foreground="{x:Bind TintBrush, Mode=OneWay, TargetNullValue={ThemeResource TextFillColorPrimaryBrush}}"/>
                                                             <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="24" Height="24" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                 <Image.RenderTransform>
                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
@@ -2409,7 +2415,7 @@
                 </Storyboard>
             </Grid.Resources>
 
-            <Border x:Name="FolderPopupCard" Width="420" Height="360" CornerRadius="12"
+            <Border x:Name="FolderPopupCard" Width="420" Height="376" CornerRadius="12"
                     BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}" BorderThickness="1"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
                     RenderTransformOrigin="0.5,0.5"
@@ -2475,7 +2481,8 @@
                             <Style TargetType="GridViewItem">
                                 <Setter Property="Margin" Value="0"/>
                                 <Setter Property="Padding" Value="0"/>
-                                <Setter Property="MinHeight" Value="96"/>
+                                <Setter Property="MinHeight" Value="94"/>
+                                <Setter Property="MinWidth" Value="80"/>
                             </Style>
                         </GridView.ItemContainerStyle>
                     </GridView>

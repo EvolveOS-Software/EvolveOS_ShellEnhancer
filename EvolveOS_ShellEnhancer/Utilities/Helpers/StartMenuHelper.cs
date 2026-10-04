@@ -24,8 +24,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             "uninstall", "readme", "manual", "documentation", "license"
         };
 
-        // Add keywords for any UWP app that already has a giant/full-bleed icon.
-        // This stops them from being scaled up like the rest of the Windows apps.
         private static readonly string[] UnpaddedUwpKeywords = new[]
         {
             "dts", "optimizer", "evolveos", "realtek", "windbg"
@@ -239,7 +237,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         }
         #endregion
 
-        #region Icon Extraction
+        #region Icon Extraction & Tinting
         public static async Task<ImageSource?> ExtractAppIconAsync(AppItem appItem)
         {
             try
@@ -250,6 +248,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
                 if (!string.IsNullOrEmpty(cacheKey) && _iconCache.TryGetValue(cacheKey, out var cachedIcon))
                 {
+                    appItem.IconSource = cachedIcon;
+                    if (appItem.IsIconTinted && appItem.TintedIconSource == null)
+                        await ApplyTintAsync(appItem);
                     return cachedIcon;
                 }
 
@@ -269,20 +270,13 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                     if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
                     {
                         string parsed = ParseShortcutTarget(target);
-                        if (!string.IsNullOrEmpty(parsed) && !parsed.Contains("!") && File.Exists(parsed))
-                        {
-                            target = parsed;
-                        }
+                        if (!string.IsNullOrEmpty(parsed) && !parsed.Contains("!") && File.Exists(parsed)) target = parsed;
                     }
 
                     try
                     {
                         StorageFile file = await StorageFile.GetFileFromPathAsync(target);
-
-                        var thumbnail = await file.GetThumbnailAsync(
-                            ThumbnailMode.SingleItem,
-                            64,
-                            ThumbnailOptions.UseCurrentScale);
+                        var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.SingleItem, 64, ThumbnailOptions.UseCurrentScale);
 
                         if (thumbnail != null)
                         {
@@ -308,7 +302,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                                 bmp.Save(ms, ImageFormat.Png);
                                 ms.Position = 0;
 
-                                // FIX 2: Removed 'using' on ras to prevent disposal before rendering
                                 var ras = new InMemoryRandomAccessStream();
                                 using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
                                 {
@@ -331,6 +324,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                 if (resultImage != null && !string.IsNullOrEmpty(cacheKey))
                 {
                     _iconCache[cacheKey] = resultImage;
+                    appItem.IconSource = resultImage;
+
+                    if (appItem.IsIconTinted) await ApplyTintAsync(appItem);
                 }
 
                 return resultImage;
@@ -340,6 +336,114 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                 Debug.WriteLine($"Icon extraction failed for {appItem.Name}: {ex.Message}");
             }
             return null;
+        }
+
+        public static async Task<IRandomAccessStream?> ExtractAppIconStreamAsync(AppItem appItem)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(appItem.ExecutablePath)) return null;
+
+                if (appItem.IsUwp && appItem.UwpLogoStreamRef != null)
+                {
+                    return await appItem.UwpLogoStreamRef.OpenReadAsync();
+                }
+
+                string target = appItem.ExecutablePath;
+                if (target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                {
+                    string parsed = ParseShortcutTarget(target);
+                    if (!string.IsNullOrEmpty(parsed) && File.Exists(parsed)) target = parsed;
+                }
+
+                try
+                {
+                    var file = await StorageFile.GetFileFromPathAsync(target);
+                    var thumbnail = await file.GetThumbnailAsync(ThumbnailMode.SingleItem, 64, ThumbnailOptions.UseCurrentScale);
+                    if (thumbnail != null) return thumbnail;
+                }
+                catch { }
+
+                SHFILEINFO shinfo = new SHFILEINFO();
+                IntPtr res = SHGetFileInfo(target, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_LARGEICON);
+                if (res != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
+                {
+                    try
+                    {
+                        using var icon = Icon.FromHandle(shinfo.hIcon);
+                        using var bmp = icon.ToBitmap();
+                        using var ms = new MemoryStream();
+                        bmp.Save(ms, ImageFormat.Png);
+                        ms.Position = 0;
+
+                        var ras = new InMemoryRandomAccessStream();
+                        using (var writer = new DataWriter(ras.GetOutputStreamAt(0)))
+                        {
+                            writer.WriteBytes(ms.ToArray());
+                            await writer.StoreAsync();
+                        }
+                        return ras;
+                    }
+                    finally
+                    {
+                        DestroyIcon(shinfo.hIcon);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Stream extraction failed for {appItem.Name}: {ex.Message}");
+            }
+            return null;
+        }
+
+        public static async Task ApplyTintAsync(AppItem app)
+        {
+            if (!app.IsIconTinted || string.IsNullOrEmpty(app.TintColor) || app.TintColor == "NONE")
+            {
+                app.TintedIconSource = null;
+                return;
+            }
+
+            try
+            {
+                string hex = app.TintColor.Split('_')[0].Replace("#", "");
+                byte a = 255, r = 0, g = 0, b = 0;
+
+                if (hex.Length == 8)
+                {
+                    a = Convert.ToByte(hex.Substring(0, 2), 16);
+                    r = Convert.ToByte(hex.Substring(2, 2), 16);
+                    g = Convert.ToByte(hex.Substring(4, 2), 16);
+                    b = Convert.ToByte(hex.Substring(6, 2), 16);
+                }
+                else if (hex.Length == 6)
+                {
+                    r = Convert.ToByte(hex.Substring(0, 2), 16);
+                    g = Convert.ToByte(hex.Substring(2, 2), 16);
+                    b = Convert.ToByte(hex.Substring(4, 2), 16);
+                }
+                var tintColor = Color.FromArgb(a, r, g, b);
+
+                if (!string.IsNullOrEmpty(app.CustomImagePath) && File.Exists(app.CustomImagePath))
+                {
+                    var file = await StorageFile.GetFileFromPathAsync(app.CustomImagePath);
+                    using var stream = await file.OpenReadAsync();
+                    app.TintedIconSource = await IconTintHelper.GetTintedImageAsync(stream, tintColor);
+                    return;
+                }
+
+                using var iconStream = await ExtractAppIconStreamAsync(app);
+                if (iconStream != null)
+                {
+                    iconStream.Seek(0);
+                    app.TintedIconSource = await IconTintHelper.GetTintedImageAsync(iconStream, tintColor);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Tint generation failed: {ex.Message}");
+            }
         }
         #endregion
     }
