@@ -623,7 +623,7 @@
                                                 <ListView.ItemContainerStyle>
                                                     <Style TargetType="ListViewItem">
                                                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,0,4"/>
+                                                        <Setter Property="Margin" Value="0,0,16,4"/>
                                                         <Setter Property="Padding" Value="0"/>
                                                         <Setter Property="CornerRadius" Value="6"/>
                                                         <Setter Property="Background" Value="Transparent"/>
@@ -669,7 +669,7 @@
                                                 <ListView.ItemContainerStyle>
                                                     <Style TargetType="ListViewItem">
                                                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,0,4"/>
+                                                        <Setter Property="Margin" Value="0,0,16,4"/>
                                                         <Setter Property="Padding" Value="0"/>
                                                         <Setter Property="CornerRadius" Value="6"/>
                                                         <Setter Property="Background" Value="Transparent"/>
@@ -708,7 +708,7 @@
                                     <ListView.ItemContainerStyle>
                                         <Style TargetType="ListViewItem">
                                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <Setter Property="Margin" Value="0,0,0,4"/>
+                                            <Setter Property="Margin" Value="0,0,16,4"/>
                                             <Setter Property="Padding" Value="0"/>
                                             <Setter Property="Background" Value="Transparent"/>
                                             <Setter Property="FocusVisualMargin" Value="0"/>
@@ -1591,7 +1591,7 @@
                                                 <ListView.ItemContainerStyle>
                                                     <Style TargetType="ListViewItem">
                                                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,0,4"/>
+                                                        <Setter Property="Margin" Value="0,0,16,4"/>
                                                         <Setter Property="Padding" Value="0"/>
                                                         <Setter Property="CornerRadius" Value="6"/>
                                                         <Setter Property="Background" Value="Transparent"/>
@@ -1637,7 +1637,7 @@
                                                 <ListView.ItemContainerStyle>
                                                     <Style TargetType="ListViewItem">
                                                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,0,4"/>
+                                                        <Setter Property="Margin" Value="0,0,16,4"/>
                                                         <Setter Property="Padding" Value="0"/>
                                                         <Setter Property="CornerRadius" Value="6"/>
                                                         <Setter Property="Background" Value="Transparent"/>
@@ -1676,7 +1676,7 @@
                                     <ListView.ItemContainerStyle>
                                         <Style TargetType="ListViewItem">
                                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <Setter Property="Margin" Value="0,0,0,4"/>
+                                            <Setter Property="Margin" Value="0,0,16,4"/>
                                             <Setter Property="Padding" Value="0"/>
                                             <Setter Property="Background" Value="Transparent"/>
                                             <Setter Property="FocusVisualMargin" Value="0"/>
@@ -1882,7 +1882,7 @@
                                                         <ListView.ItemContainerStyle>
                                                             <Style TargetType="ListViewItem">
                                                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                                <Setter Property="Margin" Value="0,0,0,4"/>
+                                                                <Setter Property="Margin" Value="0,0,16,4"/>
                                                                 <Setter Property="Padding" Value="0"/>
                                                                 <Setter Property="CornerRadius" Value="6"/>
                                                                 <Setter Property="Background" Value="Transparent"/>
@@ -1928,7 +1928,7 @@
                                                         <ListView.ItemContainerStyle>
                                                             <Style TargetType="ListViewItem">
                                                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                                <Setter Property="Margin" Value="0,0,0,4"/>
+                                                                <Setter Property="Margin" Value="0,0,16,4"/>
                                                                 <Setter Property="Padding" Value="0"/>
                                                                 <Setter Property="CornerRadius" Value="6"/>
                                                                 <Setter Property="Background" Value="Transparent"/>
@@ -1967,7 +1967,7 @@
                                             <ListView.ItemContainerStyle>
                                                 <Style TargetType="ListViewItem">
                                                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                    <Setter Property="Margin" Value="0,0,0,4"/>
+                                                    <Setter Property="Margin" Value="0,0,16,4"/>
                                                     <Setter Property="Padding" Value="0"/>
                                                     <Setter Property="Background" Value="Transparent"/>
                                                     <Setter Property="FocusVisualMargin" Value="0"/>
@@ -2109,7 +2109,7 @@
                                             <ListView.ItemContainerStyle>
                                                 <Style TargetType="ListViewItem">
                                                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                    <Setter Property="Margin" Value="0,0,0,4"/>
+                                                    <Setter Property="Margin" Value="0,0,16,4"/>
                                                     <Setter Property="Padding" Value="0"/>
                                                     <Setter Property="CornerRadius" Value="6"/>
                                                 </Style>
