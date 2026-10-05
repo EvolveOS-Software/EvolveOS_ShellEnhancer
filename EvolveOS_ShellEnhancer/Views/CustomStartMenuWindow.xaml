@@ -601,12 +601,12 @@
                                                 <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
                                                     <FontIcon Glyph="&#xE712;" FontSize="14" />
                                                     <Button.Flyout>
-                                                        <MenuFlyout>
-                                                            <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=OneWay}"
+                                                        <MenuFlyout Opened="OptionsMenuFlyout_Opened">
+                                                            <ToggleMenuFlyoutItem Tag="ToggleRecent" 
+                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
                                                                                   Click="ToggleRecentlyAdded_Click" />
-                                                            <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=OneWay}"
+                                                            <ToggleMenuFlyoutItem Tag="ToggleSuggested" 
+                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
                                                                                   Click="ToggleSuggestedApps_Click" />
                                                         </MenuFlyout>
                                                     </Button.Flyout>
@@ -701,6 +701,8 @@
                                                     </DataTemplate>
                                                 </ListView.ItemTemplate>
                                             </ListView>
+
+                                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
 
                                         </StackPanel>
                                     </ListView.Header>
@@ -1569,12 +1571,12 @@
                                                 <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
                                                     <FontIcon Glyph="&#xE712;" FontSize="14" />
                                                     <Button.Flyout>
-                                                        <MenuFlyout>
-                                                            <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=OneWay}"
+                                                        <MenuFlyout Opened="OptionsMenuFlyout_Opened">
+                                                            <ToggleMenuFlyoutItem Tag="ToggleRecent" 
+                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
                                                                                   Click="ToggleRecentlyAdded_Click" />
-                                                            <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=OneWay}"
+                                                            <ToggleMenuFlyoutItem Tag="ToggleSuggested" 
+                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
                                                                                   Click="ToggleSuggestedApps_Click" />
                                                         </MenuFlyout>
                                                     </Button.Flyout>
@@ -1669,6 +1671,8 @@
                                                     </DataTemplate>
                                                 </ListView.ItemTemplate>
                                             </ListView>
+
+                                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
 
                                         </StackPanel>
                                     </ListView.Header>
@@ -1860,12 +1864,12 @@
                                                         <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
                                                             <FontIcon Glyph="&#xE712;" FontSize="14" />
                                                             <Button.Flyout>
-                                                                <MenuFlyout>
-                                                                    <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=OneWay}"
+                                                                <MenuFlyout Opened="OptionsMenuFlyout_Opened">
+                                                                    <ToggleMenuFlyoutItem Tag="ToggleRecent" 
+                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
                                                                                   Click="ToggleRecentlyAdded_Click" />
-                                                                    <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=OneWay}"
+                                                                    <ToggleMenuFlyoutItem Tag="ToggleSuggested" 
+                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
                                                                                   Click="ToggleSuggestedApps_Click" />
                                                                 </MenuFlyout>
                                                             </Button.Flyout>
@@ -1960,6 +1964,8 @@
                                                             </DataTemplate>
                                                         </ListView.ItemTemplate>
                                                     </ListView>
+
+                                                    <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
 
                                                 </StackPanel>
                                             </ListView.Header>

@@ -31,44 +31,43 @@ namespace EvolveOS_ShellEnhancer.ViewModels
 
         public Visibility SuggestedVisibility => ShowSuggestedApps && SuggestedAppsCollection.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility RecentlyAddedVisibility => ShowRecentlyAdded && RecentlyAddedCollection.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility HasAnyHeaderContent => (SuggestedVisibility == Visibility.Visible || RecentlyAddedVisibility == Visibility.Visible) ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility HasAnyHeaderContent => Visibility.Visible;
         public Visibility BothHeadersVisible => (SuggestedVisibility == Visibility.Visible && RecentlyAddedVisibility == Visibility.Visible) ? Visibility.Visible : Visibility.Collapsed;
 
-        private bool _showSuggestedApps = SettingsEngine.Shell_StartMenuShowSuggested;
         public bool ShowSuggestedApps
         {
-            get => _showSuggestedApps;
+            get => SettingsEngine.Shell_StartMenuShowSuggested;
             set
             {
-                if (SetProperty(ref _showSuggestedApps, value))
+                if (SettingsEngine.Shell_StartMenuShowSuggested == value) return;
+
+                SettingsEngine.Shell_StartMenuShowSuggested = value;
+
+                if (value && SuggestedAppsCollection.Count == 0)
                 {
-                    SettingsEngine.Shell_StartMenuShowSuggested = value;
-
-                    if (value && SuggestedAppsCollection.Count == 0)
-                    {
-                        UpdateSuggestedApps();
-                    }
-
-                    OnPropertyChanged(nameof(SuggestedVisibility));
-                    OnPropertyChanged(nameof(HasAnyHeaderContent));
-                    OnPropertyChanged(nameof(BothHeadersVisible));
+                    UpdateSuggestedApps();
                 }
+
+                OnPropertyChanged(nameof(ShowSuggestedApps));
+                OnPropertyChanged(nameof(SuggestedVisibility));
+                OnPropertyChanged(nameof(HasAnyHeaderContent));
+                OnPropertyChanged(nameof(BothHeadersVisible));
             }
         }
 
-        private bool _showRecentlyAdded = SettingsEngine.Shell_StartMenuShowRecentlyAdded;
         public bool ShowRecentlyAdded
         {
-            get => _showRecentlyAdded;
+            get => SettingsEngine.Shell_StartMenuShowRecentlyAdded;
             set
             {
-                if (SetProperty(ref _showRecentlyAdded, value))
-                {
-                    SettingsEngine.Shell_StartMenuShowRecentlyAdded = value;
-                    OnPropertyChanged(nameof(RecentlyAddedVisibility));
-                    OnPropertyChanged(nameof(HasAnyHeaderContent));
-                    OnPropertyChanged(nameof(BothHeadersVisible));
-                }
+                if (SettingsEngine.Shell_StartMenuShowRecentlyAdded == value) return;
+
+                SettingsEngine.Shell_StartMenuShowRecentlyAdded = value;
+
+                OnPropertyChanged(nameof(ShowRecentlyAdded));
+                OnPropertyChanged(nameof(RecentlyAddedVisibility));
+                OnPropertyChanged(nameof(HasAnyHeaderContent));
+                OnPropertyChanged(nameof(BothHeadersVisible));
             }
         }
 
@@ -498,7 +497,16 @@ namespace EvolveOS_ShellEnhancer.ViewModels
             if (!ShowSuggestedApps || AllAppsCollection == null || AllAppsCollection.Count == 0)
                 return;
 
-            var userLaunchCounts = GetUserAssistRunCounts();
+            Dictionary<string, int> userLaunchCounts = new();
+
+            try
+            {
+                userLaunchCounts = GetUserAssistRunCounts();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Registry restricted, using fallback apps: {ex.Message}");
+            }
 
             var rankedApps = AllAppsCollection
                 .Select(app => new
@@ -551,39 +559,43 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                 @"Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\{B267E3AD-A825-4A09-82B9-EEC22AA3B847}\Count"
             };
 
-            using (var hklm = Microsoft.Win32.Registry.CurrentUser)
+            try
             {
-                foreach (var subKeyPath in userAssistKeys)
+                using (var hklm = Registry.CurrentUser)
                 {
-                    using (var key = hklm.OpenSubKey(subKeyPath))
+                    foreach (var subKeyPath in userAssistKeys)
                     {
-                        if (key == null) continue;
-
-                        foreach (var valueName in key.GetValueNames())
+                        using (var key = hklm.OpenSubKey(subKeyPath))
                         {
-                            var data = key.GetValue(valueName) as byte[];
+                            if (key == null) continue;
 
-                            if (data != null && data.Length >= 8)
+                            foreach (var valueName in key.GetValueNames())
                             {
-                                int count = BitConverter.ToInt32(data, 4);
-                                if (count > 0)
+                                var data = key.GetValue(valueName) as byte[];
+
+                                if (data != null && data.Length >= 8)
                                 {
-                                    string decodedPath = DecodeROT13(valueName);
+                                    int count = BitConverter.ToInt32(data, 4);
+                                    if (count > 0)
+                                    {
+                                        string decodedPath = DecodeROT13(valueName);
 
-                                    if (decodedPath.StartsWith("P~")) decodedPath = decodedPath.Substring(2);
-                                    if (decodedPath.Contains("UEME_RUNPATH:")) decodedPath = decodedPath.Replace("UEME_RUNPATH:", "");
-                                    if (decodedPath.Contains("UEME_CTLSESSION:")) continue;
+                                        if (decodedPath.StartsWith("P~")) decodedPath = decodedPath.Substring(2);
+                                        if (decodedPath.Contains("UEME_RUNPATH:")) decodedPath = decodedPath.Replace("UEME_RUNPATH:", "");
+                                        if (decodedPath.Contains("UEME_CTLSESSION:")) continue;
 
-                                    if (runCounts.ContainsKey(decodedPath))
-                                        runCounts[decodedPath] += count;
-                                    else
-                                        runCounts[decodedPath] = count;
+                                        if (runCounts.ContainsKey(decodedPath))
+                                            runCounts[decodedPath] += count;
+                                        else
+                                            runCounts[decodedPath] = count;
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            catch (Exception ex) { Debug.WriteLine($"Registry Blocked: {ex.Message}"); }
             return runCounts;
         }
 
@@ -1056,10 +1068,10 @@ namespace EvolveOS_ShellEnhancer.ViewModels
         }
         #endregion
 
-        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
         {
-            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         protected bool SetProperty<T>(ref T storage, T value, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
         {

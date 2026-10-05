@@ -1131,6 +1131,23 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        private void OptionsMenuFlyout_Opened(object sender, object e)
+        {
+            if (sender is MenuFlyout flyout)
+            {
+                foreach (var item in flyout.Items)
+                {
+                    if (item is ToggleMenuFlyoutItem toggle)
+                    {
+                        if (toggle.Tag?.ToString() == "ToggleRecent")
+                            toggle.IsChecked = ViewModel.ShowRecentlyAdded;
+                        else if (toggle.Tag?.ToString() == "ToggleSuggested")
+                            toggle.IsChecked = ViewModel.ShowSuggestedApps;
+                    }
+                }
+            }
+        }
+
         private void ToggleRecentlyAdded_Click(object sender, RoutedEventArgs e)
         {
             if (sender is ToggleMenuFlyoutItem toggle)

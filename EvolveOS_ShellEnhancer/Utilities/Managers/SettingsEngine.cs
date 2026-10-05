@@ -153,12 +153,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #region Registry Engine
         private static string GetRegistryPath(string key)
         {
-            if (key == "TaskbarPinnedAppsOrder" || key == "StartMenuPinnedApps" || key == "Taskbar_FilteredFolders" || key == "StartMenuPageNames")
-            {
-                return RegistryPath.SubKey;
-            }
-
-            return @"Software\EvolveOS_ShellEnhancer";
+            return RegistryPath.SubKey;
         }
 
         private static void ChangingParameters(string key, object value)
@@ -204,16 +199,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
                 {
                     try
                     {
-                        object? rawVal = null;
-
-                        if (kv.Key == "TaskbarPinnedAppsOrder" || kv.Key == "StartMenuPinnedApps" || kv.Key == "Taskbar_FilteredFolders" || kv.Key == "StartMenuPageNames")
-                        {
-                            rawVal = enhancerKey?.GetValue(kv.Key);
-                        }
-                        else
-                        {
-                            rawVal = studioKey?.GetValue(kv.Key) ?? optimizerKey?.GetValue(kv.Key);
-                        }
+                        object? rawVal = enhancerKey?.GetValue(kv.Key) ?? studioKey?.GetValue(kv.Key) ?? optimizerKey?.GetValue(kv.Key);
 
                         if (rawVal != null)
                         {
@@ -261,7 +247,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         #region Registry
         internal static class RegistryPath
         {
-            internal const string SubKey = @"Software\EvolveOS_ShellEnhancer\EvolveOS_ShellEnhancer";
+            internal const string SubKey = @"Software\EvolveOS_ShellEnhancer";
             internal static readonly string BaseKey = @$"HKEY_CURRENT_USER\{SubKey}";
         }
         #endregion
