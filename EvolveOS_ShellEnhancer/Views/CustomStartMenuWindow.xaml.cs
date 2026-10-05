@@ -937,7 +937,34 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             for (int i = 0; i < Pages.Count; i++)
             {
-                Pages[i].IndicatorOpacity = (i == selectedIndex) ? 1.0 : 0.3;
+                Pages[i].IndicatorOpacity = (i == selectedIndex) ? 1.0 : 0.4;
+                Pages[i].IndicatorSize = (i == selectedIndex) ? 8.0 : 6.0;
+            }
+
+            bool canGoLeft = selectedIndex > 0;
+            bool canGoRight = selectedIndex < Pages.Count - 1;
+
+            if (PageLeftBtn != null) PageLeftBtn.IsEnabled = canGoLeft;
+            if (PageRightBtn != null) PageRightBtn.IsEnabled = canGoRight;
+            if (PageLeftBtn2 != null) PageLeftBtn2.IsEnabled = canGoLeft;
+            if (PageRightBtn2 != null) PageRightBtn2.IsEnabled = canGoRight;
+        }
+
+        private void DotIndicator_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Content is Microsoft.UI.Xaml.Shapes.Ellipse dot && dot.RenderTransform is ScaleTransform scale)
+            {
+                scale.ScaleX = 1.35;
+                scale.ScaleY = 1.35;
+            }
+        }
+
+        private void DotIndicator_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Content is Microsoft.UI.Xaml.Shapes.Ellipse dot && dot.RenderTransform is ScaleTransform scale)
+            {
+                scale.ScaleX = 1.0;
+                scale.ScaleY = 1.0;
             }
         }
 

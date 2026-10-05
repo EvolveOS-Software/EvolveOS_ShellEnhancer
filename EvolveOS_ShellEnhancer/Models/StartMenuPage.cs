@@ -47,6 +47,20 @@ namespace EvolveOS_ShellEnhancer.Models
             set { if (_recentDocsChevronAngle != value) { _recentDocsChevronAngle = value; OnPropertyChanged(nameof(RecentDocsChevronAngle)); } }
         }
 
+        private double _indicatorSize = 6.0;
+        public double IndicatorSize
+        {
+            get => _indicatorSize;
+            set
+            {
+                if (_indicatorSize != value)
+                {
+                    _indicatorSize = value;
+                    OnPropertyChanged(nameof(IndicatorSize));
+                }
+            }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

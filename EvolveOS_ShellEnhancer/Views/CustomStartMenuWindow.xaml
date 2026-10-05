@@ -817,13 +817,30 @@
                                             <ItemsControl x:Name="PageIndicatorControl" ItemsSource="{x:Bind Pages}" VerticalAlignment="Center">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
-                                                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0"/>
+                                                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,0"/>
                                                     </ItemsPanelTemplate>
                                                 </ItemsControl.ItemsPanel>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate x:DataType="models:StartMenuPage">
-                                                        <Button Background="Transparent" Padding="0" BorderThickness="0" MinWidth="0" MinHeight="0" Click="PageDotIndicator_Click" Tag="{x:Bind PageIndex}">
-                                                            <Ellipse Width="6" Height="6" Fill="{ThemeResource TextFillColorPrimaryBrush}" Opacity="{x:Bind IndicatorOpacity, Mode=OneWay}" x:Name="DotIndicator"/>
+
+                                                        <Button Background="Transparent" Padding="4" BorderThickness="0" MinWidth="0" MinHeight="0"
+                                                                Click="PageDotIndicator_Click" Tag="{x:Bind PageIndex}"
+                                                                PointerEntered="DotIndicator_PointerEntered" PointerExited="DotIndicator_PointerExited">
+                                                            <Button.Resources>
+                                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="Transparent"/>
+                                                            </Button.Resources>
+
+                                                            <Ellipse x:Name="DotIndicator"
+                                                                     Width="{x:Bind IndicatorSize, Mode=OneWay}"
+                                                                     Height="{x:Bind IndicatorSize, Mode=OneWay}"
+                                                                     Fill="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                     Opacity="{x:Bind IndicatorOpacity, Mode=OneWay}"
+                                                                     RenderTransformOrigin="0.5,0.5">
+                                                                <Ellipse.RenderTransform>
+                                                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                                                </Ellipse.RenderTransform>
+                                                            </Ellipse>
                                                         </Button>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
@@ -1766,13 +1783,30 @@
                                             <ItemsControl x:Name="PageIndicatorControl2" ItemsSource="{x:Bind Pages}" VerticalAlignment="Center">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
-                                                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="4,0"/>
+                                                        <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,0"/>
                                                     </ItemsPanelTemplate>
                                                 </ItemsControl.ItemsPanel>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate x:DataType="models:StartMenuPage">
-                                                        <Button Background="Transparent" Padding="0" BorderThickness="0" MinWidth="0" MinHeight="0" Click="PageDotIndicator_Click" Tag="{x:Bind PageIndex}">
-                                                            <Ellipse Width="6" Height="6" Fill="{ThemeResource TextFillColorPrimaryBrush}" Opacity="{x:Bind IndicatorOpacity, Mode=OneWay}" x:Name="DotIndicator"/>
+
+                                                        <Button Background="Transparent" Padding="4" BorderThickness="0" MinWidth="0" MinHeight="0"
+                                                                Click="PageDotIndicator_Click" Tag="{x:Bind PageIndex}"
+                                                                PointerEntered="DotIndicator_PointerEntered" PointerExited="DotIndicator_PointerExited">
+                                                            <Button.Resources>
+                                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent"/>
+                                                                <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="Transparent"/>
+                                                            </Button.Resources>
+
+                                                            <Ellipse x:Name="DotIndicator"
+                                                                     Width="{x:Bind IndicatorSize, Mode=OneWay}"
+                                                                     Height="{x:Bind IndicatorSize, Mode=OneWay}"
+                                                                     Fill="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                     Opacity="{x:Bind IndicatorOpacity, Mode=OneWay}"
+                                                                     RenderTransformOrigin="0.5,0.5">
+                                                                <Ellipse.RenderTransform>
+                                                                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                                                                </Ellipse.RenderTransform>
+                                                            </Ellipse>
                                                         </Button>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
