@@ -43,6 +43,12 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                 if (SetProperty(ref _showSuggestedApps, value))
                 {
                     SettingsEngine.Shell_StartMenuShowSuggested = value;
+
+                    if (value && SuggestedAppsCollection.Count == 0)
+                    {
+                        UpdateSuggestedApps();
+                    }
+
                     OnPropertyChanged(nameof(SuggestedVisibility));
                     OnPropertyChanged(nameof(HasAnyHeaderContent));
                     OnPropertyChanged(nameof(BothHeadersVisible));

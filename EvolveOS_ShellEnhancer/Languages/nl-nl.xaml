@@ -121,6 +121,11 @@
     <sys:String x:Key="StartMenu_MoveUp">Verplaats omhoog</sys:String>
     <sys:String x:Key="StartMenu_MoveDown">Verplaats omlaag</sys:String>
     <sys:String x:Key="StartMenu_MoveToApp">Verplaatsen naar</sys:String>
+    <sys:String x:Key="StartMenu_SuggestedAndRecent">Suggesties &amp; Recent</sys:String>
+    <sys:String x:Key="StartMenu_Suggested">Aanbevolen</sys:String>
+    <sys:String x:Key="StartMenu_ShowRecentlyAdded">Recent toegevoegde apps weergeven</sys:String>
+    <sys:String x:Key="StartMenu_ShowSuggestedApps">Aanbevolen apps weergeven</sys:String>
+    <sys:String x:Key="StartMenu_ListSettings">Lijstinstellingen</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Pagina hernoemen</sys:String>
@@ -152,7 +157,7 @@
     <sys:String x:Key="StartMenu_ApplyCustomColor">Aangepaste kleur toepassen</sys:String>
     <sys:String x:Key="StartMenu_SaveSetup">Instellingen opslaan</sys:String>
 
-    <sys:String x:Key="StartMenu_ContextPictogram">Pictogram-editor</sys:String>
+    <sys:String x:Key="StartMenu_ContextPictogram">Pictogram editor</sys:String>
     <sys:String x:Key="StartMenu_PictogramTargetScope">Doelbereik</sys:String>
     <sys:String x:Key="StartMenu_PictogramScopeSingle">Alleen geselecteerde app</sys:String>
     <sys:String x:Key="StartMenu_PictogramScopeGroup">Volledige groep</sys:String>

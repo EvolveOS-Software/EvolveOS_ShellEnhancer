@@ -1131,6 +1131,22 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        private void ToggleRecentlyAdded_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem toggle)
+            {
+                ViewModel.ShowRecentlyAdded = toggle.IsChecked;
+            }
+        }
+
+        private void ToggleSuggestedApps_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem toggle)
+            {
+                ViewModel.ShowSuggestedApps = toggle.IsChecked;
+            }
+        }
+
         #endregion
 
         #region Context Menu Handlers (Pinning / Actions)

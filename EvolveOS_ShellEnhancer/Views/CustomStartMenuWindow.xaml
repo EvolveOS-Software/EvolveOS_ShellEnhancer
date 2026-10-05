@@ -603,9 +603,11 @@
                                                     <Button.Flyout>
                                                         <MenuFlyout>
                                                             <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=TwoWay}" />
+                                                                                  IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=OneWay}"
+                                                                                  Click="ToggleRecentlyAdded_Click" />
                                                             <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=TwoWay}" />
+                                                                                  IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=OneWay}"
+                                                                                  Click="ToggleSuggestedApps_Click" />
                                                         </MenuFlyout>
                                                     </Button.Flyout>
                                                 </Button>
@@ -1569,9 +1571,11 @@
                                                     <Button.Flyout>
                                                         <MenuFlyout>
                                                             <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=TwoWay}" />
+                                                                                  IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=OneWay}"
+                                                                                  Click="ToggleRecentlyAdded_Click" />
                                                             <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                  IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=TwoWay}" />
+                                                                                  IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=OneWay}"
+                                                                                  Click="ToggleSuggestedApps_Click" />
                                                         </MenuFlyout>
                                                     </Button.Flyout>
                                                 </Button>
@@ -1858,9 +1862,11 @@
                                                             <Button.Flyout>
                                                                 <MenuFlyout>
                                                                     <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                          IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=TwoWay}" />
+                                                                                  IsChecked="{x:Bind ViewModel.ShowRecentlyAdded, Mode=OneWay}"
+                                                                                  Click="ToggleRecentlyAdded_Click" />
                                                                     <ToggleMenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                          IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=TwoWay}" />
+                                                                                  IsChecked="{x:Bind ViewModel.ShowSuggestedApps, Mode=OneWay}"
+                                                                                  Click="ToggleSuggestedApps_Click" />
                                                                 </MenuFlyout>
                                                             </Button.Flyout>
                                                         </Button>

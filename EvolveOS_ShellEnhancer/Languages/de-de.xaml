@@ -121,6 +121,11 @@
     <sys:String x:Key="StartMenu_MoveUp">Nach oben verschieben</sys:String>
     <sys:String x:Key="StartMenu_MoveDown">Nach unten verschieben</sys:String>
     <sys:String x:Key="StartMenu_MoveToApp">Verschieben nach</sys:String>
+    <sys:String x:Key="StartMenu_SuggestedAndRecent">Vorgeschlagen &amp; Zuletzt</sys:String>
+    <sys:String x:Key="StartMenu_Suggested">Vorgeschlagen</sys:String>
+    <sys:String x:Key="StartMenu_ShowRecentlyAdded">Zuletzt hinzugefügte Apps anzeigen</sys:String>
+    <sys:String x:Key="StartMenu_ShowSuggestedApps">Vorgeschlagene Apps anzeigen</sys:String>
+    <sys:String x:Key="StartMenu_ListSettings">Listeneinstellungen</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Seite umbenennen</sys:String>
@@ -152,7 +157,7 @@
     <sys:String x:Key="StartMenu_ApplyCustomColor">Eigene Farbe anwenden</sys:String>
     <sys:String x:Key="StartMenu_SaveSetup">Setup speichern</sys:String>
 
-    <sys:String x:Key="StartMenu_ContextPictogram">Symbol-Editor</sys:String>
+    <sys:String x:Key="StartMenu_ContextPictogram">Symbol Editor</sys:String>
     <sys:String x:Key="StartMenu_PictogramTargetScope">Zielbereich</sys:String>
     <sys:String x:Key="StartMenu_PictogramScopeSingle">Nur ausgewählte App</sys:String>
     <sys:String x:Key="StartMenu_PictogramScopeGroup">Gesamte Gruppe</sys:String>

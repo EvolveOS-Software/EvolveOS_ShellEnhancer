@@ -121,6 +121,11 @@
     <sys:String x:Key="StartMenu_MoveUp">Mover para cima</sys:String>
     <sys:String x:Key="StartMenu_MoveDown">Mover para baixo</sys:String>
     <sys:String x:Key="StartMenu_MoveToApp">Mover para</sys:String>
+    <sys:String x:Key="StartMenu_SuggestedAndRecent">Sugestões &amp; Recentes</sys:String>
+    <sys:String x:Key="StartMenu_Suggested">Sugerido</sys:String>
+    <sys:String x:Key="StartMenu_ShowRecentlyAdded">Mostrar aplicativos adicionados recentemente</sys:String>
+    <sys:String x:Key="StartMenu_ShowSuggestedApps">Mostrar aplicativos sugeridos</sys:String>
+    <sys:String x:Key="StartMenu_ListSettings">Configurações da lista</sys:String>
 
     <!-- Dialogs (Rename Page & Pin Website) -->
     <sys:String x:Key="StartMenu_RenamePage">Renomear página</sys:String>
