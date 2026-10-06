@@ -171,6 +171,18 @@
     <sys:String x:Key="StartMenu_PictogramTintTile">Teinter la tuile</sys:String>
     <sys:String x:Key="StartMenu_PictogramTintIcon">Teinter l'icône</sys:String>
 
+    <sys:String x:Key="ShowOnDesktop">Afficher sur le bureau</sys:String>
+    <sys:String x:Key="DesktopTabWidgetTitle">Widget Onglets du Bureau</sys:String>
+    <sys:String x:Key="WidgetSize">Taille du widget</sys:String>
+    <sys:String x:Key="WidgetSizeCustom">Personnalisé (Déplaçable)</sys:String>
+    <sys:String x:Key="WidgetSizeMedium">Moyen (5 Apps)</sys:String>
+    <sys:String x:Key="WidgetSizeLarge">Grand (Vertical)</sys:String>
+    <sys:String x:Key="CloseWidget">Fermer le widget</sys:String>
+    <sys:String x:Key="UnpinFromWidget">Détacher du widget</sys:String>
+    <sys:String x:Key="RunAsAdmin">Exécuter en tant qu'administrateur</sys:String>
+    <sys:String x:Key="OpenFileLocation">Ouvrir l'emplacement du fichier</sys:String>
+    <sys:String x:Key="FolderNameFallback">Dossier</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

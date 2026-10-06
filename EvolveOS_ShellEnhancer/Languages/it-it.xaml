@@ -170,6 +170,18 @@
     <sys:String x:Key="StartMenu_PictogramTintTile">Tinta riquadro</sys:String>
     <sys:String x:Key="StartMenu_PictogramTintIcon">Tinta icona</sys:String>
 
+    <sys:String x:Key="ShowOnDesktop">Mostra sul desktop</sys:String>
+    <sys:String x:Key="DesktopTabWidgetTitle">Widget Schede Desktop</sys:String>
+    <sys:String x:Key="WidgetSize">Dimensioni Widget</sys:String>
+    <sys:String x:Key="WidgetSizeCustom">Personalizzata (Trascinabile)</sys:String>
+    <sys:String x:Key="WidgetSizeMedium">Media (5 App)</sys:String>
+    <sys:String x:Key="WidgetSizeLarge">Grande (Verticale)</sys:String>
+    <sys:String x:Key="CloseWidget">Chiudi Widget</sys:String>
+    <sys:String x:Key="UnpinFromWidget">Rimuovi dal Widget</sys:String>
+    <sys:String x:Key="RunAsAdmin">Esegui come amministratore</sys:String>
+    <sys:String x:Key="OpenFileLocation">Apri percorso file</sys:String>
+    <sys:String x:Key="FolderNameFallback">Cartella</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

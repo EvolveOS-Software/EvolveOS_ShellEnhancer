@@ -35,6 +35,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             ["StartMenuPinnedApps"] = string.Empty,
             ["Taskbar_FilteredFolders"] = string.Empty,
             ["StartMenuPageNames"] = string.Empty,
+            ["Desktop_OpenWidgets"] = string.Empty,
             #endregion
 
             #region Shell Settings
@@ -97,6 +98,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static string StartMenuPinnedApps { get => (string)_cachedSettings["StartMenuPinnedApps"]; set => ChangingParameters("StartMenuPinnedApps", value); }
         internal static string Taskbar_FilteredFolders { get => (string)_cachedSettings["Taskbar_FilteredFolders"]; set => ChangingParameters("Taskbar_FilteredFolders", value); }
         internal static string StartMenuPageNames { get => (string)_cachedSettings["StartMenuPageNames"]; set => ChangingParameters("StartMenuPageNames", value); }
+        internal static string Desktop_OpenWidgets { get => (string)_cachedSettings["Desktop_OpenWidgets"]; set => ChangingParameters("Desktop_OpenWidgets", value); }
         #endregion
 
         #region Shell Settings
@@ -154,6 +156,29 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         private static string GetRegistryPath(string key)
         {
             return RegistryPath.SubKey;
+        }
+
+        internal static string GetWidgetPosition(string widgetName)
+        {
+            try
+            {
+                using RegistryKey? regKey = Registry.CurrentUser.OpenSubKey(RegistryPath.SubKey, false);
+                return regKey?.GetValue($"Widget_{widgetName}_Pos")?.ToString() ?? "";
+            }
+            catch { return ""; }
+        }
+
+        internal static void SetWidgetPosition(string widgetName, string position)
+        {
+            try
+            {
+                using RegistryKey? regKey = Registry.CurrentUser.CreateSubKey(RegistryPath.SubKey, true);
+                regKey?.SetValue($"Widget_{widgetName}_Pos", position, RegistryValueKind.String);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Settings] WRITE ERROR FOR WIDGET POS: {ex.Message}");
+            }
         }
 
         private static void ChangingParameters(string key, object value)

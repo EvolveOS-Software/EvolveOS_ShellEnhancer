@@ -170,6 +170,18 @@
     <sys:String x:Key="StartMenu_PictogramTintTile">Tegel kleuren</sys:String>
     <sys:String x:Key="StartMenu_PictogramTintIcon">Pictogram kleuren</sys:String>
 
+    <sys:String x:Key="ShowOnDesktop">Weergeven op bureaublad</sys:String>
+    <sys:String x:Key="DesktopTabWidgetTitle">Bureaublad Tabblad Widget</sys:String>
+    <sys:String x:Key="WidgetSize">Widgetgrootte</sys:String>
+    <sys:String x:Key="WidgetSizeCustom">Aangepast (Sleepbaar)</sys:String>
+    <sys:String x:Key="WidgetSizeMedium">Gemiddeld (5 Apps)</sys:String>
+    <sys:String x:Key="WidgetSizeLarge">Groot (Verticaal)</sys:String>
+    <sys:String x:Key="CloseWidget">Widget sluiten</sys:String>
+    <sys:String x:Key="UnpinFromWidget">Losmaken van widget</sys:String>
+    <sys:String x:Key="RunAsAdmin">Als administrator uitvoeren</sys:String>
+    <sys:String x:Key="OpenFileLocation">Bestandslocatie openen</sys:String>
+    <sys:String x:Key="FolderNameFallback">Map</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

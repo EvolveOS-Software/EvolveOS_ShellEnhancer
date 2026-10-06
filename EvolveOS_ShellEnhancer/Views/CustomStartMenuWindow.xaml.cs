@@ -77,6 +77,8 @@ namespace EvolveOS_ShellEnhancer.Views
         public ObservableCollection<FolderDot> FolderDots { get; } = new();
         private int _currentFolderPage = 0;
         private readonly int _folderItemsPerPage = 12;
+
+        public static List<DesktopTabWidgetWindow> ActiveDesktopWidgets = new();
         #endregion
 
         #region Initialization & Data Loading
@@ -169,6 +171,24 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     foreach (var category in page.PinnedCategories)
                     {
+                        if (category.Apps.Count > 0 && category.Apps[0].ExecutablePath == "TABBED_GROUP_FLAG")
+                        {
+                            category.IsTabbed = true;
+                            category.Tabs!.Clear();
+
+                            foreach (var appItem in category.Apps)
+                            {
+                                if (appItem.ExecutablePath == "TAB_DATA")
+                                {
+                                    var newTab = new AppCategory { Name = appItem.Name! };
+                                    foreach (var folderApp in appItem.FolderApps)
+                                    {
+                                        newTab.Apps.Add(folderApp);
+                                    }
+                                    category.Tabs.Add(newTab);
+                                }
+                            }
+                        }
                         if (category.Tabs != null && category.Tabs.Count > 0)
                         {
                             category.IsTabbed = true;
@@ -207,6 +227,9 @@ namespace EvolveOS_ShellEnhancer.Views
                         wrapPanel.InvalidateArrange();
                     }
                 }
+
+                RestoreDesktopWidgets();
+
             };
 
             ViewModel.InitializeAppWatchers(DispatcherQueue);
@@ -1883,6 +1906,56 @@ namespace EvolveOS_ShellEnhancer.Views
                 flyout.ShowAt(element, e.GetPosition(element));
             }
         }
+
+        private void ShowTabOnDesktop_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && (item.Tag as AppCategory ?? item.DataContext as AppCategory) is AppCategory targetGroup)
+            {
+                // Find the absolute root category whether they clicked a sub-tab, a standard group, or the main group header
+                AppCategory? parentGroup = targetGroup.IsTabbed
+                    ? targetGroup
+                    : Pages.SelectMany(p => p.PinnedCategories)
+                           .FirstOrDefault(c => c.IsTabbed && c.Tabs != null && c.Tabs.Contains(targetGroup))
+                      ?? targetGroup; // Fallback to standard group if it's not tabbed
+
+                if (parentGroup != null)
+                {
+                    var desktopWidget = new DesktopTabWidgetWindow(parentGroup, () => SafeSavePins());
+
+                    // Keep it alive in memory!
+                    ActiveDesktopWidgets.Add(desktopWidget);
+                    desktopWidget.Closed += (s, args) => ActiveDesktopWidgets.Remove(desktopWidget);
+
+                    desktopWidget.Activate();
+                    HideMenu();
+                }
+            }
+        }
+
+        public void RestoreDesktopWidgets()
+        {
+            var openWidgetNames = SettingsEngine.Desktop_OpenWidgets.Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+            var allCategories = Pages.SelectMany(p => p.PinnedCategories).ToList();
+            var allTabs = allCategories.Where(c => c.Tabs != null).SelectMany(c => c.Tabs).ToList();
+
+            foreach (var widgetName in openWidgetNames)
+            {
+                var categoryToOpen = allCategories.FirstOrDefault(c => c.Name == widgetName)
+                                  ?? allTabs.FirstOrDefault(t => t.Name == widgetName);
+
+                if (categoryToOpen != null)
+                {
+                    if (!ActiveDesktopWidgets.Any(w => w.ParentCategory.Name == categoryToOpen.Name))
+                    {
+                        var desktopWidget = new DesktopTabWidgetWindow(categoryToOpen, () => SafeSavePins());
+                        ActiveDesktopWidgets.Add(desktopWidget);
+                        desktopWidget.Closed += (s, args) => ActiveDesktopWidgets.Remove(desktopWidget);
+                        desktopWidget.Activate();
+                    }
+                }
+            }
+        }
         #endregion
 
         #region Custom Pointer-Based Drag and Drop Engine
@@ -3321,6 +3394,13 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 foreach (var grid in GetAllCategoryGrids())
                 {
+                    if (grid.DataContext is AppCategory cat && cat.IsTabbed)
+                    {
+                        var src = grid.ItemsSource;
+                        grid.ItemsSource = null;
+                        grid.ItemsSource = src;
+                    }
+
                     if (grid.ItemsPanelRoot is StartMenuWrapPanel wrapPanel)
                     {
                         wrapPanel.InvalidateMeasure();

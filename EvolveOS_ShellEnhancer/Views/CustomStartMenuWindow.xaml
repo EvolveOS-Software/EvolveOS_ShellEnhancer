@@ -343,7 +343,17 @@
                                                                                         <fluentIcons:SymbolIcon Symbol="Settings" />
                                                                                     </MenuFlyoutItem.Icon>
                                                                                 </MenuFlyoutItem>
+                                                                                
                                                                                 <MenuFlyoutSeparator/>
+                                                                                
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=ShowOnDesktop}" Click="ShowTabOnDesktop_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <FontIcon Glyph="&#xE8A7;" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+                                                                                
+                                                                                <MenuFlyoutSeparator/>
+                                                                                
                                                                                 <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteEntireGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red">
                                                                                     <MenuFlyoutItem.Icon>
                                                                                         <fluentIcons:SymbolIcon Symbol="Delete" />
@@ -375,6 +385,17 @@
                                                                             <ListView.ItemTemplate>
                                                                                 <DataTemplate x:DataType="models:AppCategory">
                                                                                     <Grid Background="Transparent">
+
+                                                                                        <Grid.ContextFlyout>
+                                                                                            <MenuFlyout>
+                                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=ShowOnDesktop}" Click="ShowTabOnDesktop_Click" Tag="{x:Bind}">
+                                                                                                    <MenuFlyoutItem.Icon>
+                                                                                                        <FontIcon Glyph="&#xE8A7;" />
+                                                                                                    </MenuFlyoutItem.Icon>
+                                                                                                </MenuFlyoutItem>
+                                                                                            </MenuFlyout>
+                                                                                        </Grid.ContextFlyout>
+
                                                                                         <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,6"/>
                                                                                         <Border Height="3" Background="{x:Bind TabColorBrush, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="1.5" Margin="0,18,0,0" />
                                                                                     </Grid>
@@ -1365,7 +1386,17 @@
                                                                                         <fluentIcons:SymbolIcon Symbol="Settings" />
                                                                                     </MenuFlyoutItem.Icon>
                                                                                 </MenuFlyoutItem>
+                                                                                
                                                                                 <MenuFlyoutSeparator/>
+
+                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=ShowOnDesktop}" Click="ShowTabOnDesktop_Click" Tag="{x:Bind}">
+                                                                                    <MenuFlyoutItem.Icon>
+                                                                                        <FontIcon Glyph="&#xE8A7;" />
+                                                                                    </MenuFlyoutItem.Icon>
+                                                                                </MenuFlyoutItem>
+
+                                                                                <MenuFlyoutSeparator/>
+
                                                                                 <MenuFlyoutItem Text="{helpers:ResourceString Key=StartMenu_DeleteEntireGroup}" Click="DeleteCategory_Click" Tag="{x:Bind}" Foreground="Red">
                                                                                     <MenuFlyoutItem.Icon>
                                                                                         <fluentIcons:SymbolIcon Symbol="Delete" />
@@ -1397,6 +1428,17 @@
                                                                             <ListView.ItemTemplate>
                                                                                 <DataTemplate x:DataType="models:AppCategory">
                                                                                     <Grid Background="Transparent">
+
+                                                                                        <Grid.ContextFlyout>
+                                                                                            <MenuFlyout>
+                                                                                                <MenuFlyoutItem Text="{helpers:ResourceString Key=ShowOnDesktop}" Click="ShowTabOnDesktop_Click" Tag="{x:Bind}">
+                                                                                                    <MenuFlyoutItem.Icon>
+                                                                                                        <FontIcon Glyph="&#xE8A7;" />
+                                                                                                    </MenuFlyoutItem.Icon>
+                                                                                                </MenuFlyoutItem>
+                                                                                            </MenuFlyout>
+                                                                                        </Grid.ContextFlyout>
+
                                                                                         <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,0,6"/>
                                                                                         <Border Height="3" Background="{x:Bind TabColorBrush, Mode=OneWay}" VerticalAlignment="Bottom" CornerRadius="1.5" Margin="0,18,0,0" />
                                                                                     </Grid>

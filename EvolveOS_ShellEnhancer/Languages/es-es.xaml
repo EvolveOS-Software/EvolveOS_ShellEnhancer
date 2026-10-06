@@ -170,6 +170,18 @@
     <sys:String x:Key="StartMenu_PictogramTintTile">Teñir mosaico</sys:String>
     <sys:String x:Key="StartMenu_PictogramTintIcon">Teñir icono</sys:String>
 
+    <sys:String x:Key="ShowOnDesktop">Mostrar en el escritorio</sys:String>
+    <sys:String x:Key="DesktopTabWidgetTitle">Widget de pestañas de escritorio</sys:String>
+    <sys:String x:Key="WidgetSize">Tamaño del widget</sys:String>
+    <sys:String x:Key="WidgetSizeCustom">Personalizado (Arrastrable)</sys:String>
+    <sys:String x:Key="WidgetSizeMedium">Mediano (5 Apps)</sys:String>
+    <sys:String x:Key="WidgetSizeLarge">Grande (Vertical)</sys:String>
+    <sys:String x:Key="CloseWidget">Cerrar widget</sys:String>
+    <sys:String x:Key="UnpinFromWidget">Desanclar del widget</sys:String>
+    <sys:String x:Key="RunAsAdmin">Ejecutar como administrador</sys:String>
+    <sys:String x:Key="OpenFileLocation">Abrir ubicación del archivo</sys:String>
+    <sys:String x:Key="FolderNameFallback">Carpeta</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

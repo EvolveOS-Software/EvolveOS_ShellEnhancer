@@ -170,6 +170,18 @@
     <sys:String x:Key="StartMenu_PictogramTintTile">Colorir bloco</sys:String>
     <sys:String x:Key="StartMenu_PictogramTintIcon">Colorir ícone</sys:String>
 
+    <sys:String x:Key="ShowOnDesktop">Mostrar na área de trabalho</sys:String>
+    <sys:String x:Key="DesktopTabWidgetTitle">Widget de Guias da Área de Trabalho</sys:String>
+    <sys:String x:Key="WidgetSize">Tamanho do Widget</sys:String>
+    <sys:String x:Key="WidgetSizeCustom">Personalizado (Arrastável)</sys:String>
+    <sys:String x:Key="WidgetSizeMedium">Médio (5 Apps)</sys:String>
+    <sys:String x:Key="WidgetSizeLarge">Grande (Vertical)</sys:String>
+    <sys:String x:Key="CloseWidget">Fechar Widget</sys:String>
+    <sys:String x:Key="UnpinFromWidget">Desafixar do Widget</sys:String>
+    <sys:String x:Key="RunAsAdmin">Executar como administrador</sys:String>
+    <sys:String x:Key="OpenFileLocation">Abrir local do arquivo</sys:String>
+    <sys:String x:Key="FolderNameFallback">Pasta</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>

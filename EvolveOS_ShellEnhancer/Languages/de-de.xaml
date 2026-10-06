@@ -170,6 +170,18 @@
     <sys:String x:Key="StartMenu_PictogramTintTile">Kachel färben</sys:String>
     <sys:String x:Key="StartMenu_PictogramTintIcon">Symbol färben</sys:String>
 
+    <sys:String x:Key="ShowOnDesktop">Auf dem Desktop anzeigen</sys:String>
+    <sys:String x:Key="DesktopTabWidgetTitle">Desktop Tab Widget</sys:String>
+    <sys:String x:Key="WidgetSize">Widget Größe</sys:String>
+    <sys:String x:Key="WidgetSizeCustom">Benutzerdefiniert (Ziehbar)</sys:String>
+    <sys:String x:Key="WidgetSizeMedium">Mittel (5 Apps)</sys:String>
+    <sys:String x:Key="WidgetSizeLarge">Groß (Vertikal)</sys:String>
+    <sys:String x:Key="CloseWidget">Widget schließen</sys:String>
+    <sys:String x:Key="UnpinFromWidget">Vom Widget lösen</sys:String>
+    <sys:String x:Key="RunAsAdmin">Als Administrator ausführen</sys:String>
+    <sys:String x:Key="OpenFileLocation">Dateipfad öffnen</sys:String>
+    <sys:String x:Key="FolderNameFallback">Ordner</sys:String>
+
     <!-- endregion StartMenu -->
 
 </ResourceDictionary>
