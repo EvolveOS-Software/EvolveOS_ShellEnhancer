@@ -17,6 +17,10 @@
     <Grid>
 
         <Grid.Resources>
+            <CollectionViewSource x:Name="AllAppsCVS" IsSourceGrouped="True" Source="{x:Bind ViewModel.GroupedAllApps, Mode=OneWay}" />
+            <CollectionViewSource x:Name="AllAppsCVS2" IsSourceGrouped="True" Source="{x:Bind ViewModel.GroupedAllApps, Mode=OneWay}" />
+            <CollectionViewSource x:Name="AllAppsCVS3" IsSourceGrouped="True" Source="{x:Bind ViewModel.GroupedAllApps, Mode=OneWay}" />
+            
             <converters:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
             <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter" />
@@ -580,194 +584,76 @@
                                 </FlipView>
 
                                 <!-- Search Results & All Apps -->
-                                <ListView x:Name="SearchAndAllAppsGrid" Grid.Row="1" Visibility="Collapsed" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
-                                    <ListView.Resources>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPointerOver" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPressed" Color="Transparent"/>
-                                    </ListView.Resources>
+                                <Grid x:Name="SearchAndAllAppsContainer" Grid.Row="1" Visibility="Collapsed">
+                                    <ListView x:Name="SearchAndAllAppsGrid" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
 
-                                    <ListView.Header>
-                                        <StackPanel Spacing="8" Margin="0,0,0,24">
-
-                                            <!-- Header & Options Button -->
-                                            <Grid Margin="12,0,0,8" Visibility="{x:Bind ViewModel.HasAnyHeaderContent, Mode=OneWay}">
-                                                <TextBlock Text="{helpers:ResourceString Key=StartMenu_SuggestedAndRecent}" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
-
-                                                <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                    <FontIcon Glyph="&#xE712;" FontSize="14" />
-                                                    <Button.Flyout>
-                                                        <MenuFlyout Opened="OptionsMenuFlyout_Opened">
-                                                            <ToggleMenuFlyoutItem Tag="ToggleRecent" 
-                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                  Click="ToggleRecentlyAdded_Click" />
-                                                            <ToggleMenuFlyoutItem Tag="ToggleSuggested" 
-                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                  Click="ToggleSuggestedApps_Click" />
-                                                        </MenuFlyout>
-                                                    </Button.Flyout>
-                                                </Button>
-                                            </Grid>
-
-                                            <!-- Suggested Apps Panel -->
-                                            <ListView ItemsSource="{x:Bind ViewModel.SuggestedAppsCollection, Mode=OneWay}"
-                                                      Visibility="{x:Bind ViewModel.SuggestedVisibility, Mode=OneWay}"
-                                                      SelectionMode="Single"
-                                                      IsItemClickEnabled="True"
-                                                      ItemClick="AppGrid_ItemClick"
-                                                      ScrollViewer.VerticalScrollMode="Disabled">
-                                                <ListView.ItemContainerStyle>
-                                                    <Style TargetType="ListViewItem">
-                                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,16,4"/>
-                                                        <Setter Property="Padding" Value="0"/>
-                                                        <Setter Property="CornerRadius" Value="6"/>
-                                                        <Setter Property="Background" Value="Transparent"/>
-                                                    </Style>
-                                                </ListView.ItemContainerStyle>
-                                                <ListView.ItemTemplate>
-                                                    <DataTemplate x:DataType="models:AppItem">
-                                                        <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
-                                                                RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                            <Grid ColumnSpacing="12" Padding="8,0">
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="32"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
-
-                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}" />
-                                                                <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                    <Image.RenderTransform>
-                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                    </Image.RenderTransform>
-                                                                </Image>
-
-                                                                <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
-
-                                                                <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_Suggested}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
-                                                            </Grid>
-                                                        </Border>
+                                        <!-- Grouping Headers for the App List -->
+                                        <ListView.GroupStyle>
+                                            <GroupStyle>
+                                                <GroupStyle.HeaderTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="{Binding Key}"
+                                                                Click="AppListHeader_Click"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                FontWeight="SemiBold"
+                                                                FontSize="16"
+                                                                Margin="12,12,0,4"/>
                                                     </DataTemplate>
-                                                </ListView.ItemTemplate>
-                                            </ListView>
+                                                </GroupStyle.HeaderTemplate>
+                                            </GroupStyle>
+                                        </ListView.GroupStyle>
 
-                                            <!-- Separator between Suggested and Recent (if both are visible) -->
-                                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.BothHeadersVisible, Mode=OneWay}" />
+                                        <ListView.Resources>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPointerOver" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPressed" Color="Transparent"/>
+                                        </ListView.Resources>
 
-                                            <!-- Recently Added Panel -->
-                                            <ListView ItemsSource="{x:Bind ViewModel.RecentlyAddedCollection, Mode=OneWay}"
-                                                      Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}"
-                                                      SelectionMode="Single"
-                                                      IsItemClickEnabled="True"
-                                                      ItemClick="AppGrid_ItemClick"
-                                                      ScrollViewer.VerticalScrollMode="Disabled">
-                                                <ListView.ItemContainerStyle>
-                                                    <Style TargetType="ListViewItem">
-                                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,16,4"/>
-                                                        <Setter Property="Padding" Value="0"/>
-                                                        <Setter Property="CornerRadius" Value="6"/>
-                                                        <Setter Property="Background" Value="Transparent"/>
-                                                    </Style>
-                                                </ListView.ItemContainerStyle>
-                                                <ListView.ItemTemplate>
-                                                    <DataTemplate x:DataType="models:AppItem">
-                                                        <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
-                                                                RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                            <Grid ColumnSpacing="12" Padding="8,0">
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="32"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
+                                        <ListView.Header>
+                                            <StackPanel Spacing="8" Margin="0,0,0,24">
 
-                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                    <Image.RenderTransform>
-                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                    </Image.RenderTransform>
-                                                                </Image>
-                                                                
-                                                                <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+                                                <!-- Header & Options Button -->
+                                                <Grid Margin="12,0,0,8" Visibility="{x:Bind ViewModel.HasAnyHeaderContent, Mode=OneWay}">
+                                                    <TextBlock Text="{helpers:ResourceString Key=StartMenu_SuggestedAndRecent}" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
 
-                                                                <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_NewApp}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
-                                                            </Grid>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ListView.ItemTemplate>
-                                            </ListView>
+                                                    <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE712;" FontSize="14" />
+                                                        <Button.Flyout>
+                                                            <MenuFlyout Opened="OptionsMenuFlyout_Opened">
+                                                                <ToggleMenuFlyoutItem Tag="ToggleRecent"
+                                                                                      Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
+                                                                                      Click="ToggleRecentlyAdded_Click" />
+                                                                <ToggleMenuFlyoutItem Tag="ToggleSuggested"
+                                                                                      Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
+                                                                                      Click="ToggleSuggestedApps_Click" />
+                                                            </MenuFlyout>
+                                                        </Button.Flyout>
+                                                    </Button>
+                                                </Grid>
 
-                                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
-
-                                        </StackPanel>
-                                    </ListView.Header>
-
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem">
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <Setter Property="Margin" Value="0,0,16,4"/>
-                                            <Setter Property="Padding" Value="0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="FocusVisualMargin" Value="0"/>
-                                        </Style>
-                                    </ListView.ItemContainerStyle>
-
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate x:DataType="models:AppItem">
-                                            <StackPanel>
-                                                <!-- 1. Folder Header / App Card -->
-                                                <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
-                                                        RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                    <Grid ColumnSpacing="12" Padding="8,0">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="32"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-
-                                                        <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                        <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                            <Image.RenderTransform>
-                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                            </Image.RenderTransform>
-                                                        </Image>
-
-                                                        <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
-
-                                                        <Border Grid.Column="2"
-                                                                Style="{StaticResource BadgePreferenceStyle}"
-                                                                Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
-                                                                MinWidth="56"
-                                                                VerticalAlignment="Center">
-                                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
-                                                                       Style="{StaticResource BadgeTextStyle}"
-                                                                       HorizontalAlignment="Center"
-                                                                       Foreground="{ThemeResource BadgePreferenceForeground}"/>
-                                                        </Border>
-
-                                                        <!-- Chevron Icon -->
-                                                        <FontIcon x:Name="ChevronIcon" Grid.Column="3" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                            <FontIcon.RenderTransform>
-                                                                <RotateTransform Angle="0"/>
-                                                            </FontIcon.RenderTransform>
-                                                        </FontIcon>
-                                                    </Grid>
-                                                </Border>
-
-                                                <!-- 2. Folder Contents -->
-                                                <ItemsControl x:Name="NestedFolderGrid"
-                                                              ItemsSource="{x:Bind FolderApps, Mode=OneWay}"
-                                                              Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}"
-                                                              MaxHeight="0">
-                                                    <ItemsControl.ItemTemplate>
+                                                <!-- Suggested Apps Panel -->
+                                                <ListView ItemsSource="{x:Bind ViewModel.SuggestedAppsCollection, Mode=OneWay}"
+                                                          SelectionMode="Single"
+                                                          IsItemClickEnabled="True"
+                                                          ItemClick="AppGrid_ItemClick"
+                                                          ScrollViewer.VerticalScrollMode="Disabled">
+                                                    <ListView.ItemContainerStyle>
+                                                        <Style TargetType="ListViewItem">
+                                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                            <Setter Property="Margin" Value="0,0,16,4"/>
+                                                            <Setter Property="Padding" Value="0"/>
+                                                            <Setter Property="CornerRadius" Value="6"/>
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Style>
+                                                    </ListView.ItemContainerStyle>
+                                                    <ListView.ItemTemplate>
                                                         <DataTemplate x:DataType="models:AppItem">
-                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
+                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
                                                                     RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                 <Grid ColumnSpacing="12" Padding="8,0">
                                                                     <Grid.ColumnDefinitions>
@@ -783,27 +669,198 @@
                                                                         </Image.RenderTransform>
                                                                     </Image>
 
-                                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
 
-                                                                    <Border Grid.Column="2"
-                                                                            Style="{StaticResource BadgePreferenceStyle}"
-                                                                            Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
-                                                                            MinWidth="56"
-                                                                            VerticalAlignment="Center">
-                                                                        <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
-                                                                                   Style="{StaticResource BadgeTextStyle}"
-                                                                                   HorizontalAlignment="Center"
-                                                                                   Foreground="{ThemeResource BadgePreferenceForeground}"/>
-                                                                    </Border>
+                                                                    <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_Suggested}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
                                                                 </Grid>
                                                             </Border>
                                                         </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
+                                                    </ListView.ItemTemplate>
+                                                </ListView>
+
+                                                <!-- Separator between Suggested and Recent (if both are visible) -->
+                                                <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.BothHeadersVisible, Mode=OneWay}" />
+
+                                                <!-- Recently Added Panel -->
+                                                <ListView ItemsSource="{x:Bind ViewModel.RecentlyAddedCollection, Mode=OneWay}"
+                                                          Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}"
+                                                          SelectionMode="Single"
+                                                          IsItemClickEnabled="True"
+                                                          ItemClick="AppGrid_ItemClick"
+                                                          ScrollViewer.VerticalScrollMode="Disabled">
+                                                    <ListView.ItemContainerStyle>
+                                                        <Style TargetType="ListViewItem">
+                                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                            <Setter Property="Margin" Value="0,0,16,4"/>
+                                                            <Setter Property="Padding" Value="0"/>
+                                                            <Setter Property="CornerRadius" Value="6"/>
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Style>
+                                                    </ListView.ItemContainerStyle>
+                                                    <ListView.ItemTemplate>
+                                                        <DataTemplate x:DataType="models:AppItem">
+                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
+                                                                    RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                <Grid ColumnSpacing="12" Padding="8,0">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="32"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+
+                                                                    <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                    <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                        <Image.RenderTransform>
+                                                                            <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                        </Image.RenderTransform>
+                                                                    </Image>
+
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+
+                                                                    <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_NewApp}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ListView.ItemTemplate>
+                                                </ListView>
+
+                                                <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
+
                                             </StackPanel>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
+                                        </ListView.Header>
+
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="Margin" Value="0,0,16,4"/>
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="FocusVisualMargin" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="models:AppItem">
+                                                <StackPanel>
+                                                    <!-- 1. Folder Header / App Card -->
+                                                    <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
+                                                            RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                        <Grid ColumnSpacing="12" Padding="8,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="32"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                            <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                <Image.RenderTransform>
+                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                </Image.RenderTransform>
+                                                            </Image>
+
+                                                            <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
+
+                                                            <Border Grid.Column="2"
+                                                                    Style="{StaticResource BadgePreferenceStyle}"
+                                                                    Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
+                                                                    MinWidth="56"
+                                                                    VerticalAlignment="Center">
+                                                                <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
+                                                                           Style="{StaticResource BadgeTextStyle}"
+                                                                           HorizontalAlignment="Center"
+                                                                           Foreground="{ThemeResource BadgePreferenceForeground}"/>
+                                                            </Border>
+
+                                                            <!-- Chevron Icon -->
+                                                            <FontIcon x:Name="ChevronIcon" Grid.Column="3" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                <FontIcon.RenderTransform>
+                                                                    <RotateTransform Angle="0"/>
+                                                                </FontIcon.RenderTransform>
+                                                            </FontIcon>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- 2. Folder Contents -->
+                                                    <ItemsControl x:Name="NestedFolderGrid"
+                                                                  ItemsSource="{x:Bind FolderApps, Mode=OneWay}"
+                                                                  Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}"
+                                                                  MaxHeight="0">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="models:AppItem">
+                                                                <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
+                                                                        RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                    <Grid ColumnSpacing="12" Padding="8,0">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="32"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                        <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                            <Image.RenderTransform>
+                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                            </Image.RenderTransform>
+                                                                        </Image>
+
+                                                                        <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
+
+                                                                        <Border Grid.Column="2"
+                                                                                Style="{StaticResource BadgePreferenceStyle}"
+                                                                                Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
+                                                                                MinWidth="56"
+                                                                                VerticalAlignment="Center">
+                                                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
+                                                                                       Style="{StaticResource BadgeTextStyle}"
+                                                                                       HorizontalAlignment="Center"
+                                                                                       Foreground="{ThemeResource BadgePreferenceForeground}"/>
+                                                                        </Border>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+
+                                    <!-- The Alphabet Grid -->
+                                    <GridView x:Name="AlphabetGrid1"
+                                              Visibility="Collapsed"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              ItemsSource="{x:Bind AllAppsCVS.View.CollectionGroups, Mode=OneWay}"
+                                              Margin="0,40,0,0"
+                                              IsItemClickEnabled="True"
+                                              ItemClick="AlphabetGrid_ItemClick">
+                                        <GridView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <VariableSizedWrapGrid MaximumRowsOrColumns="4" Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </GridView.ItemsPanel>
+                                        <GridView.ItemContainerStyle>
+                                            <Style TargetType="GridViewItem">
+                                                <Setter Property="Width" Value="56"/>
+                                                <Setter Property="Height" Value="56"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                <Setter Property="CornerRadius" Value="4"/>
+                                                <Setter Property="IsEnabled" Value="{Binding Group.HasItems}"/>
+                                            </Style>
+                                        </GridView.ItemContainerStyle>
+                                        <GridView.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Group.Key}"
+                                                           FontSize="16"
+                                                           FontWeight="SemiBold"
+                                                           Opacity="{Binding Group.Opacity}"/>
+                                            </DataTemplate>
+                                        </GridView.ItemTemplate>
+                                    </GridView>
+                                </Grid>
 
                                 <!-- Anchored Bottom Section -->
                                 <StackPanel Grid.Row="2" VerticalAlignment="Bottom" Spacing="0" Margin="0,8,0,-12">
@@ -1548,196 +1605,83 @@
                                 </FlipView>
 
                                 <!-- Search Results & All Apps -->
-                                <ListView x:Name="SearchAndAllAppsGrid2" Grid.Row="1" Visibility="Collapsed" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
+                                <Grid x:Name="SearchAndAllAppsContainer2" Grid.Row="1" Visibility="Collapsed">
+                                    <ListView x:Name="SearchAndAllAppsGrid2"
+                                              ItemsSource="{x:Bind AllAppsCVS2.View, Mode=OneWay}"
+                                              SelectionMode="Single"
+                                              IsItemClickEnabled="True"
+                                              ItemClick="AppGrid_ItemClick"
+                                              SelectionChanged="AppGrid_SelectionChanged">
 
-                                    <ListView.Resources>
-                                        <!-- Standard Brushes -->
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPointerOver" Color="Transparent"/>
-                                        <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPressed" Color="Transparent"/>
-                                    </ListView.Resources>
-
-                                    <ListView.Header>
-                                        <StackPanel Spacing="8" Margin="0,0,0,24">
-
-                                            <!-- Header & Options Button -->
-                                            <Grid Margin="12,0,0,8" Visibility="{x:Bind ViewModel.HasAnyHeaderContent, Mode=OneWay}">
-                                                <TextBlock Text="{helpers:ResourceString Key=StartMenu_SuggestedAndRecent}" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
-
-                                                <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                    <FontIcon Glyph="&#xE712;" FontSize="14" />
-                                                    <Button.Flyout>
-                                                        <MenuFlyout Opened="OptionsMenuFlyout_Opened">
-                                                            <ToggleMenuFlyoutItem Tag="ToggleRecent" 
-                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                  Click="ToggleRecentlyAdded_Click" />
-                                                            <ToggleMenuFlyoutItem Tag="ToggleSuggested" 
-                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                  Click="ToggleSuggestedApps_Click" />
-                                                        </MenuFlyout>
-                                                    </Button.Flyout>
-                                                </Button>
-                                            </Grid>
-
-                                            <!-- Suggested Apps Panel -->
-                                            <ListView ItemsSource="{x:Bind ViewModel.SuggestedAppsCollection, Mode=OneWay}"
-                                                      Visibility="{x:Bind ViewModel.SuggestedVisibility, Mode=OneWay}"
-                                                      SelectionMode="Single"
-                                                      IsItemClickEnabled="True"
-                                                      ItemClick="AppGrid_ItemClick"
-                                                      ScrollViewer.VerticalScrollMode="Disabled">
-                                                <ListView.ItemContainerStyle>
-                                                    <Style TargetType="ListViewItem">
-                                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,16,4"/>
-                                                        <Setter Property="Padding" Value="0"/>
-                                                        <Setter Property="CornerRadius" Value="6"/>
-                                                        <Setter Property="Background" Value="Transparent"/>
-                                                    </Style>
-                                                </ListView.ItemContainerStyle>
-                                                <ListView.ItemTemplate>
-                                                    <DataTemplate x:DataType="models:AppItem">
-                                                        <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
-                                                                RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                            <Grid ColumnSpacing="12" Padding="8,0">
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="32"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
-
-                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                    <Image.RenderTransform>
-                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                    </Image.RenderTransform>
-                                                                </Image>
-
-                                                                <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
-
-                                                                <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_Suggested}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
-                                                            </Grid>
-                                                        </Border>
+                                        <!-- Grouping Headers for the App List -->
+                                        <ListView.GroupStyle>
+                                            <GroupStyle>
+                                                <GroupStyle.HeaderTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="{Binding Key}"
+                                                                Click="AppListHeader_Click"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                FontWeight="SemiBold"
+                                                                FontSize="16"
+                                                                Margin="12,12,0,4"/>
                                                     </DataTemplate>
-                                                </ListView.ItemTemplate>
-                                            </ListView>
+                                                </GroupStyle.HeaderTemplate>
+                                            </GroupStyle>
+                                        </ListView.GroupStyle>
 
-                                            <!-- Separator between Suggested and Recent (if both are visible) -->
-                                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.BothHeadersVisible, Mode=OneWay}" />
+                                        <ListView.Resources>
+                                            <!-- Standard Brushes -->
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPointerOver" Color="Transparent"/>
+                                            <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPressed" Color="Transparent"/>
+                                        </ListView.Resources>
 
-                                            <!-- Recently Added Panel -->
-                                            <ListView ItemsSource="{x:Bind ViewModel.RecentlyAddedCollection, Mode=OneWay}"
-                                                      Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}"
-                                                      SelectionMode="Single"
-                                                      IsItemClickEnabled="True"
-                                                      ItemClick="AppGrid_ItemClick"
-                                                      ScrollViewer.VerticalScrollMode="Disabled">
-                                                <ListView.ItemContainerStyle>
-                                                    <Style TargetType="ListViewItem">
-                                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                        <Setter Property="Margin" Value="0,0,16,4"/>
-                                                        <Setter Property="Padding" Value="0"/>
-                                                        <Setter Property="CornerRadius" Value="6"/>
-                                                        <Setter Property="Background" Value="Transparent"/>
-                                                    </Style>
-                                                </ListView.ItemContainerStyle>
-                                                <ListView.ItemTemplate>
-                                                    <DataTemplate x:DataType="models:AppItem">
-                                                        <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
-                                                                RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                            <Grid ColumnSpacing="12" Padding="8,0">
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="32"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
+                                        <ListView.Header>
+                                            <StackPanel Spacing="8" Margin="0,0,0,24">
 
-                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                    <Image.RenderTransform>
-                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                    </Image.RenderTransform>
-                                                                </Image>
+                                                <!-- Header & Options Button -->
+                                                <Grid Margin="12,0,0,8" Visibility="{x:Bind ViewModel.HasAnyHeaderContent, Mode=OneWay}">
+                                                    <TextBlock Text="{helpers:ResourceString Key=StartMenu_SuggestedAndRecent}" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
 
-                                                                <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+                                                    <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE712;" FontSize="14" />
+                                                        <Button.Flyout>
+                                                            <MenuFlyout Opened="OptionsMenuFlyout_Opened">
+                                                                <ToggleMenuFlyoutItem Tag="ToggleRecent"
+                                                                                      Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
+                                                                                      Click="ToggleRecentlyAdded_Click" />
+                                                                <ToggleMenuFlyoutItem Tag="ToggleSuggested"
+                                                                                      Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
+                                                                                      Click="ToggleSuggestedApps_Click" />
+                                                            </MenuFlyout>
+                                                        </Button.Flyout>
+                                                    </Button>
+                                                </Grid>
 
-                                                                <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_NewApp}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
-                                                            </Grid>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ListView.ItemTemplate>
-                                            </ListView>
-
-                                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
-
-                                        </StackPanel>
-                                    </ListView.Header>
-
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem">
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <Setter Property="Margin" Value="0,0,16,4"/>
-                                            <Setter Property="Padding" Value="0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="FocusVisualMargin" Value="0"/>
-                                        </Style>
-                                    </ListView.ItemContainerStyle>
-
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate x:DataType="models:AppItem">
-                                            <StackPanel>
-                                                <!-- 1. Folder Header / App Card -->
-                                                <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
-                                                        RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                    <Grid ColumnSpacing="12" Padding="8,0">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="32"/>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-
-                                                        <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                        <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                            <Image.RenderTransform>
-                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                            </Image.RenderTransform>
-                                                        </Image>
-
-                                                        <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
-
-                                                        <Border Grid.Column="2"
-                                                                Style="{StaticResource BadgePreferenceStyle}"
-                                                                Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
-                                                                MinWidth="56"
-                                                                VerticalAlignment="Center">
-                                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
-                                                                       Style="{StaticResource BadgeTextStyle}"
-                                                                       HorizontalAlignment="Center"
-                                                                       Foreground="{ThemeResource BadgePreferenceForeground}"/>
-                                                        </Border>
-
-                                                        <!-- Chevron Icon -->
-                                                        <FontIcon x:Name="ChevronIcon" Grid.Column="3" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                            <FontIcon.RenderTransform>
-                                                                <RotateTransform Angle="0"/>
-                                                            </FontIcon.RenderTransform>
-                                                        </FontIcon>
-                                                    </Grid>
-                                                </Border>
-
-                                                <!-- 2. Folder Contents -->
-                                                <ItemsControl x:Name="NestedFolderGrid"
-                                                              ItemsSource="{x:Bind FolderApps, Mode=OneWay}"
-                                                              Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}"
-                                                              MaxHeight="0">
-                                                    <ItemsControl.ItemTemplate>
+                                                <!-- Suggested Apps Panel -->
+                                                <ListView ItemsSource="{x:Bind ViewModel.SuggestedAppsCollection, Mode=OneWay}"
+                                                          Visibility="{x:Bind ViewModel.SuggestedVisibility, Mode=OneWay}"
+                                                          SelectionMode="Single"
+                                                          IsItemClickEnabled="True"
+                                                          ItemClick="AppGrid_ItemClick"
+                                                          ScrollViewer.VerticalScrollMode="Disabled">
+                                                    <ListView.ItemContainerStyle>
+                                                        <Style TargetType="ListViewItem">
+                                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                            <Setter Property="Margin" Value="0,0,16,4"/>
+                                                            <Setter Property="Padding" Value="0"/>
+                                                            <Setter Property="CornerRadius" Value="6"/>
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Style>
+                                                    </ListView.ItemContainerStyle>
+                                                    <ListView.ItemTemplate>
                                                         <DataTemplate x:DataType="models:AppItem">
-                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
+                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
                                                                     RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                 <Grid ColumnSpacing="12" Padding="8,0">
                                                                     <Grid.ColumnDefinitions>
@@ -1753,27 +1697,199 @@
                                                                         </Image.RenderTransform>
                                                                     </Image>
 
-                                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
 
-                                                                    <Border Grid.Column="2"
-                                                                            Style="{StaticResource BadgePreferenceStyle}"
-                                                                            Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
-                                                                            MinWidth="56"
-                                                                            VerticalAlignment="Center">
-                                                                        <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
-                                                                                   Style="{StaticResource BadgeTextStyle}"
-                                                                                   HorizontalAlignment="Center"
-                                                                                   Foreground="{ThemeResource BadgePreferenceForeground}"/>
-                                                                    </Border>
+                                                                    <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_Suggested}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
                                                                 </Grid>
                                                             </Border>
                                                         </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
+                                                    </ListView.ItemTemplate>
+                                                </ListView>
+
+                                                <!-- Separator between Suggested and Recent (if both are visible) -->
+                                                <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.BothHeadersVisible, Mode=OneWay}" />
+
+                                                <!-- Recently Added Panel -->
+                                                <ListView ItemsSource="{x:Bind ViewModel.RecentlyAddedCollection, Mode=OneWay}"
+                                                          Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}"
+                                                          SelectionMode="Single"
+                                                          IsItemClickEnabled="True"
+                                                          ItemClick="AppGrid_ItemClick"
+                                                          ScrollViewer.VerticalScrollMode="Disabled">
+                                                    <ListView.ItemContainerStyle>
+                                                        <Style TargetType="ListViewItem">
+                                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                            <Setter Property="Margin" Value="0,0,16,4"/>
+                                                            <Setter Property="Padding" Value="0"/>
+                                                            <Setter Property="CornerRadius" Value="6"/>
+                                                            <Setter Property="Background" Value="Transparent"/>
+                                                        </Style>
+                                                    </ListView.ItemContainerStyle>
+                                                    <ListView.ItemTemplate>
+                                                        <DataTemplate x:DataType="models:AppItem">
+                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
+                                                                    RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                <Grid ColumnSpacing="12" Padding="8,0">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="32"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+
+                                                                    <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                    <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                        <Image.RenderTransform>
+                                                                            <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                        </Image.RenderTransform>
+                                                                    </Image>
+
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+
+                                                                    <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_NewApp}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ListView.ItemTemplate>
+                                                </ListView>
+
+                                                <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
+
                                             </StackPanel>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
+                                        </ListView.Header>
+
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="Margin" Value="0,0,16,4"/>
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="FocusVisualMargin" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="models:AppItem">
+                                                <StackPanel>
+                                                    <!-- 1. Folder Header / App Card -->
+                                                    <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
+                                                            RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                        <Grid ColumnSpacing="12" Padding="8,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="32"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                            <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                <Image.RenderTransform>
+                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                </Image.RenderTransform>
+                                                            </Image>
+
+                                                            <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
+
+                                                            <Border Grid.Column="2"
+                                                                    Style="{StaticResource BadgePreferenceStyle}"
+                                                                    Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
+                                                                    MinWidth="56"
+                                                                    VerticalAlignment="Center">
+                                                                <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
+                                                                           Style="{StaticResource BadgeTextStyle}"
+                                                                           HorizontalAlignment="Center"
+                                                                           Foreground="{ThemeResource BadgePreferenceForeground}"/>
+                                                            </Border>
+
+                                                            <!-- Chevron Icon -->
+                                                            <FontIcon x:Name="ChevronIcon" Grid.Column="3" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                <FontIcon.RenderTransform>
+                                                                    <RotateTransform Angle="0"/>
+                                                                </FontIcon.RenderTransform>
+                                                            </FontIcon>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- 2. Folder Contents -->
+                                                    <ItemsControl x:Name="NestedFolderGrid"
+                                                                  ItemsSource="{x:Bind FolderApps, Mode=OneWay}"
+                                                                  Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}"
+                                                                  MaxHeight="0">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="models:AppItem">
+                                                                <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
+                                                                        RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                    <Grid ColumnSpacing="12" Padding="8,0">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="32"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                        <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                            <Image.RenderTransform>
+                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                            </Image.RenderTransform>
+                                                                        </Image>
+
+                                                                        <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
+
+                                                                        <Border Grid.Column="2"
+                                                                                Style="{StaticResource BadgePreferenceStyle}"
+                                                                                Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
+                                                                                MinWidth="56"
+                                                                                VerticalAlignment="Center">
+                                                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
+                                                                                       Style="{StaticResource BadgeTextStyle}"
+                                                                                       HorizontalAlignment="Center"
+                                                                                       Foreground="{ThemeResource BadgePreferenceForeground}"/>
+                                                                        </Border>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+
+                                    <!-- The Alphabet Grid (Zoomed Out) -->
+                                    <GridView x:Name="AlphabetGrid2"
+                                              Visibility="Collapsed"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              ItemsSource="{x:Bind AllAppsCVS2.View.CollectionGroups, Mode=OneWay}"
+                                              Margin="0,40,0,0"
+                                              IsItemClickEnabled="True"
+                                              ItemClick="AlphabetGrid_ItemClick">
+                                        <GridView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <VariableSizedWrapGrid MaximumRowsOrColumns="4" Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </GridView.ItemsPanel>
+                                        <GridView.ItemContainerStyle>
+                                            <Style TargetType="GridViewItem">
+                                                <Setter Property="Width" Value="56"/>
+                                                <Setter Property="Height" Value="56"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                <Setter Property="CornerRadius" Value="4"/>
+                                                <!-- Disables letters that do not have associated apps -->
+                                                <Setter Property="IsEnabled" Value="{Binding Group.HasItems}"/>
+                                            </Style>
+                                        </GridView.ItemContainerStyle>
+                                        <GridView.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Group.Key}"
+                                                           FontSize="16"
+                                                           FontWeight="SemiBold"
+                                                           Opacity="{Binding Group.Opacity}"/>
+                                            </DataTemplate>
+                                        </GridView.ItemTemplate>
+                                    </GridView>
+                                </Grid>
 
                                 <!-- Anchored Bottom Section -->
                                 <StackPanel Grid.Row="2" VerticalAlignment="Bottom" Spacing="0" Margin="0,8,0,-12">
@@ -1843,194 +1959,80 @@
                                     BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="1,0,0,0">
                                 <Grid Padding="12,12,12,12">
                                     <Grid x:Name="DefaultRightPane2" Visibility="Visible">
-                                        <ListView x:Name="SearchAndAllAppsGrid3" ItemsSource="{x:Bind AllAppsCollection, Mode=OneWay}" SelectionMode="Single" IsItemClickEnabled="True" ItemClick="AppGrid_ItemClick" SelectionChanged="AppGrid_SelectionChanged">
-                                            <ListView.Resources>
-                                                <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent"/>
-                                                <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent"/>
-                                                <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
-                                                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
-                                                <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
-                                                <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPointerOver" Color="Transparent"/>
-                                                <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPressed" Color="Transparent"/>
-                                            </ListView.Resources>
 
-                                            <ListView.Header>
-                                                <StackPanel Spacing="8" Margin="0,0,0,24">
+                                        <!-- Right Pane: All Apps List (A-Z) -->
+                                        <Grid x:Name="SearchAndAllAppsContainer3" Grid.Row="1">
 
-                                                    <!-- Header & Options Button -->
-                                                    <Grid Margin="12,0,0,8" Visibility="{x:Bind ViewModel.HasAnyHeaderContent, Mode=OneWay}">
-                                                        <TextBlock Text="{helpers:ResourceString Key=StartMenu_SuggestedAndRecent}" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
+                                            <ListView x:Name="SearchAndAllAppsGrid3"
+                                                      ItemsSource="{x:Bind AllAppsCVS3.View, Mode=OneWay}"
+                                                      SelectionMode="Single"
+                                                      IsItemClickEnabled="True"
+                                                      ItemClick="AppGrid_ItemClick"
+                                                      SelectionChanged="AppGrid_SelectionChanged">
 
-                                                        <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                            <FontIcon Glyph="&#xE712;" FontSize="14" />
-                                                            <Button.Flyout>
-                                                                <MenuFlyout Opened="OptionsMenuFlyout_Opened">
-                                                                    <ToggleMenuFlyoutItem Tag="ToggleRecent" 
-                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
-                                                                                  Click="ToggleRecentlyAdded_Click" />
-                                                                    <ToggleMenuFlyoutItem Tag="ToggleSuggested" 
-                                                                                  Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
-                                                                                  Click="ToggleSuggestedApps_Click" />
-                                                                </MenuFlyout>
-                                                            </Button.Flyout>
-                                                        </Button>
-                                                    </Grid>
-
-                                                    <!-- Suggested Apps Panel -->
-                                                    <ListView ItemsSource="{x:Bind ViewModel.SuggestedAppsCollection, Mode=OneWay}"
-                                                              Visibility="{x:Bind ViewModel.SuggestedVisibility, Mode=OneWay}"
-                                                              SelectionMode="Single"
-                                                              IsItemClickEnabled="True"
-                                                              ItemClick="AppGrid_ItemClick"
-                                                              ScrollViewer.VerticalScrollMode="Disabled">
-                                                        <ListView.ItemContainerStyle>
-                                                            <Style TargetType="ListViewItem">
-                                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                                <Setter Property="Margin" Value="0,0,16,4"/>
-                                                                <Setter Property="Padding" Value="0"/>
-                                                                <Setter Property="CornerRadius" Value="6"/>
-                                                                <Setter Property="Background" Value="Transparent"/>
-                                                            </Style>
-                                                        </ListView.ItemContainerStyle>
-                                                        <ListView.ItemTemplate>
-                                                            <DataTemplate x:DataType="models:AppItem">
-                                                                <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
-                                                                        RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                                    <Grid ColumnSpacing="12" Padding="8,0">
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="32"/>
-                                                                            <ColumnDefinition Width="*"/>
-                                                                            <ColumnDefinition Width="Auto"/>
-                                                                        </Grid.ColumnDefinitions>
-
-                                                                        <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                        <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                            <Image.RenderTransform>
-                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                            </Image.RenderTransform>
-                                                                        </Image>
-
-                                                                        <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
-
-                                                                        <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_Suggested}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
-                                                                    </Grid>
-                                                                </Border>
+                                                <ListView.GroupStyle>
+                                                    <GroupStyle>
+                                                        <GroupStyle.HeaderTemplate>
+                                                            <DataTemplate>
+                                                                <Button Content="{Binding Key}"
+                                                                        Click="AppListHeader_Click"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        FontWeight="SemiBold"
+                                                                        FontSize="16"
+                                                                        Margin="12,12,0,4"/>
                                                             </DataTemplate>
-                                                        </ListView.ItemTemplate>
-                                                    </ListView>
+                                                        </GroupStyle.HeaderTemplate>
+                                                    </GroupStyle>
+                                                </ListView.GroupStyle>
 
-                                                    <!-- Separator between Suggested and Recent (if both are visible) -->
-                                                    <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.BothHeadersVisible, Mode=OneWay}" />
+                                                <ListView.Resources>
+                                                    <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="Transparent"/>
+                                                    <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="Transparent"/>
+                                                    <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="Transparent"/>
+                                                    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="Transparent"/>
+                                                    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="Transparent"/>
+                                                    <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPointerOver" Color="Transparent"/>
+                                                    <SolidColorBrush x:Key="ListViewItemOverlayBackgroundPressed" Color="Transparent"/>
+                                                </ListView.Resources>
 
-                                                    <!-- Recently Added Panel -->
-                                                    <ListView ItemsSource="{x:Bind ViewModel.RecentlyAddedCollection, Mode=OneWay}"
-                                                              Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}"
-                                                              SelectionMode="Single"
-                                                              IsItemClickEnabled="True"
-                                                              ItemClick="AppGrid_ItemClick"
-                                                              ScrollViewer.VerticalScrollMode="Disabled">
-                                                        <ListView.ItemContainerStyle>
-                                                            <Style TargetType="ListViewItem">
-                                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                                <Setter Property="Margin" Value="0,0,16,4"/>
-                                                                <Setter Property="Padding" Value="0"/>
-                                                                <Setter Property="CornerRadius" Value="6"/>
-                                                                <Setter Property="Background" Value="Transparent"/>
-                                                            </Style>
-                                                        </ListView.ItemContainerStyle>
-                                                        <ListView.ItemTemplate>
-                                                            <DataTemplate x:DataType="models:AppItem">
-                                                                <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
-                                                                        RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                                    <Grid ColumnSpacing="12" Padding="8,0">
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="32"/>
-                                                                            <ColumnDefinition Width="*"/>
-                                                                            <ColumnDefinition Width="Auto"/>
-                                                                        </Grid.ColumnDefinitions>
+                                                <ListView.Header>
+                                                    <StackPanel Spacing="8" Margin="0,0,0,24">
+                                                        <Grid Margin="12,0,0,8" Visibility="{x:Bind ViewModel.HasAnyHeaderContent, Mode=OneWay}">
+                                                            <TextBlock Text="{helpers:ResourceString Key=StartMenu_SuggestedAndRecent}" FontWeight="SemiBold" FontSize="{ThemeResource AppFontSizeHeader}" VerticalAlignment="Center"/>
+                                                            <Button Background="Transparent" BorderThickness="0" Padding="8,4" CornerRadius="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                                <FontIcon Glyph="&#xE712;" FontSize="14" />
+                                                                <Button.Flyout>
+                                                                    <MenuFlyout Opened="OptionsMenuFlyout_Opened">
+                                                                        <ToggleMenuFlyoutItem Tag="ToggleRecent"
+                                                                                              Text="{helpers:ResourceString Key=StartMenu_ShowRecentlyAdded}"
+                                                                                              Click="ToggleRecentlyAdded_Click" />
+                                                                        <ToggleMenuFlyoutItem Tag="ToggleSuggested"
+                                                                                              Text="{helpers:ResourceString Key=StartMenu_ShowSuggestedApps}"
+                                                                                              Click="ToggleSuggestedApps_Click" />
+                                                                    </MenuFlyout>
+                                                                </Button.Flyout>
+                                                            </Button>
+                                                        </Grid>
 
-                                                                        <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                        <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                            <Image.RenderTransform>
-                                                                                <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                            </Image.RenderTransform>
-                                                                        </Image>
-
-                                                                        <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
-
-                                                                        <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_NewApp}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
-                                                                    </Grid>
-                                                                </Border>
-                                                            </DataTemplate>
-                                                        </ListView.ItemTemplate>
-                                                    </ListView>
-
-                                                    <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
-
-                                                </StackPanel>
-                                            </ListView.Header>
-
-                                            <ListView.ItemContainerStyle>
-                                                <Style TargetType="ListViewItem">
-                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                                    <Setter Property="Margin" Value="0,0,16,4"/>
-                                                    <Setter Property="Padding" Value="0"/>
-                                                    <Setter Property="Background" Value="Transparent"/>
-                                                    <Setter Property="FocusVisualMargin" Value="0"/>
-                                                </Style>
-                                            </ListView.ItemContainerStyle>
-
-                                            <ListView.ItemTemplate>
-                                                <DataTemplate x:DataType="models:AppItem">
-                                                    <StackPanel>
-                                                        <!-- 1. Folder Header / App Card -->
-                                                        <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
-                                                                RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
-                                                            <Grid ColumnSpacing="12" Padding="8,0">
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="32"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
-
-                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
-                                                                <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                    <Image.RenderTransform>
-                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
-                                                                    </Image.RenderTransform>
-                                                                </Image>
-                                                                
-                                                                <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
-
-                                                                <Border Grid.Column="2"
-                                                                        Style="{StaticResource BadgePreferenceStyle}"
-                                                                        Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
-                                                                        MinWidth="56"
-                                                                        VerticalAlignment="Center">
-                                                                    <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
-                                                                               Style="{StaticResource BadgeTextStyle}"
-                                                                               HorizontalAlignment="Center"
-                                                                               Foreground="{ThemeResource BadgePreferenceForeground}"/>
-                                                                </Border>
-
-                                                                <!-- Chevron Icon -->
-                                                                <FontIcon x:Name="ChevronIcon" Grid.Column="3" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
-                                                                    <FontIcon.RenderTransform>
-                                                                        <RotateTransform Angle="0"/>
-                                                                    </FontIcon.RenderTransform>
-                                                                </FontIcon>
-                                                            </Grid>
-                                                        </Border>
-
-                                                        <!-- 2. Folder Contents -->
-                                                        <ItemsControl x:Name="NestedFolderGrid"
-                                                                      ItemsSource="{x:Bind FolderApps, Mode=OneWay}"
-                                                                      Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}"
-                                                                      MaxHeight="0">
-                                                            <ItemsControl.ItemTemplate>
+                                                        <ListView ItemsSource="{x:Bind ViewModel.SuggestedAppsCollection, Mode=OneWay}"
+                                                                  Visibility="{x:Bind ViewModel.SuggestedVisibility, Mode=OneWay}"
+                                                                  SelectionMode="Single"
+                                                                  IsItemClickEnabled="True"
+                                                                  ItemClick="AppGrid_ItemClick"
+                                                                  ScrollViewer.VerticalScrollMode="Disabled">
+                                                            <ListView.ItemContainerStyle>
+                                                                <Style TargetType="ListViewItem">
+                                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                                    <Setter Property="Margin" Value="0,0,16,4"/>
+                                                                    <Setter Property="Padding" Value="0"/>
+                                                                    <Setter Property="CornerRadius" Value="6"/>
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                </Style>
+                                                            </ListView.ItemContainerStyle>
+                                                            <ListView.ItemTemplate>
                                                                 <DataTemplate x:DataType="models:AppItem">
-                                                                    <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
+                                                                    <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
                                                                             RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
                                                                         <Grid ColumnSpacing="12" Padding="8,0">
                                                                             <Grid.ColumnDefinitions>
@@ -2038,35 +2040,197 @@
                                                                                 <ColumnDefinition Width="*"/>
                                                                                 <ColumnDefinition Width="Auto"/>
                                                                             </Grid.ColumnDefinitions>
-
                                                                             <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
                                                                             <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
                                                                                 <Image.RenderTransform>
                                                                                     <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
                                                                                 </Image.RenderTransform>
                                                                             </Image>
-
-                                                                            <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
-
-                                                                            <Border Grid.Column="2"
-                                                                                    Style="{StaticResource BadgePreferenceStyle}"
-                                                                                    Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
-                                                                                    MinWidth="56"
-                                                                                    VerticalAlignment="Center">
-                                                                                <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
-                                                                                           Style="{StaticResource BadgeTextStyle}"
-                                                                                           HorizontalAlignment="Center"
-                                                                                           Foreground="{ThemeResource BadgePreferenceForeground}"/>
-                                                                            </Border>
+                                                                            <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+                                                                            <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_Suggested}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
                                                                         </Grid>
                                                                     </Border>
                                                                 </DataTemplate>
-                                                            </ItemsControl.ItemTemplate>
-                                                        </ItemsControl>
+                                                            </ListView.ItemTemplate>
+                                                        </ListView>
+
+                                                        <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.BothHeadersVisible, Mode=OneWay}" />
+
+                                                        <ListView ItemsSource="{x:Bind ViewModel.RecentlyAddedCollection, Mode=OneWay}"
+                                                                  Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}"
+                                                                  SelectionMode="Single"
+                                                                  IsItemClickEnabled="True"
+                                                                  ItemClick="AppGrid_ItemClick"
+                                                                  ScrollViewer.VerticalScrollMode="Disabled">
+                                                            <ListView.ItemContainerStyle>
+                                                                <Style TargetType="ListViewItem">
+                                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                                    <Setter Property="Margin" Value="0,0,16,4"/>
+                                                                    <Setter Property="Padding" Value="0"/>
+                                                                    <Setter Property="CornerRadius" Value="6"/>
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                </Style>
+                                                            </ListView.ItemContainerStyle>
+                                                            <ListView.ItemTemplate>
+                                                                <DataTemplate x:DataType="models:AppItem">
+                                                                    <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" CornerRadius="6" Background="Transparent"
+                                                                            RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                        <Grid ColumnSpacing="12" Padding="8,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="32"/>
+                                                                                <ColumnDefinition Width="*"/>
+                                                                                <ColumnDefinition Width="Auto"/>
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                            <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                <Image.RenderTransform>
+                                                                                    <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                </Image.RenderTransform>
+                                                                            </Image>
+                                                                            <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" MaxLines="1"/>
+                                                                            <TextBlock Grid.Column="2" Text="{helpers:ResourceString Key=StartMenu_NewApp}" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ListView.ItemTemplate>
+                                                        </ListView>
+
+                                                        <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" Opacity="0.3" Margin="12,4,12,4" Visibility="{x:Bind ViewModel.RecentlyAddedVisibility, Mode=OneWay}" />
                                                     </StackPanel>
-                                                </DataTemplate>
-                                            </ListView.ItemTemplate>
-                                        </ListView>
+                                                </ListView.Header>
+
+                                                <ListView.ItemContainerStyle>
+                                                    <Style TargetType="ListViewItem">
+                                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                        <Setter Property="Margin" Value="0,0,16,4"/>
+                                                        <Setter Property="Padding" Value="0"/>
+                                                        <Setter Property="Background" Value="Transparent"/>
+                                                        <Setter Property="FocusVisualMargin" Value="0"/>
+                                                    </Style>
+                                                </ListView.ItemContainerStyle>
+
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:AppItem">
+                                                        <StackPanel>
+                                                            <!-- 1. Folder Header / App Card -->
+                                                            <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="{x:Bind ItemMargin, Mode=OneWay}" CornerRadius="6" Background="Transparent"
+                                                                    RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                <Grid ColumnSpacing="12" Padding="8,0">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="32"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+
+                                                                    <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                    <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                        <Image.RenderTransform>
+                                                                            <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                        </Image.RenderTransform>
+                                                                    </Image>
+
+                                                                    <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
+
+                                                                    <Border Grid.Column="2"
+                                                                            Style="{StaticResource BadgePreferenceStyle}"
+                                                                            Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
+                                                                            MinWidth="56"
+                                                                            VerticalAlignment="Center">
+                                                                        <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
+                                                                                   Style="{StaticResource BadgeTextStyle}"
+                                                                                   HorizontalAlignment="Center"
+                                                                                   Foreground="{ThemeResource BadgePreferenceForeground}"/>
+                                                                    </Border>
+
+                                                                    <!-- Chevron Icon -->
+                                                                    <FontIcon x:Name="ChevronIcon" Grid.Column="3" Glyph="&#xE70D;" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0" Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                        <FontIcon.RenderTransform>
+                                                                            <RotateTransform Angle="0"/>
+                                                                        </FontIcon.RenderTransform>
+                                                                    </FontIcon>
+                                                                </Grid>
+                                                            </Border>
+
+                                                            <!-- 2. Folder Contents -->
+                                                            <ItemsControl x:Name="NestedFolderGrid"
+                                                                          ItemsSource="{x:Bind FolderApps, Mode=OneWay}"
+                                                                          Visibility="{x:Bind AllAppsChevronVisibility, Mode=OneWay}"
+                                                                          MaxHeight="0">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate x:DataType="models:AppItem">
+                                                                        <Border Tag="{x:Bind}" HorizontalAlignment="Stretch" Height="44" Margin="32,0,0,4" CornerRadius="6" Background="{x:Bind TileBrush, Mode=OneWay}"
+                                                                                RightTapped="AppCard_RightTapped" PointerPressed="AppCard_PointerPressed" PointerEntered="AppCard_PointerEntered" PointerExited="AppCard_PointerExited">
+                                                                            <Grid ColumnSpacing="12" Padding="8,0">
+                                                                                <Grid.ColumnDefinitions>
+                                                                                    <ColumnDefinition Width="32"/>
+                                                                                    <ColumnDefinition Width="*"/>
+                                                                                    <ColumnDefinition Width="Auto"/>
+                                                                                </Grid.ColumnDefinitions>
+
+                                                                                <FontIcon Grid.Column="0" Glyph="{x:Bind FallbackGlyph}" FontSize="20" HorizontalAlignment="Center" Visibility="{x:Bind HasNoIcon, Mode=OneWay}"/>
+                                                                                <Image Grid.Column="0" Source="{x:Bind IconSource, Mode=OneWay}" Width="20" Height="20" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{x:Bind HasIcon, Mode=OneWay}" RenderTransformOrigin="0.5,0.5">
+                                                                                    <Image.RenderTransform>
+                                                                                        <ScaleTransform ScaleX="{x:Bind IconScale}" ScaleY="{x:Bind IconScale}" />
+                                                                                    </Image.RenderTransform>
+                                                                                </Image>
+
+                                                                                <TextBlock Grid.Column="1" Text="{x:Bind Name, Mode=OneWay}" FontSize="{ThemeResource AppFontSizeSmall}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center"/>
+
+                                                                                <Border Grid.Column="2"
+                                                                                        Style="{StaticResource BadgePreferenceStyle}"
+                                                                                        Visibility="{x:Bind NewBadgeVisibility, Mode=OneWay}"
+                                                                                        MinWidth="56"
+                                                                                        VerticalAlignment="Center">
+                                                                                    <TextBlock Text="{helpers:ResourceString Key=StartMenu_NewApp}"
+                                                                                               Style="{StaticResource BadgeTextStyle}"
+                                                                                               HorizontalAlignment="Center"
+                                                                                               Foreground="{ThemeResource BadgePreferenceForeground}"/>
+                                                                                </Border>
+                                                                            </Grid>
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+
+                                            <!-- The Alphabet Grid -->
+                                            <GridView x:Name="AlphabetGrid3"
+                                                      Visibility="Collapsed"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      ItemsSource="{x:Bind AllAppsCVS3.View.CollectionGroups, Mode=OneWay}"
+                                                      Margin="0,40,0,0"
+                                                      IsItemClickEnabled="True"
+                                                      ItemClick="AlphabetGrid_ItemClick">
+                                                <GridView.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <VariableSizedWrapGrid MaximumRowsOrColumns="4" Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </GridView.ItemsPanel>
+                                                <GridView.ItemContainerStyle>
+                                                    <Style TargetType="GridViewItem">
+                                                        <Setter Property="Width" Value="56"/>
+                                                        <Setter Property="Height" Value="56"/>
+                                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                        <Setter Property="CornerRadius" Value="4"/>
+                                                        <Setter Property="IsEnabled" Value="{Binding Group.HasItems}"/>
+                                                    </Style>
+                                                </GridView.ItemContainerStyle>
+                                                <GridView.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Group.Key}"
+                                                                   FontSize="16"
+                                                                   FontWeight="SemiBold"
+                                                                   Opacity="{Binding Group.Opacity}"/>
+                                                    </DataTemplate>
+                                                </GridView.ItemTemplate>
+                                            </GridView>
+                                        </Grid>
                                     </Grid>
                                 </Grid>
                             </Border>

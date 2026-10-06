@@ -735,6 +735,52 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             storyboard.Begin();
         }
 
+        public static void PlaySemanticZoomTransition(UIElement target)
+        {
+            target.RenderTransformOrigin = new Point(0.5, 0.5);
+
+            var scaleTransform = new ScaleTransform { ScaleX = 0.85, ScaleY = 0.85 };
+            target.RenderTransform = scaleTransform;
+            target.Opacity = 0;
+
+            var storyboard = new Storyboard();
+
+            var scaleX = new DoubleAnimation
+            {
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(250),
+                EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut, Exponent = 4.5 }
+            };
+            var scaleY = new DoubleAnimation
+            {
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(250),
+                EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut, Exponent = 4.5 }
+            };
+
+            var fade = new DoubleAnimation
+            {
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            Storyboard.SetTarget(scaleX, scaleTransform);
+            Storyboard.SetTargetProperty(scaleX, "ScaleX");
+
+            Storyboard.SetTarget(scaleY, scaleTransform);
+            Storyboard.SetTargetProperty(scaleY, "ScaleY");
+
+            Storyboard.SetTarget(fade, target);
+            Storyboard.SetTargetProperty(fade, "Opacity");
+
+            storyboard.Children.Add(scaleX);
+            storyboard.Children.Add(scaleY);
+            storyboard.Children.Add(fade);
+
+            storyboard.Begin();
+        }
+
         #endregion
     }
 }

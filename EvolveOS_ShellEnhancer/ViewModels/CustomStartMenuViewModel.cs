@@ -29,6 +29,8 @@ namespace EvolveOS_ShellEnhancer.ViewModels
 
         public ObservableCollection<ShortcutItem> StartMenuShortcuts { get; } = new();
 
+        public ObservableCollection<AppGroup> GroupedAllApps { get; } = new();
+
         public Visibility SuggestedVisibility => ShowSuggestedApps && SuggestedAppsCollection.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility RecentlyAddedVisibility => ShowRecentlyAdded && RecentlyAddedCollection.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility HasAnyHeaderContent => Visibility.Visible;
@@ -355,6 +357,8 @@ namespace EvolveOS_ShellEnhancer.ViewModels
                         }
 
                         UpdateSuggestedApps();
+
+                        UpdateGroupedApps();
 
                         OnAppsDataLoaded?.Invoke();
 
@@ -869,6 +873,38 @@ namespace EvolveOS_ShellEnhancer.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine("Taskbar pin toggle failed: " + ex.Message);
+            }
+        }
+
+        public void UpdateGroupedApps()
+        {
+            GroupedAllApps.Clear();
+
+            var dict = new Dictionary<string, AppGroup>();
+            var symbolsGroup = new AppGroup("#");
+            dict["#"] = symbolsGroup;
+            GroupedAllApps.Add(symbolsGroup);
+
+            for (char c = 'A'; c <= 'Z'; c++)
+            {
+                var group = new AppGroup(c.ToString());
+                dict[c.ToString()] = group;
+                GroupedAllApps.Add(group);
+            }
+
+            foreach (var app in AllAppsCollection.OrderBy(a => a.Name))
+            {
+                if (string.IsNullOrWhiteSpace(app.Name)) continue;
+
+                string firstChar = app.Name.Substring(0, 1).ToUpper();
+                if (dict.ContainsKey(firstChar))
+                {
+                    dict[firstChar].Add(app);
+                }
+                else
+                {
+                    dict["#"].Add(app);
+                }
             }
         }
         #endregion

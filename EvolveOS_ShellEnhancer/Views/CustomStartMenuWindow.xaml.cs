@@ -6,6 +6,7 @@ using EvolveOS_ShellEnhancer.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using System.Collections.ObjectModel;
@@ -731,25 +732,48 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _isShowingAllApps = !_isShowingAllApps;
 
+                string label = _isShowingAllApps
+                    ? LocalizationService.Instance.GetString("StartMenu_BackToPinned")
+                    : LocalizationService.Instance.GetString("StartMenu_AllApps");
+
+                if (BtnAllApps != null) BtnAllApps.Content = label;
+                if (BtnAllApps2 != null) BtnAllApps2.Content = label;
+
                 if (_isShowingAllApps)
                 {
-                    btn.Content = LocalizationService.Instance.GetString("StartMenu_BackToPinned");
-
+                    // Layout 1 (Standard)
                     if (PagesFlipView != null) PagesFlipView.Visibility = Visibility.Collapsed;
                     if (BottomNavigationGrid != null) BottomNavigationGrid.Visibility = Visibility.Collapsed;
-                    if (SearchAndAllAppsGrid != null)
+                    if (SearchAndAllAppsContainer != null && SearchAndAllAppsGrid != null)
                     {
+                        SearchAndAllAppsContainer.Visibility = Visibility.Visible;
                         SearchAndAllAppsGrid.Visibility = Visibility.Visible;
-                        SearchAndAllAppsGrid.ItemsSource = AllAppsCollection;
+                        if (AlphabetGrid1 != null) AlphabetGrid1.Visibility = Visibility.Collapsed;
+                        SearchAndAllAppsGrid.ItemsSource = AllAppsCVS.View;
+                    }
+
+                    // Layout 2 (Split Grouped Left Pane)
+                    if (PagesFlipView2 != null) PagesFlipView2.Visibility = Visibility.Collapsed;
+                    if (BottomNavigationGrid2 != null) BottomNavigationGrid2.Visibility = Visibility.Collapsed;
+                    if (SearchAndAllAppsContainer2 != null && SearchAndAllAppsGrid2 != null)
+                    {
+                        SearchAndAllAppsContainer2.Visibility = Visibility.Visible;
+                        SearchAndAllAppsGrid2.Visibility = Visibility.Visible;
+                        if (AlphabetGrid2 != null) AlphabetGrid2.Visibility = Visibility.Collapsed;
+                        SearchAndAllAppsGrid2.ItemsSource = AllAppsCVS2.View;
                     }
                 }
                 else
                 {
-                    btn.Content = LocalizationService.Instance.GetString("StartMenu_AllApps");
-
+                    // Layout 1 (Standard)
                     if (PagesFlipView != null) PagesFlipView.Visibility = Visibility.Visible;
                     if (BottomNavigationGrid != null) BottomNavigationGrid.Visibility = Visibility.Visible;
-                    if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.Visibility = Visibility.Collapsed;
+                    if (SearchAndAllAppsContainer != null) SearchAndAllAppsContainer.Visibility = Visibility.Collapsed;
+
+                    // Layout 2 (Split Grouped Left Pane)
+                    if (PagesFlipView2 != null) PagesFlipView2.Visibility = Visibility.Visible;
+                    if (BottomNavigationGrid2 != null) BottomNavigationGrid2.Visibility = Visibility.Visible;
+                    if (SearchAndAllAppsContainer2 != null) SearchAndAllAppsContainer2.Visibility = Visibility.Collapsed;
                 }
             }
         }
@@ -1161,6 +1185,67 @@ namespace EvolveOS_ShellEnhancer.Views
             if (sender is ToggleMenuFlyoutItem toggle)
             {
                 ViewModel.ShowSuggestedApps = toggle.IsChecked;
+            }
+        }
+
+        private void AppListHeader_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe)
+            {
+                GridView? alphabetGrid = null;
+                ListView? parentList = FindVisualParent<ListView>(fe);
+
+                if (parentList != null)
+                {
+                    if (parentList.Name == "SearchAndAllAppsGrid") alphabetGrid = AlphabetGrid1;
+                    else if (parentList.Name == "SearchAndAllAppsGrid2") alphabetGrid = AlphabetGrid2;
+                    else if (parentList.Name == "SearchAndAllAppsGrid3") alphabetGrid = AlphabetGrid3;
+                }
+                else
+                {
+                    if (_currentStyle == "Standard" || _currentStyle == "SplitStandard")
+                    {
+                        parentList = SearchAndAllAppsGrid;
+                        alphabetGrid = AlphabetGrid1;
+                    }
+                    else if (_currentStyle == "SplitGrouped" || _currentStyle == "Compact")
+                    {
+                        parentList = SearchAndAllAppsGrid3;
+                        alphabetGrid = AlphabetGrid3;
+                    }
+                }
+
+                if (parentList != null && alphabetGrid != null)
+                {
+                    parentList.Visibility = Visibility.Collapsed;
+                    alphabetGrid.Visibility = Visibility.Visible;
+                    FactoryAnimation.PlaySemanticZoomTransition(alphabetGrid);
+                }
+            }
+        }
+
+        private void AlphabetGrid_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (sender is GridView alphabetGrid)
+            {
+                ListView? parentList = null;
+
+                if (alphabetGrid.Name == "AlphabetGrid1") parentList = SearchAndAllAppsGrid;
+                else if (alphabetGrid.Name == "AlphabetGrid2") parentList = SearchAndAllAppsGrid2;
+                else if (alphabetGrid.Name == "AlphabetGrid3") parentList = SearchAndAllAppsGrid3;
+
+                if (parentList != null && e.ClickedItem is ICollectionViewGroup group)
+                {
+                    alphabetGrid.Visibility = Visibility.Collapsed;
+                    parentList.Visibility = Visibility.Visible;
+
+                    if (group.GroupItems != null && group.GroupItems.Count > 0)
+                    {
+                        parentList.ScrollIntoView(group.GroupItems[0], ScrollIntoViewAlignment.Leading);
+                    }
+
+                    FactoryAnimation.PlaySemanticZoomTransition(parentList);
+                }
             }
         }
 
@@ -2811,16 +2896,39 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 if (_isShowingAllApps)
                 {
-                    if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.ItemsSource = AllAppsCollection;
+                    if (SearchAndAllAppsContainer != null && SearchAndAllAppsGrid != null)
+                    {
+                        SearchAndAllAppsContainer.Visibility = Visibility.Visible;
+                        SearchAndAllAppsGrid.Visibility = Visibility.Visible;
+                        if (AlphabetGrid1 != null) AlphabetGrid1.Visibility = Visibility.Collapsed;
+                        SearchAndAllAppsGrid.ItemsSource = AllAppsCVS.View;
+                    }
+                    if (SearchAndAllAppsContainer2 != null && SearchAndAllAppsGrid2 != null)
+                    {
+                        SearchAndAllAppsContainer2.Visibility = Visibility.Visible;
+                        SearchAndAllAppsGrid2.Visibility = Visibility.Visible;
+                        if (AlphabetGrid2 != null) AlphabetGrid2.Visibility = Visibility.Collapsed;
+                        SearchAndAllAppsGrid2.ItemsSource = AllAppsCVS2.View;
+                    }
                 }
                 else
                 {
-                    if (SearchAndAllAppsGrid != null) SearchAndAllAppsGrid.Visibility = Visibility.Collapsed;
+                    if (SearchAndAllAppsContainer != null) SearchAndAllAppsContainer.Visibility = Visibility.Collapsed;
                     if (PagesFlipView != null) PagesFlipView.Visibility = Visibility.Visible;
                     if (BottomNavigationGrid != null) BottomNavigationGrid.Visibility = Visibility.Visible;
+
+                    if (SearchAndAllAppsContainer2 != null) SearchAndAllAppsContainer2.Visibility = Visibility.Collapsed;
+                    if (PagesFlipView2 != null) PagesFlipView2.Visibility = Visibility.Visible;
+                    if (BottomNavigationGrid2 != null) BottomNavigationGrid2.Visibility = Visibility.Visible;
                 }
 
-                if (SearchAndAllAppsGrid2 != null) SearchAndAllAppsGrid2.ItemsSource = AllAppsCollection;
+                if (SearchAndAllAppsGrid3 != null)
+                {
+                    // Reset Right Pane
+                    SearchAndAllAppsGrid3.Visibility = Visibility.Visible;
+                    if (AlphabetGrid3 != null) AlphabetGrid3.Visibility = Visibility.Collapsed;
+                    SearchAndAllAppsGrid3.ItemsSource = AllAppsCVS3.View;
+                }
 
                 if (DefaultRightPane1 != null) DefaultRightPane1.Visibility = Visibility.Visible;
                 if (SearchRightPane1 != null) SearchRightPane1.Visibility = Visibility.Collapsed;
@@ -2881,9 +2989,12 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (PagesFlipView != null) PagesFlipView.Visibility = Visibility.Collapsed;
                 if (BottomNavigationGrid != null) BottomNavigationGrid.Visibility = Visibility.Collapsed;
 
-                if (SearchAndAllAppsGrid != null)
+                if (SearchAndAllAppsContainer != null && SearchAndAllAppsGrid != null)
                 {
+                    SearchAndAllAppsContainer.Visibility = Visibility.Visible;
                     SearchAndAllAppsGrid.Visibility = Visibility.Visible;
+                    if (AlphabetGrid1 != null) AlphabetGrid1.Visibility = Visibility.Collapsed;
+
                     SearchAndAllAppsGrid.ItemsSource = SearchResultsCollection;
                 }
                 if (DefaultRightPane1 != null) DefaultRightPane1.Visibility = Visibility.Collapsed;
