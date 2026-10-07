@@ -1075,11 +1075,25 @@ namespace EvolveOS_ShellEnhancer.Views
                     if (handles.Count > 0)
                     {
                         IntPtr handle = handles[0];
-                        if (Win32Helper.IsIconic(handle))
+
+                        const int WM_SYSCOMMAND = 0x0112;
+                        const int SC_RESTORE = 0xF120;
+                        const int SC_MINIMIZE = 0xF020;
+
+                        if (IsIconic(handle))
                         {
-                            Win32Helper.ShowWindow(handle, Win32Helper.SW_RESTORE);
+                            PostMessage(handle, WM_SYSCOMMAND, new IntPtr(SC_RESTORE), IntPtr.Zero);
+                            SetForegroundWindow(handle);
                         }
-                        Win32Helper.SetForegroundWindow(handle);
+                        else if (handle == GetForegroundWindow())
+                        {
+                            PostMessage(handle, WM_SYSCOMMAND, new IntPtr(SC_MINIMIZE), IntPtr.Zero);
+                        }
+                        else
+                        {
+                            SetForegroundWindow(handle);
+                        }
+
                         activatedExisting = true;
                     }
                 }
