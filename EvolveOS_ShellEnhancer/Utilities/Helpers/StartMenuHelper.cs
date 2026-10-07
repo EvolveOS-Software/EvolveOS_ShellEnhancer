@@ -1,6 +1,7 @@
 // Copyright (c) 2026 EvolveOS Software
 // Licensed under the MIT License.
 
+using System.Collections.Concurrent;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -15,7 +16,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
     public static class StartMenuHelper
     {
         #region Fields & Properties
-        private static readonly Dictionary<string, ImageSource> _iconCache = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, ImageSource> _iconCache = new(StringComparer.OrdinalIgnoreCase);
         #endregion
 
         #region Constants & Exclusion Lists
@@ -307,7 +308,11 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                                 {
                                     writer.WriteBytes(ms.ToArray());
                                     await writer.StoreAsync();
+
+                                    writer.DetachStream();
                                 }
+
+                                ras.Seek(0);
 
                                 var bitmapImage = new BitmapImage();
                                 await bitmapImage.SetSourceAsync(ras);
@@ -323,7 +328,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
                 if (resultImage != null && !string.IsNullOrEmpty(cacheKey))
                 {
-                    _iconCache[cacheKey] = resultImage;
+                    _iconCache[cacheKey] = resultImage; // Now safe due to ConcurrentDictionary
                     appItem.IconSource = resultImage;
 
                     if (appItem.IsIconTinted) await ApplyTintAsync(appItem);
@@ -381,7 +386,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                         {
                             writer.WriteBytes(ms.ToArray());
                             await writer.StoreAsync();
+                            writer.DetachStream();
                         }
+
+                        ras.Seek(0);
                         return ras;
                     }
                     finally
