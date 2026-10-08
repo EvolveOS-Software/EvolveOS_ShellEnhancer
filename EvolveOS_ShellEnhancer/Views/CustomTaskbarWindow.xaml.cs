@@ -63,7 +63,23 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public static bool ShowHoverBackground = true;
 
-        public readonly DisplayArea MonitorArea;
+        private DisplayArea _cachedMonitorArea;
+
+        public DisplayArea MonitorArea
+        {
+            get
+            {
+                try
+                {
+                    return DisplayArea.GetFromDisplayId(_cachedMonitorArea.DisplayId) ?? _cachedMonitorArea;
+                }
+                catch
+                {
+                    return _cachedMonitorArea;
+                }
+            }
+        }
+
         public readonly bool IsPrimaryMonitor;
 
         public static bool MonitorAwareApps = false;
@@ -140,14 +156,16 @@ namespace EvolveOS_ShellEnhancer.Views
             UnpinnedDisplayMode = SettingsEngine.Shell_TaskbarUnpinnedMode ?? "Inline";
 
             _hWnd = WindowNative.GetWindowHandle(this);
-            Microsoft.UI.WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
+            WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
 
-            MonitorArea = displayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
-            IsPrimaryMonitor = MonitorArea.IsPrimary;
+            var initialArea = displayArea ?? DisplayArea.Primary;
+
+            _cachedMonitorArea = displayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+            IsPrimaryMonitor = _cachedMonitorArea.IsPrimary;
 
             int exclude = 1;
-            Win32Helper.DwmSetWindowAttribute(_hWnd, Win32Helper.DWMWA_EXCLUDED_FROM_PEEK, ref exclude, sizeof(int));
+            DwmSetWindowAttribute(_hWnd, DWMWA_EXCLUDED_FROM_PEEK, ref exclude, sizeof(int));
 
             if (_appWindow.Presenter is OverlappedPresenter presenter)
             {
@@ -159,8 +177,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
             this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
-            Win32Helper.RemoveWindowBorders(_hWnd);
-            Win32Helper.PreventFocusStealing(_hWnd);
+            RemoveWindowBorders(_hWnd);
+            PreventFocusStealing(_hWnd);
 
             TaskbarOverlayManager.ApplyWidgetStyles(_hWnd);
 
@@ -1441,10 +1459,11 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
                 }
 
-                int screenX = MonitorArea!.OuterBounds.X;
-                int screenY = MonitorArea.OuterBounds.Y;
-                int screenWidth = MonitorArea.OuterBounds.Width;
-                int screenHeight = MonitorArea.OuterBounds.Height;
+                var liveMonitor = MonitorArea;
+                int screenX = liveMonitor.OuterBounds.X;
+                int screenY = liveMonitor.OuterBounds.Y;
+                int screenWidth = liveMonitor.OuterBounds.Width;
+                int screenHeight = liveMonitor.OuterBounds.Height;
 
                 int taskbarSize = TaskbarSize;
                 int margin = (_currentStyle == "Floating") ? 5 : 0;
