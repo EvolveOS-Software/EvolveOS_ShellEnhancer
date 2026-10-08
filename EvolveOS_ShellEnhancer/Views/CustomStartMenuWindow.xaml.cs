@@ -24,6 +24,8 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public DisplayArea? TargetDisplayArea { get; set; }
 
+        private EvolveAcrylicController _acrylicController;
+
         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
         private bool _isVisible = false;
@@ -89,6 +91,8 @@ namespace EvolveOS_ShellEnhancer.Views
             _hWnd = WindowNative.GetWindowHandle(this);
             WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
+
+            _acrylicController = new EvolveAcrylicController(_hWnd);
 
             if (_appWindow.Presenter is OverlappedPresenter presenter)
             {
@@ -263,6 +267,20 @@ namespace EvolveOS_ShellEnhancer.Views
             }
         }
 
+        private static bool IsSystemInDarkMode()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (key?.GetValue("AppsUseLightTheme") is int val)
+                {
+                    return val == 0;
+                }
+            }
+            catch { }
+            return true;
+        }
+
         public void ReloadTheme()
         {
             string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
@@ -271,18 +289,45 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public void SetTheme(string theme)
         {
-            if (this.Content is FrameworkElement root)
-            {
-                if (theme == "Light")
-                    root.RequestedTheme = ElementTheme.Light;
-                else if (theme == "Dark")
-                    root.RequestedTheme = ElementTheme.Dark;
-                else
-                    root.RequestedTheme = ElementTheme.Default;
-            }
+            bool isLight = theme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                           (theme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
 
-            this.SystemBackdrop = null;
-            this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+            string acrylicStyle = SettingsEngine.Shell_AcrylicStyle ?? "Acrylic";
+            bool isSolidMode = acrylicStyle.Equals("Solid", StringComparison.OrdinalIgnoreCase) || acrylicStyle.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+            if (this.Content is Panel root)
+            {
+                root.RequestedTheme = isLight ? ElementTheme.Light : ElementTheme.Dark;
+
+                if (isSolidMode)
+                {
+                    _acrylicController?.ClearAcrylic();
+                    root.Background = isLight ?
+                        new SolidColorBrush(Colors.WhiteSmoke) :
+                        new SolidColorBrush(ColorHelper.FromArgb(255, 32, 32, 32));
+
+                    this.SystemBackdrop = null;
+                }
+                else
+                {
+                    root.Background = new SolidColorBrush(Colors.Transparent);
+
+                    if (this.SystemBackdrop is not Utilities.Helpers.AlwaysActiveAcrylicBackdrop)
+                    {
+                        this.SystemBackdrop = new Utilities.Helpers.AlwaysActiveAcrylicBackdrop();
+                    }
+
+                    if (this.SystemBackdrop is Utilities.Helpers.AlwaysActiveAcrylicBackdrop backdrop)
+                    {
+                        backdrop.UpdateLive();
+                    }
+
+                    double opacity = SettingsEngine.Shell_AcrylicOpacity;
+                    double luminosity = SettingsEngine.Shell_AcrylicLuminosity;
+
+                    _acrylicController?.UpdateStyle(acrylicStyle, opacity, luminosity, isLight);
+                }
+            }
 
             ViewModel.LoadUserProfile(DispatcherQueue);
         }
@@ -477,6 +522,12 @@ namespace EvolveOS_ShellEnhancer.Views
                 _appWindow.MoveAndResize(new RectInt32(startX, startY, windowWidth, windowHeight));
                 _appWindow.Show();
 
+                string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+                bool isLight = savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                               (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+                _acrylicController.Initialize(isLight);
+                SetTheme(savedTheme);
+
                 this.Activate();
                 Win32Helper.SetForegroundWindow(_hWnd);
 
@@ -499,6 +550,12 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _appWindow.MoveAndResize(new RectInt32(x, y, windowWidth, windowHeight));
                 _appWindow.Show();
+
+                string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+                bool isLight = savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                               (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+                _acrylicController.Initialize(isLight);
+                SetTheme(savedTheme);
 
                 this.Activate();
                 Win32Helper.SetForegroundWindow(_hWnd);

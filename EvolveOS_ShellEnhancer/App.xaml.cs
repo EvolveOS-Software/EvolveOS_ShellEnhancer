@@ -629,26 +629,30 @@ namespace EvolveOS_ShellEnhancer
                     case "Shell_AppTheme":
                         SettingsEngine.Shell_AppTheme = value;
                         ApplyAppThemeGlobally(value);
+
+                        UpdateAllTaskbarBackdrops();
+                        _startMenuWindow?.ReloadTheme();
                         break;
 
                     case "Shell_AcrylicStyle":
                         SettingsEngine.Shell_AcrylicStyle = value;
-                        TaskbarManager.ReloadAll();
+
+                        UpdateAllTaskbarBackdrops();
                         _startMenuWindow?.ReloadTheme();
                         break;
 
                     case "Shell_AcrylicOpacity":
                         if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double opVal))
                             SettingsEngine.Shell_AcrylicOpacity = opVal;
-                        TaskbarManager.ReloadAll();
-                        _startMenuWindow?.ReloadTheme();
+
+                        UpdateAllTaskbarBackdrops();
                         break;
 
                     case "Shell_AcrylicLuminosity":
                         if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double lumVal))
                             SettingsEngine.Shell_AcrylicLuminosity = lumVal;
-                        TaskbarManager.ReloadAll();
-                        _startMenuWindow?.ReloadTheme();
+
+                        UpdateAllTaskbarBackdrops();
                         break;
 
                     case "Taskbar_PowerPlanMenu":
@@ -662,17 +666,31 @@ namespace EvolveOS_ShellEnhancer
                         if (bool.TryParse(value, out bool effMode))
                         {
                             SettingsEngine.Shell_EnableEfficiencyMode = effMode;
-                            EvolveOS_ShellEnhancer.Managers.AppLifecycleEngine.IsEfficiencyModeEnabled = effMode;
+                            Managers.AppLifecycleEngine.IsEfficiencyModeEnabled = effMode;
 
                             if (!effMode)
                             {
-                                EvolveOS_ShellEnhancer.Managers.AppLifecycleEngine.RegisterWakeLock("SettingsOverride");
-                                EvolveOS_ShellEnhancer.Managers.AppLifecycleEngine.ReleaseWakeLock("SettingsOverride");
+                                Managers.AppLifecycleEngine.RegisterWakeLock("SettingsOverride");
+                                Managers.AppLifecycleEngine.ReleaseWakeLock("SettingsOverride");
                             }
                         }
                         break;
                 }
             });
+        }
+
+        private void UpdateAllTaskbarBackdrops()
+        {
+            foreach (var taskbar in CustomTaskbarWindow.ActiveTaskbars)
+            {
+                taskbar.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (taskbar.SystemBackdrop is AlwaysActiveAcrylicBackdrop backdrop)
+                    {
+                        backdrop.UpdateLive();
+                    }
+                });
+            }
         }
         #endregion
 

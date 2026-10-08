@@ -27,9 +27,12 @@ namespace EvolveOS_ShellEnhancer.Views
     {
         #region Fields & Properties
         public CustomTaskbarViewModel ViewModel { get; } = new();
+        public static List<CustomTaskbarWindow> ActiveTaskbars { get; } = new();
+        private EvolveAcrylicController _acrylicController;
 
         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
+
         private string _currentStyle = "Standard";
 
         private string _currentPosition = "Bottom";
@@ -147,6 +150,9 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             this.InitializeComponent();
 
+            ActiveTaskbars.Add(this);
+            this.Closed += (s, e) => ActiveTaskbars.Remove(this);
+
             _currentStyle = SettingsEngine.Shell_TaskbarStyle ?? "Standard";
             _currentPosition = SettingsEngine.Shell_TaskbarPosition ?? "Bottom";
             PositionAnimationStyle = SettingsEngine.Shell_TaskbarAnimation ?? "Spring";
@@ -158,6 +164,10 @@ namespace EvolveOS_ShellEnhancer.Views
             _hWnd = WindowNative.GetWindowHandle(this);
             WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
+
+            _acrylicController = new EvolveAcrylicController(_hWnd);
+
+            this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
             var initialArea = displayArea ?? DisplayArea.Primary;
 
@@ -174,8 +184,6 @@ namespace EvolveOS_ShellEnhancer.Views
                 presenter.IsMinimizable = false;
                 presenter.IsResizable = false;
             }
-
-            this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
 
             RemoveWindowBorders(_hWnd);
             PreventFocusStealing(_hWnd);
@@ -258,6 +266,8 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 rootElement.Loaded += async (s, e) =>
                 {
+                    ApplyTaskbarStyleSync();
+
                     await Task.Delay(150);
                     ShowDock();
 
@@ -288,6 +298,40 @@ namespace EvolveOS_ShellEnhancer.Views
             if (VolumeIcon != null) VolumeIcon.Foreground = new SolidColorBrush(textColor);
 
             UpdateSizes();
+        }
+
+        public void ApplyTaskbarStyleSync()
+        {
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            bool isLight = savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                           (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+
+            string acrylicStyle = SettingsEngine.Shell_AcrylicStyle ?? "Acrylic";
+            bool isSolidMode = acrylicStyle.Equals("Solid", StringComparison.OrdinalIgnoreCase) || acrylicStyle.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+            if (this.Content is Panel root)
+            {
+                root.RequestedTheme = isLight ? ElementTheme.Light : ElementTheme.Dark;
+
+                if (isSolidMode)
+                {
+                    _acrylicController.ClearAcrylic();
+                    root.Background = isLight ?
+                        new SolidColorBrush(Colors.WhiteSmoke) :
+                        new SolidColorBrush(ColorHelper.FromArgb(255, 32, 32, 32));
+                }
+                else
+                {
+                    root.Background = new SolidColorBrush(Colors.Transparent);
+
+                    double opacity = SettingsEngine.Shell_AcrylicOpacity;
+                    double luminosity = SettingsEngine.Shell_AcrylicLuminosity;
+
+                    _acrylicController.UpdateStyle(acrylicStyle, opacity, luminosity, isLight);
+                }
+            }
+
+            _previewWindow?.SetTheme(savedTheme);
         }
         #endregion
 
@@ -641,22 +685,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 _ = LoadPinnedAppsAsync();
 
-                string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
-
-                if (this.Content is FrameworkElement root)
-                {
-                    if (savedTheme == "Light")
-                        root.RequestedTheme = ElementTheme.Light;
-                    else if (savedTheme == "Dark")
-                        root.RequestedTheme = ElementTheme.Dark;
-                    else
-                        root.RequestedTheme = ElementTheme.Default;
-
-                    this.SystemBackdrop = null;
-                    this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
-                }
-
-                _previewWindow?.SetTheme(savedTheme);
+                ApplyTaskbarStyleSync();
 
                 Color textColor = GetThemeAwareTextColor();
                 Color secondaryColor = textColor == Colors.White
@@ -673,14 +702,10 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (ClockText != null && DateText != null)
                 {
                     if (Application.Current.Resources.TryGetValue("AppFontSizeBase", out var baseObj) && baseObj is double baseSize)
-                    {
                         ClockText.FontSize = baseSize;
-                    }
 
                     if (Application.Current.Resources.TryGetValue("AppFontSizeSmall", out var smallObj) && smallObj is double smallSize)
-                    {
                         DateText.FontSize = smallSize;
-                    }
                 }
 
                 UpdateSizes();
@@ -1467,6 +1492,7 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 int taskbarSize = TaskbarSize;
                 int margin = (_currentStyle == "Floating") ? 5 : 0;
+
                 int reservedSpace = taskbarSize + (margin * 2);
 
                 int x = 0, y = 0, w = 0, h = 0;
@@ -1551,7 +1577,16 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
                 _appWindow.Show();
-                SetWindowPos(_hWnd, new IntPtr(-1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040);
+
+                string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+                bool isLight = savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                               (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+
+                _acrylicController.Initialize(isLight);
+
+                ApplyTaskbarStyleSync();
+
+                SetWindowPos(_hWnd, new IntPtr(-1), x, y, w, h, 0x0040);
                 TaskbarOverlayManager.EnsureTopmost(_hWnd);
 
                 if (!isResizing)
@@ -1605,31 +1640,6 @@ namespace EvolveOS_ShellEnhancer.Views
 
                     SHAppBarMessage(ABM_SETPOS, ref abd);
                 }
-
-                if (_currentStyle == "Floating")
-                {
-                    if (TaskbarCornerRadius <= 4)
-                    {
-                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
-                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(TaskbarCornerRadius);
-                    }
-                    else
-                    {
-                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUND);
-                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(TaskbarCornerRadius);
-                    }
-                }
-                else
-                {
-                    Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_DONOTROUND);
-                    if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(0);
-                }
-
-                _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
-                _appWindow.Show();
-
-                SetWindowPos(_hWnd, new IntPtr(-1), x, y, w, h, 0x0040);
-                TaskbarOverlayManager.EnsureTopmost(_hWnd);
 
                 string savedAlignment = TaskbarManager.CurrentAlignment;
                 SetAlignment(savedAlignment, animate: false);

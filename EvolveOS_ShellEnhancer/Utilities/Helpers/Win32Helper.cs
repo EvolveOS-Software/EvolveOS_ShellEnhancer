@@ -140,7 +140,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("user32.dll")]
         public static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [DllImport("user32.dll")]
         public static extern bool ReleaseCapture();
 
         [DllImport("powrprof.dll", CharSet = CharSet.Unicode)]
@@ -200,6 +200,11 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool CloseHandle(IntPtr hObject);
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
         #endregion
 
         #region DWM Thumbnail API
@@ -310,6 +315,23 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             public uint StateMask;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct AccentPolicy
+        {
+            public AccentState AccentState;
+            public uint AccentFlags;
+            public uint GradientColor; // ABGR Format
+            public uint AnimationId;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct WindowCompositionAttributeData
+        {
+            public int Attribute;
+            public IntPtr Data;
+            public int SizeOfData;
+        }
+
         #endregion
 
         #region Constants
@@ -384,6 +406,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
         public const int WM_KEYDOWN = 0x0100;
         public const int WM_KEYUP = 0x0101;
         public const int WM_SYSKEYDOWN = 0x0104;
+
+        public const uint WM_MOUSEMOVE = 0x0200;
+        public const uint WM_ACTIVATE = 0x0006;
+        public const int WA_ACTIVE = 1;
 
         public const int WS_EX_NOACTIVATE = 0x08000000;
         public const int WS_EX_TOOLWINDOW = 0x00000080;
