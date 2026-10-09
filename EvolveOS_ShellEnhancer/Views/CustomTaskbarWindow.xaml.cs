@@ -315,7 +315,54 @@ namespace EvolveOS_ShellEnhancer.Views
 
                 if (isSolidMode)
                 {
-                    _acrylicController.ClearAcrylic();
+                    _acrylicController?.ClearAcrylic();
+                    root.Background = isLight ?
+                        new SolidColorBrush(Colors.WhiteSmoke) :
+                        new SolidColorBrush(ColorHelper.FromArgb(255, 32, 32, 32));
+
+                    // Safely remove the backdrop ONLY in solid mode
+                    this.SystemBackdrop = null;
+                }
+                else
+                {
+                    root.Background = new SolidColorBrush(Colors.Transparent);
+
+                    if (this.SystemBackdrop is not Utilities.Helpers.AlwaysActiveAcrylicBackdrop)
+                    {
+                        this.SystemBackdrop = new Utilities.Helpers.AlwaysActiveAcrylicBackdrop();
+                    }
+
+                    if (this.SystemBackdrop is Utilities.Helpers.AlwaysActiveAcrylicBackdrop backdrop)
+                    {
+                        backdrop.UpdateLive();
+                    }
+
+                    double opacity = SettingsEngine.Shell_AcrylicOpacity;
+                    double luminosity = SettingsEngine.Shell_AcrylicLuminosity;
+
+                    _acrylicController?.UpdateStyle(acrylicStyle, opacity, luminosity, isLight);
+                }
+            }
+
+            _previewWindow?.SetTheme(savedTheme);
+        }
+
+        /*public void ApplyTaskbarStyleSync()
+        {
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            bool isLight = savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                           (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+
+            string acrylicStyle = SettingsEngine.Shell_AcrylicStyle ?? "Acrylic";
+            bool isSolidMode = acrylicStyle.Equals("Solid", StringComparison.OrdinalIgnoreCase) || acrylicStyle.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+            if (this.Content is Panel root)
+            {
+                root.RequestedTheme = isLight ? ElementTheme.Light : ElementTheme.Dark;
+
+                if (isSolidMode)
+                {
+                    _acrylicController?.ClearAcrylic();
                     root.Background = isLight ?
                         new SolidColorBrush(Colors.WhiteSmoke) :
                         new SolidColorBrush(ColorHelper.FromArgb(255, 32, 32, 32));
@@ -327,12 +374,17 @@ namespace EvolveOS_ShellEnhancer.Views
                     double opacity = SettingsEngine.Shell_AcrylicOpacity;
                     double luminosity = SettingsEngine.Shell_AcrylicLuminosity;
 
-                    _acrylicController.UpdateStyle(acrylicStyle, opacity, luminosity, isLight);
+                    _acrylicController?.UpdateStyle(acrylicStyle, opacity, luminosity, isLight);
+
+                    if (this.SystemBackdrop is AlwaysActiveAcrylicBackdrop backdrop)
+                    {
+                        backdrop.UpdateLive();
+                    }
                 }
             }
 
             _previewWindow?.SetTheme(savedTheme);
-        }
+        }*/
         #endregion
 
         #region Sizing Engine

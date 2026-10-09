@@ -3,6 +3,9 @@
 
 using Microsoft.UI.Composition;
 using Microsoft.UI.Composition.SystemBackdrops;
+using Microsoft.Win32;
+using Windows.UI;
+using System;
 
 namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 {
@@ -28,20 +31,26 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
             bool isLight = !isDark;
 
+            float opacity = (float)SettingsEngine.Shell_AcrylicOpacity;
+            if (opacity <= 0) opacity = 0.65f;
+
+            float luminosity = (float)SettingsEngine.Shell_AcrylicLuminosity;
+            if (luminosity <= 0) luminosity = 0.50f;
+
+            string acrylicStyle = SettingsEngine.Shell_AcrylicStyle ?? "Acrylic";
+            bool isThin = acrylicStyle.Equals("AcrylicThin", StringComparison.OrdinalIgnoreCase);
+            if (isThin) opacity = Math.Max(0.10f, opacity - 0.35f);
+
             if (isLight)
             {
                 _acrylicController.TintColor = Color.FromArgb(255, 245, 245, 245);
-                _acrylicController.TintOpacity = 0.40f;
-                _acrylicController.LuminosityOpacity = 0.50f;
+                _acrylicController.TintOpacity = opacity;
+
+                _acrylicController.LuminosityOpacity = luminosity + 0.001f;
+                _acrylicController.LuminosityOpacity = luminosity;
             }
             else
             {
-                float opacity = (float)SettingsEngine.Shell_AcrylicOpacity;
-                if (opacity <= 0) opacity = 0.65f;
-
-                float luminosity = (float)SettingsEngine.Shell_AcrylicLuminosity;
-                if (luminosity <= 0) luminosity = 0.50f;
-
                 _acrylicController.TintColor = Color.FromArgb(255, 32, 32, 32);
                 _acrylicController.TintOpacity = opacity;
 

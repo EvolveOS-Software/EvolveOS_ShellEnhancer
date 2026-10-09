@@ -116,22 +116,23 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
             if (isThin) opacity = Math.Max(0.10, opacity - 0.35);
 
-            byte alpha = (byte)(opacity * 255);
+            byte alpha = (byte)(Math.Clamp(opacity, 0.0, 1.0) * 255);
             uint gradientColor;
 
             if (isLightMode)
             {
-                gradientColor = (uint)((alpha << 24) | (245 << 16) | (245 << 8) | 245);
+                byte rgb = (byte)(211 + (44 * Math.Clamp(luminosity, 0.0, 1.0)));
+                gradientColor = (uint)((alpha << 24) | (rgb << 16) | (rgb << 8) | rgb);
             }
             else
             {
-                byte rgb = (byte)(10 + (44 * luminosity));
+                byte rgb = (byte)(10 + (44 * Math.Clamp(luminosity, 0.0, 1.0)));
                 gradientColor = (uint)((alpha << 24) | (rgb << 16) | (rgb << 8) | rgb);
             }
 
             var policy = new Win32Helper.AccentPolicy
             {
-                AccentState = EvolveOS_ShellEnhancer.Enums.AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND,
+                AccentState = AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND,
                 AccentFlags = 2,
                 GradientColor = gradientColor
             };

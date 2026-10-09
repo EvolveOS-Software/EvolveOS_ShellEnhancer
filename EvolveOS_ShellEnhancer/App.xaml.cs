@@ -685,13 +685,24 @@ namespace EvolveOS_ShellEnhancer
             {
                 taskbar.DispatcherQueue.TryEnqueue(() =>
                 {
+                    taskbar.ApplyTaskbarStyleSync();
+                });
+            }
+        }
+
+        /*private void UpdateAllTaskbarBackdrops()
+        {
+            foreach (var taskbar in CustomTaskbarWindow.ActiveTaskbars)
+            {
+                taskbar.DispatcherQueue.TryEnqueue(() =>
+                {
                     if (taskbar.SystemBackdrop is AlwaysActiveAcrylicBackdrop backdrop)
                     {
                         backdrop.UpdateLive();
                     }
                 });
             }
-        }
+        }*/
         #endregion
 
         #region Input Handling & Destructor
