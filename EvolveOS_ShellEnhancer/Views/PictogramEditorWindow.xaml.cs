@@ -41,6 +41,19 @@ namespace EvolveOS_ShellEnhancer.Views
         private ImageSource? _originalIconSource;
         private DispatcherTimer? _debounceTimer;
 
+        private EvolveAcrylicController _acrylicController;
+
+        private static bool IsSystemInDarkMode()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (key?.GetValue("AppsUseLightTheme") is int val) return val == 0;
+            }
+            catch { }
+            return true;
+        }
+
         public PictogramEditorWindow(AppItem targetApp, AppCategory? targetCategory, IEnumerable<AppCategory>? allCategories, Action onSave)
         {
             this.InitializeComponent();
@@ -54,8 +67,15 @@ namespace EvolveOS_ShellEnhancer.Views
             WindowId windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
             _appWindow = AppWindow.GetFromWindowId(windowId);
 
+            _acrylicController = new EvolveAcrylicController(_hWnd);
+
             ConfigureWindow();
-            string savedTheme = Utilities.Managers.SettingsEngine.Shell_AppTheme ?? "Default";
+
+            string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+            bool isLight = savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                           (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+
+            _acrylicController.Initialize(isLight);
             SetTheme(savedTheme);
 
             LoadInitialData();
@@ -86,11 +106,45 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public void SetTheme(string theme)
         {
-            if (this.Content is FrameworkElement root)
+            bool isLight = theme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                           (theme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+
+            string acrylicStyle = SettingsEngine.Shell_AcrylicStyle ?? "Acrylic";
+            bool isSolidMode = acrylicStyle.Equals("Solid", StringComparison.OrdinalIgnoreCase) || acrylicStyle.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+            if (this.Content is Panel root)
             {
-                root.RequestedTheme = theme == "Light" ? ElementTheme.Light : (theme == "Dark" ? ElementTheme.Dark : ElementTheme.Default);
+                root.RequestedTheme = isLight ? ElementTheme.Light : ElementTheme.Dark;
+
+                if (isSolidMode)
+                {
+                    _acrylicController?.ClearAcrylic();
+                    root.Background = isLight ?
+                        new SolidColorBrush(Colors.WhiteSmoke) :
+                        new SolidColorBrush(ColorHelper.FromArgb(255, 32, 32, 32));
+
+                    this.SystemBackdrop = null;
+                }
+                else
+                {
+                    root.Background = new SolidColorBrush(Colors.Transparent);
+
+                    if (this.SystemBackdrop is not AlwaysActiveAcrylicBackdrop)
+                    {
+                        this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
+                    }
+
+                    if (this.SystemBackdrop is AlwaysActiveAcrylicBackdrop backdrop)
+                    {
+                        backdrop.UpdateLive();
+                    }
+
+                    double opacity = SettingsEngine.Shell_AcrylicOpacity;
+                    double luminosity = SettingsEngine.Shell_AcrylicLuminosity;
+
+                    _acrylicController?.UpdateStyle(acrylicStyle, opacity, luminosity, isLight);
+                }
             }
-            this.SystemBackdrop = new AlwaysActiveAcrylicBackdrop();
         }
 
         private async void LoadInitialData()

@@ -26,6 +26,20 @@ namespace EvolveOS_ShellEnhancer.Views
 
         private EvolveAcrylicController _acrylicController;
 
+        private static bool IsSystemInDarkMode()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (key?.GetValue("AppsUseLightTheme") is int val)
+                {
+                    return val == 0;
+                }
+            }
+            catch { }
+            return true;
+        }
+
         private readonly AppWindow _appWindow;
         private readonly IntPtr _hWnd;
         private bool _isVisible = false;
@@ -265,20 +279,6 @@ namespace EvolveOS_ShellEnhancer.Views
                     args.Handled = true;
                 }
             }
-        }
-
-        private static bool IsSystemInDarkMode()
-        {
-            try
-            {
-                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-                if (key?.GetValue("AppsUseLightTheme") is int val)
-                {
-                    return val == 0;
-                }
-            }
-            catch { }
-            return true;
         }
 
         public void ReloadTheme()

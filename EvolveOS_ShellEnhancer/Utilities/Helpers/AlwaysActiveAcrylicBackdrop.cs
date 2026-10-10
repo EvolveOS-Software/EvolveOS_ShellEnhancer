@@ -45,7 +45,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             {
                 _acrylicController.TintColor = Color.FromArgb(255, 245, 245, 245);
                 _acrylicController.TintOpacity = opacity;
-
                 _acrylicController.LuminosityOpacity = luminosity + 0.001f;
                 _acrylicController.LuminosityOpacity = luminosity;
             }
@@ -53,7 +52,6 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
             {
                 _acrylicController.TintColor = Color.FromArgb(255, 32, 32, 32);
                 _acrylicController.TintOpacity = opacity;
-
                 _acrylicController.LuminosityOpacity = luminosity + 0.001f;
                 _acrylicController.LuminosityOpacity = luminosity;
             }
@@ -101,6 +99,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
                 _acrylicController.Dispose();
                 _acrylicController = null;
             }
+        }
+
+        protected override void OnDefaultSystemBackdropConfigurationChanged(ICompositionSupportsSystemBackdrop target, XamlRoot xamlRoot)
+        {
         }
     }
 }

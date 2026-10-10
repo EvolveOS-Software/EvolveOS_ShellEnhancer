@@ -688,6 +688,15 @@ namespace EvolveOS_ShellEnhancer
                     taskbar.ApplyTaskbarStyleSync();
                 });
             }
+
+            foreach (var widget in DesktopTabWidgetWindow.ActiveWidgets)
+            {
+                widget.DispatcherQueue.TryEnqueue(() =>
+                {
+                    string theme = SettingsEngine.Shell_AppTheme ?? "Default";
+                    widget.SetTheme(theme);
+                });
+            }
         }
 
         /*private void UpdateAllTaskbarBackdrops()
