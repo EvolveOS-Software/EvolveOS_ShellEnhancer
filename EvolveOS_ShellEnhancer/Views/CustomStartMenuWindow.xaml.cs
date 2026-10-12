@@ -426,6 +426,51 @@ namespace EvolveOS_ShellEnhancer.Views
             TargetDisplayArea = area;
         }
 
+        private DisplayArea ResolveLiveDisplayArea()
+        {
+            try
+            {
+                if (TargetDisplayArea != null)
+                {
+                    var refreshed = DisplayArea.GetFromDisplayId(TargetDisplayArea.DisplayId);
+                    if (refreshed != null && refreshed.OuterBounds.Width > 0 && refreshed.OuterBounds.Height > 0)
+                    {
+                        TargetDisplayArea = refreshed;
+                        return refreshed;
+                    }
+                }
+
+                if (GetCursorPos(out POINT pt))
+                {
+                    var fromCursor = DisplayArea.GetFromPoint(new PointInt32(pt.X, pt.Y), DisplayAreaFallback.Primary);
+                    if (fromCursor != null && fromCursor.OuterBounds.Width > 0 && fromCursor.OuterBounds.Height > 0)
+                    {
+                        TargetDisplayArea = fromCursor;
+                        return fromCursor;
+                    }
+                }
+            }
+            catch { }
+
+            var primary = DisplayArea.Primary;
+            TargetDisplayArea = primary;
+            return primary;
+        }
+
+        private static double GetDisplayScale(DisplayArea displayArea)
+        {
+            try
+            {
+                IntPtr hMonitor = Win32Interop.GetMonitorFromDisplayId(displayArea.DisplayId);
+                if (hMonitor != IntPtr.Zero && GetDpiForMonitor(hMonitor, 0 /* MDT_EFFECTIVE_DPI */, out uint dpiX, out _) == 0 && dpiX > 0)
+                {
+                    return dpiX / 96.0;
+                }
+            }
+            catch { }
+            return 1.0;
+        }
+
         public void SetStyle(string style)
         {
             _currentStyle = style;
@@ -465,7 +510,9 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             AppLifecycleEngine.RegisterWakeLock("StartMenu");
 
-            var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+            var displayArea = ResolveLiveDisplayArea();
+            RectInt32 bounds = displayArea.OuterBounds;
+            double scale = GetDisplayScale(displayArea);
 
             UpdatePowerMenuVisibility();
             LoadRecentDocuments();
@@ -479,11 +526,11 @@ namespace EvolveOS_ShellEnhancer.Views
             if (SearchOverlay2 != null) SearchOverlay2.Visibility = Visibility.Collapsed;
             if (MainSplitContentGrid != null) MainSplitContentGrid.Visibility = Visibility.Visible;
 
-            int windowWidth = isGroupedStyle ? 920 : 780;
-            int windowHeight = isGroupedStyle ? 720 : 680;
+            int windowWidth = (int)Math.Round((isGroupedStyle ? 920 : 780) * scale);
+            int windowHeight = (int)Math.Round((isGroupedStyle ? 720 : 680) * scale);
 
-            int taskbarOffset = 60;
-            int margin = 16;
+            int taskbarOffset = (int)Math.Round(60 * scale);
+            int margin = (int)Math.Round(16 * scale);
 
             int x = 0; int y = 0;
             string targetPos = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
@@ -491,23 +538,26 @@ namespace EvolveOS_ShellEnhancer.Views
             switch (targetPos)
             {
                 case "Top":
-                    y = displayArea.OuterBounds.Y + taskbarOffset;
-                    x = (_currentAlignment == "Center") ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - windowWidth) / 2 : displayArea.OuterBounds.X + margin;
+                    y = bounds.Y + taskbarOffset;
+                    x = (_currentAlignment == "Center") ? bounds.X + (bounds.Width - windowWidth) / 2 : bounds.X + margin;
                     break;
                 case "Left":
-                    x = displayArea.OuterBounds.X + taskbarOffset;
-                    y = (_currentAlignment == "Center") ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - windowHeight) / 2 : displayArea.OuterBounds.Y + margin;
+                    x = bounds.X + taskbarOffset;
+                    y = (_currentAlignment == "Center") ? bounds.Y + (bounds.Height - windowHeight) / 2 : bounds.Y + margin;
                     break;
                 case "Right":
-                    x = displayArea.OuterBounds.X + displayArea.OuterBounds.Width - windowWidth - taskbarOffset;
-                    y = (_currentAlignment == "Center") ? displayArea.OuterBounds.Y + (displayArea.OuterBounds.Height - windowHeight) / 2 : displayArea.OuterBounds.Y + margin;
+                    x = bounds.X + bounds.Width - windowWidth - taskbarOffset;
+                    y = (_currentAlignment == "Center") ? bounds.Y + (bounds.Height - windowHeight) / 2 : bounds.Y + margin;
                     break;
                 case "Bottom":
                 default:
-                    y = displayArea.OuterBounds.Y + displayArea.OuterBounds.Height - windowHeight - taskbarOffset;
-                    x = (_currentAlignment == "Center") ? displayArea.OuterBounds.X + (displayArea.OuterBounds.Width - windowWidth) / 2 : displayArea.OuterBounds.X + margin;
+                    y = bounds.Y + bounds.Height - windowHeight - taskbarOffset;
+                    x = (_currentAlignment == "Center") ? bounds.X + (bounds.Width - windowWidth) / 2 : bounds.X + margin;
                     break;
             }
+
+            x = Math.Clamp(x, bounds.X, Math.Max(bounds.X, bounds.X + bounds.Width - windowWidth));
+            y = Math.Clamp(y, bounds.Y, Math.Max(bounds.Y, bounds.Y + bounds.Height - windowHeight));
 
             bool isStandardStyle = (_currentStyle == "Standard" || _currentStyle == "SplitStandard");
 
@@ -519,6 +569,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 else if (targetPos == "Right") startX = x + windowWidth + 15;
                 else startY = y + windowHeight + 15;
 
+                _appWindow.MoveAndResize(new RectInt32(x, y, windowWidth, windowHeight));
                 _appWindow.MoveAndResize(new RectInt32(startX, startY, windowWidth, windowHeight));
                 _appWindow.Show();
 
@@ -590,7 +641,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 int targetX = startX;
                 int targetY = startY;
 
-                var displayArea = TargetDisplayArea ?? DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary);
+                var displayArea = ResolveLiveDisplayArea();
                 string targetPos = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
 
                 if (targetPos == "Top") targetY = startY - height - 15;

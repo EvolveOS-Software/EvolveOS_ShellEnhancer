@@ -218,6 +218,9 @@ namespace EvolveOS_ShellEnhancer.Utilities.Helpers
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        [DllImport("shcore.dll")]
+        public static extern int GetDpiForMonitor(IntPtr hmonitor, int dpiType, out uint dpiX, out uint dpiY);
         #endregion
 
         #region DWM Thumbnail API
