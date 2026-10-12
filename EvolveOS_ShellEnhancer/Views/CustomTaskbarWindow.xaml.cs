@@ -146,6 +146,12 @@ namespace EvolveOS_ShellEnhancer.Views
         public static bool AutoFitTaskbar { get; set; } = false;
         public readonly bool IsTrayOnlyIsland = false;
         private CustomTaskbarWindow? _companionTrayIsland;
+
+        private bool _isDockBoundsAnimating = false;
+        private readonly System.Diagnostics.Stopwatch _dockBoundsStopwatch = new();
+        private const double DockBoundsAnimDurationMs = 260.0;
+        private int _animStartX, _animStartY, _animStartW, _animStartH;
+        private int _animTargetX, _animTargetY, _animTargetW, _animTargetH;
         #endregion
 
         #region Initialization
@@ -347,7 +353,6 @@ namespace EvolveOS_ShellEnhancer.Views
                         new SolidColorBrush(Colors.WhiteSmoke) :
                         new SolidColorBrush(ColorHelper.FromArgb(255, 32, 32, 32));
 
-                    // Safely remove the backdrop ONLY in solid mode
                     this.SystemBackdrop = null;
                 }
                 else
@@ -1690,6 +1695,65 @@ namespace EvolveOS_ShellEnhancer.Views
             return Math.Max(physicalLength, minFloor);
         }
 
+        private void AnimateTaskbarBounds(int targetX, int targetY, int targetW, int targetH)
+        {
+            _animStartX = _appWindow.Position.X;
+            _animStartY = _appWindow.Position.Y;
+            _animStartW = _appWindow.Size.Width;
+            _animStartH = _appWindow.Size.Height;
+
+            _animTargetX = targetX;
+            _animTargetY = targetY;
+            _animTargetW = targetW;
+            _animTargetH = targetH;
+
+            if (_animStartX == targetX && _animStartY == targetY && _animStartW == targetW && _animStartH == targetH)
+            {
+                return;
+            }
+
+            _dockBoundsStopwatch.Restart();
+            if (!_isDockBoundsAnimating)
+            {
+                _isDockBoundsAnimating = true;
+                CompositionTarget.Rendering += DockBounds_Rendering;
+            }
+        }
+
+        private void StopTaskbarBoundsAnimation()
+        {
+            if (_isDockBoundsAnimating)
+            {
+                _isDockBoundsAnimating = false;
+                _dockBoundsStopwatch.Stop();
+                CompositionTarget.Rendering -= DockBounds_Rendering;
+            }
+        }
+
+        private void DockBounds_Rendering(object? sender, object e)
+        {
+            if (!_isDockBoundsAnimating) return;
+
+            double elapsed = _dockBoundsStopwatch.Elapsed.TotalMilliseconds;
+            double t = Math.Clamp(elapsed / DockBoundsAnimDurationMs, 0.0, 1.0);
+
+            double ease = 1.0 - Math.Pow(1.0 - t, 3.0);
+
+            int curX = (int)Math.Round(_animStartX + (_animTargetX - _animStartX) * ease);
+            int curY = (int)Math.Round(_animStartY + (_animTargetY - _animStartY) * ease);
+            int curW = Math.Max(10, (int)Math.Round(_animStartW + (_animTargetW - _animStartW) * ease));
+            int curH = Math.Max(10, (int)Math.Round(_animStartH + (_animTargetH - _animStartH) * ease));
+
+            SetWindowPos(_hWnd, IntPtr.Zero, curX, curY, curW, curH, 0x0014);
+
+            if (t >= 1.0)
+            {
+                StopTaskbarBoundsAnimation();
+                _appWindow.MoveAndResize(new RectInt32(_animTargetX, _animTargetY, _animTargetW, _animTargetH));
+                TaskbarOverlayManager.EnsureTopmost(_hWnd);
+            }
+        }
+
         public void ShowDock()
         {
             try
@@ -1819,7 +1883,6 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
                 }
 
-                // Ensure BtnStart and PinnedAppsPanel are placed in their target panel BEFORE measuring Auto-Fit length
                 string savedAlignment = (AutoFitTaskbar && useSplit) ? "Center" : TaskbarManager.CurrentAlignment;
                 SetAlignment(savedAlignment, animate: false);
 
@@ -1886,9 +1949,10 @@ namespace EvolveOS_ShellEnhancer.Views
                 bool isPositionChange = !string.IsNullOrEmpty(_lastPosition) && _lastPosition != _currentPosition;
                 _lastPosition = _currentPosition;
 
-                bool isResizing = !AutoFitTaskbar && !isPositionChange && (_lastW != 0 && _lastH != 0) && (_lastW != w || _lastH != h);
+                bool isManualResizing = !AutoFitTaskbar && !isPositionChange && (_lastW != 0 && _lastH != 0) && (_lastW != w || _lastH != h);
+                bool isAutoFitResizing = AutoFitTaskbar && _appWindow.IsVisible && !isPositionChange && (_lastW != 0 && _lastH != 0) && (_lastW != w || _lastH != h);
 
-                if (isResizing)
+                if (isManualResizing)
                 {
                     FadeContent(0.0, 0);
                     _resizeDebounceTimer.Stop();
@@ -1910,21 +1974,28 @@ namespace EvolveOS_ShellEnhancer.Views
                     if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(0);
                 }
 
-                _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
-                _appWindow.Show();
+                if (isAutoFitResizing)
+                {
+                    AnimateTaskbarBounds(x, y, w, h);
+                }
+                else
+                {
+                    StopTaskbarBoundsAnimation();
+                    _appWindow.MoveAndResize(new RectInt32(x, y, w, h));
+                    _appWindow.Show();
 
-                string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
-                bool isLight = savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
-                               (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+                    string savedTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+                    bool isLight = savedTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                                   (savedTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
 
-                _acrylicController.Initialize(isLight);
+                    _acrylicController.Initialize(isLight);
+                    ApplyTaskbarStyleSync();
 
-                ApplyTaskbarStyleSync();
+                    SetWindowPos(_hWnd, new IntPtr(-1), x, y, w, h, 0x0040);
+                    TaskbarOverlayManager.EnsureTopmost(_hWnd);
+                }
 
-                SetWindowPos(_hWnd, new IntPtr(-1), x, y, w, h, 0x0040);
-                TaskbarOverlayManager.EnsureTopmost(_hWnd);
-
-                if (!isResizing)
+                if (!isManualResizing && !isAutoFitResizing)
                 {
                     APPBARDATA abd = new APPBARDATA();
                     abd.cbSize = (uint)Marshal.SizeOf(typeof(APPBARDATA));
@@ -1976,7 +2047,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     SHAppBarMessage(ABM_SETPOS, ref abd);
                 }
 
-                if (useSplit && _companionTrayIsland != null)
+                if (useSplit && _companionTrayIsland != null && !isAutoFitResizing)
                 {
                     _companionTrayIsland._currentStyle = _currentStyle;
                     _companionTrayIsland._currentPosition = _currentPosition;
