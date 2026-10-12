@@ -20,6 +20,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             {
                 CurrentAlignment = SettingsEngine.Shell_TaskbarAlignment;
                 CurrentPositionRaw = SettingsEngine.Shell_TaskbarPosition;
+                CustomTaskbarWindow.SplitTaskbarMode = SettingsEngine.Shell_TaskbarSplitMode;
+                CustomTaskbarWindow.AutoFitTaskbar = SettingsEngine.Shell_TaskbarAutoFit;
 
                 if (_taskbars.Count == 0)
                 {
@@ -139,7 +141,7 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
 
         public static void EnsureAllTaskbarsTopmost()
         {
-            foreach (var taskbar in _taskbars)
+            foreach (var taskbar in CustomTaskbarWindow.ActiveTaskbars.ToList())
             {
                 if (taskbar != null)
                 {
@@ -159,12 +161,24 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
 
         public static void ReloadAll()
         {
-            foreach (var t in _taskbars) t.ReloadTaskbar();
+            foreach (var t in CustomTaskbarWindow.ActiveTaskbars.ToList())
+            {
+                t.ReloadTaskbar();
+            }
         }
 
         public static void ResetUnpinnedScrollViewAll()
         {
             foreach (var t in _taskbars) t.ResetUnpinnedScrollView();
+        }
+
+        public static void UpdateSplitModeAll(bool splitEnabled)
+        {
+            CustomTaskbarWindow.SplitTaskbarMode = splitEnabled;
+            foreach (var tb in _taskbars)
+            {
+                tb.UpdateSplitModeState();
+            }
         }
     }
 }

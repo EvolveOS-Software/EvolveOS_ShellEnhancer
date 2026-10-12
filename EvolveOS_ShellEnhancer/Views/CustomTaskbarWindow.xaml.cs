@@ -96,7 +96,7 @@ namespace EvolveOS_ShellEnhancer.Views
         public static int TaskbarLength
         {
             get => _taskbarLength;
-            set => _taskbarLength = Math.Clamp(value, 50, 100);
+            set => _taskbarLength = Math.Clamp(value, 15, 100);
         }
 
         private static int _taskbarCornerRadius = 8;
@@ -141,18 +141,31 @@ namespace EvolveOS_ShellEnhancer.Views
             UpdatePowerPlanVisibilityEvent?.Invoke();
         }
         private PowerPlanFlyoutWindow _powerPlanFlyout;
+
+        public static bool SplitTaskbarMode { get; set; } = false;
+        public static bool AutoFitTaskbar { get; set; } = false;
+        public readonly bool IsTrayOnlyIsland = false;
+        private CustomTaskbarWindow? _companionTrayIsland;
         #endregion
 
         #region Initialization
-        public CustomTaskbarWindow() : this(null) { }
+        public CustomTaskbarWindow() : this(null, false) { }
 
-        public CustomTaskbarWindow(DisplayArea? displayArea)
+        public CustomTaskbarWindow(DisplayArea? displayArea, bool isTrayOnlyIsland = false)
         {
+            IsTrayOnlyIsland = isTrayOnlyIsland;
             this.InitializeComponent();
 
             ActiveTaskbars.Add(this);
-            this.Closed += (s, e) => ActiveTaskbars.Remove(this);
+            this.Closed += (s, e) =>
+            {
+                ActiveTaskbars.Remove(this);
+                _companionTrayIsland?.Close();
+                _companionTrayIsland = null;
+            };
 
+            SplitTaskbarMode = SettingsEngine.Shell_TaskbarSplitMode;
+            AutoFitTaskbar = SettingsEngine.Shell_TaskbarAutoFit;
             _currentStyle = SettingsEngine.Shell_TaskbarStyle ?? "Standard";
             _currentPosition = SettingsEngine.Shell_TaskbarPosition ?? "Bottom";
             PositionAnimationStyle = SettingsEngine.Shell_TaskbarAnimation ?? "Spring";
@@ -260,7 +273,21 @@ namespace EvolveOS_ShellEnhancer.Views
                 BtnStart.AddHandler(UIElement.PointerCanceledEvent, new PointerEventHandler(FactoryAnimation.StartButton_PointerReleased), true);
             }
 
-            _ = LoadPinnedAppsAsync();
+            if (IsTrayOnlyIsland)
+            {
+                if (LeftPanel != null) LeftPanel.Visibility = Visibility.Collapsed;
+                if (CenterPanel != null) CenterPanel.Visibility = Visibility.Collapsed;
+                if (RightPanel != null)
+                {
+                    RightPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                    RightPanel.VerticalAlignment = VerticalAlignment.Center;
+                    RightPanel.Margin = new Thickness(6, 0, 6, 0);
+                }
+            }
+            else
+            {
+                _ = LoadPinnedAppsAsync();
+            }
 
             if (this.Content is FrameworkElement rootElement)
             {
@@ -661,6 +688,11 @@ namespace EvolveOS_ShellEnhancer.Views
                         PinnedAppsPanel.Children.Remove(card);
                     }
                     _appIndicators.RemoveAll(i => GetAppWindowHandles(i.processName).Count == 0);
+
+                    if (AutoFitTaskbar && _appWindow.IsVisible && !IsTrayOnlyIsland)
+                    {
+                        ShowDock();
+                    }
                 }
 
                 if (!isScrollMode || _showingAllRunningView)
@@ -735,7 +767,10 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             this.DispatcherQueue.TryEnqueue(() =>
             {
-                _ = LoadPinnedAppsAsync();
+                if (!IsTrayOnlyIsland)
+                {
+                    _ = LoadPinnedAppsAsync();
+                }
 
                 ApplyTaskbarStyleSync();
 
@@ -896,6 +931,11 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             UpdateAppIndicators();
+
+            if (AutoFitTaskbar && _appWindow.IsVisible && !IsTrayOnlyIsland)
+            {
+                ShowDock();
+            }
         }
 
         private async Task CreateAppCardAsync(string identifier, string pathOrLnk, bool isShortcut, string windowTitle = "")
@@ -1500,10 +1540,205 @@ namespace EvolveOS_ShellEnhancer.Views
             storyboard.Begin();
         }
 
+        public void UpdateSplitModeState()
+        {
+            if (IsTrayOnlyIsland) return;
+
+            bool useSplit = SplitTaskbarMode && IsPrimaryMonitor;
+
+            if (RightPanel != null)
+            {
+                RightPanel.Visibility = useSplit ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            if (useSplit)
+            {
+                if (_companionTrayIsland == null)
+                {
+                    _companionTrayIsland = new CustomTaskbarWindow(_cachedMonitorArea, isTrayOnlyIsland: true);
+                }
+                _companionTrayIsland._currentStyle = _currentStyle;
+                _companionTrayIsland.SetPosition(_currentPosition);
+                _companionTrayIsland.UpdateSizes();
+                _companionTrayIsland.ShowDock();
+            }
+            else
+            {
+                if (_companionTrayIsland != null)
+                {
+                    _companionTrayIsland.HideDock();
+                    _companionTrayIsland.Close();
+                    _companionTrayIsland = null;
+                }
+            }
+
+            if (_appWindow.IsVisible)
+            {
+                ShowDock();
+            }
+        }
+
+        private (int width, int height) CalculateTrayIslandSize(bool isVertical, int taskbarSize)
+        {
+            double scale = (this.Content?.XamlRoot != null) ? this.Content.XamlRoot.RasterizationScale : 1.0;
+            if (RightPanel != null)
+            {
+                RightPanel.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+                var desired = RightPanel.DesiredSize;
+                if (isVertical)
+                {
+                    int h = (int)Math.Ceiling((desired.Height + 20) * scale);
+                    return (taskbarSize, Math.Max(h, (int)(170 * scale)));
+                }
+                else
+                {
+                    int w = (int)Math.Ceiling((desired.Width + 20) * scale);
+                    return (Math.Max(w, (int)(185 * scale)), taskbarSize);
+                }
+            }
+
+            return isVertical
+                ? (taskbarSize, (int)(180 * scale))
+                : ((int)(195 * scale), taskbarSize);
+        }
+
+        private int CalculateAutoFitMainLength(bool isVertical, int taskbarSize, bool useSplit)
+        {
+            double scale = (this.Content?.XamlRoot != null) ? this.Content.XamlRoot.RasterizationScale : 1.0;
+
+            var inf = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
+            double totalLogicalLength = 0;
+
+            if (LeftPanel != null && LeftPanel.Visibility == Visibility.Visible && LeftPanel.Children.Count > 0)
+            {
+                LeftPanel.Measure(inf);
+                totalLogicalLength += isVertical ? LeftPanel.DesiredSize.Height : LeftPanel.DesiredSize.Width;
+            }
+
+            if (CenterPanel != null && CenterPanel.Visibility == Visibility.Visible && CenterPanel.Children.Count > 0)
+            {
+                CenterPanel.Measure(inf);
+                totalLogicalLength += isVertical ? CenterPanel.DesiredSize.Height : CenterPanel.DesiredSize.Width;
+            }
+
+            int appCount = PinnedAppsPanel != null ? PinnedAppsPanel.Children.Count : 0;
+            double fallbackLogical = ((1 + appCount) * ((TaskbarSize - 8) + 8));
+            if (totalLogicalLength < fallbackLogical)
+            {
+                totalLogicalLength = fallbackLogical;
+            }
+
+            if (!useSplit && RightPanel != null && RightPanel.Visibility == Visibility.Visible)
+            {
+                RightPanel.Measure(inf);
+                double trayLogical = isVertical ? RightPanel.DesiredSize.Height : RightPanel.DesiredSize.Width;
+                totalLogicalLength += trayLogical + 16;
+            }
+
+            totalLogicalLength += 32;
+
+            int physicalLength = (int)Math.Ceiling(totalLogicalLength * scale);
+            int minFloor = (int)Math.Ceiling((taskbarSize + 32) * scale);
+            return Math.Max(physicalLength, minFloor);
+        }
+
         public void ShowDock()
         {
             try
             {
+                var liveMonitor = MonitorArea;
+                int screenX = liveMonitor.OuterBounds.X;
+                int screenY = liveMonitor.OuterBounds.Y;
+                int screenWidth = liveMonitor.OuterBounds.Width;
+                int screenHeight = liveMonitor.OuterBounds.Height;
+
+                int taskbarSize = TaskbarSize;
+                bool useSplit = SplitTaskbarMode && IsPrimaryMonitor;
+
+                int margin = (_currentStyle == "Floating" || useSplit || IsTrayOnlyIsland) ? 5 : 0;
+                int reservedSpace = taskbarSize + (margin * 2);
+
+                uint edge;
+                switch (_currentPosition)
+                {
+                    case "Top": edge = ABE_TOP; break;
+                    case "Left": edge = ABE_LEFT; break;
+                    case "Right": edge = ABE_RIGHT; break;
+                    case "Bottom": default: edge = ABE_BOTTOM; break;
+                }
+
+                bool isVertical = (edge == ABE_LEFT || edge == ABE_RIGHT);
+
+                if (IsTrayOnlyIsland)
+                {
+                    var (trayW, trayH) = CalculateTrayIslandSize(isVertical, taskbarSize);
+                    int tx = 0, ty = 0;
+
+                    switch (edge)
+                    {
+                        case ABE_TOP:
+                            tx = screenX + screenWidth - trayW - margin;
+                            ty = screenY + margin;
+                            break;
+                        case ABE_LEFT:
+                            tx = screenX + margin;
+                            ty = screenY + screenHeight - trayH - margin;
+                            break;
+                        case ABE_RIGHT:
+                            tx = screenX + screenWidth - taskbarSize - margin;
+                            ty = screenY + screenHeight - trayH - margin;
+                            break;
+                        case ABE_BOTTOM:
+                        default:
+                            tx = screenX + screenWidth - trayW - margin;
+                            ty = screenY + screenHeight - taskbarSize - margin;
+                            break;
+                    }
+
+                    if (_currentStyle == "Floating" || SplitTaskbarMode)
+                    {
+                        int cornerPref = TaskbarCornerRadius <= 4 ? Win32Helper.DWMWCP_ROUNDSMALL : Win32Helper.DWMWCP_ROUND;
+                        Win32Helper.SetCornerPreference(_hWnd, cornerPref);
+                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(Math.Max(4, TaskbarCornerRadius));
+                    }
+                    else
+                    {
+                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_DONOTROUND);
+                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(0);
+                    }
+
+                    _appWindow.MoveAndResize(new RectInt32(tx, ty, trayW, trayH));
+                    _appWindow.Show();
+
+                    string trayTheme = SettingsEngine.Shell_AppTheme ?? "Default";
+                    bool trayLight = trayTheme.Equals("Light", StringComparison.OrdinalIgnoreCase) ||
+                                     (trayTheme.Equals("Default", StringComparison.OrdinalIgnoreCase) && !IsSystemInDarkMode());
+                    _acrylicController.Initialize(trayLight);
+                    ApplyTaskbarStyleSync();
+
+                    SetWindowPos(_hWnd, new IntPtr(-1), tx, ty, trayW, trayH, 0x0040);
+                    TaskbarOverlayManager.EnsureTopmost(_hWnd);
+                    return;
+                }
+
+                if (RightPanel != null)
+                {
+                    RightPanel.Visibility = useSplit ? Visibility.Collapsed : Visibility.Visible;
+                }
+
+                if (useSplit && _companionTrayIsland == null)
+                {
+                    _companionTrayIsland = new CustomTaskbarWindow(_cachedMonitorArea, isTrayOnlyIsland: true);
+                    _companionTrayIsland._currentStyle = _currentStyle;
+                    _companionTrayIsland.SetPosition(_currentPosition);
+                }
+                else if (!useSplit && _companionTrayIsland != null)
+                {
+                    _companionTrayIsland.HideDock();
+                    _companionTrayIsland.Close();
+                    _companionTrayIsland = null;
+                }
+
                 if (!_isAppBarRegistered)
                 {
                     Win32Helper.HideNativeTaskbar();
@@ -1536,38 +1771,45 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
                 }
 
-                var liveMonitor = MonitorArea;
-                int screenX = liveMonitor.OuterBounds.X;
-                int screenY = liveMonitor.OuterBounds.Y;
-                int screenWidth = liveMonitor.OuterBounds.Width;
-                int screenHeight = liveMonitor.OuterBounds.Height;
-
-                int taskbarSize = TaskbarSize;
-                int margin = (_currentStyle == "Floating") ? 5 : 0;
-
-                int reservedSpace = taskbarSize + (margin * 2);
+                // Ensure BtnStart and PinnedAppsPanel are placed in their target panel BEFORE measuring Auto-Fit length
+                string savedAlignment = (AutoFitTaskbar && useSplit) ? "Center" : TaskbarManager.CurrentAlignment;
+                SetAlignment(savedAlignment, animate: false);
 
                 int x = 0, y = 0, w = 0, h = 0;
-                uint edge;
-
-                switch (_currentPosition)
-                {
-                    case "Top": edge = ABE_TOP; break;
-                    case "Left": edge = ABE_LEFT; break;
-                    case "Right": edge = ABE_RIGHT; break;
-                    case "Bottom": default: edge = ABE_BOTTOM; break;
-                }
-
-                int minLengthPx = 300;
+                int minLengthPx = useSplit ? 120 : 220;
                 int percentage = TaskbarLength <= 0 ? 100 : TaskbarLength;
 
-                int targetWidth = (int)((screenWidth - (margin * 2)) * (percentage / 100.0f));
-                int finalWidth = Math.Clamp(targetWidth, minLengthPx, screenWidth - (margin * 2));
-                int offsetX = (screenWidth - finalWidth) / 2;
+                int trayReserveW = 0, trayReserveH = 0;
+                if (useSplit && _companionTrayIsland != null)
+                {
+                    var (tw, th) = _companionTrayIsland.CalculateTrayIslandSize(isVertical, taskbarSize);
+                    trayReserveW = tw + margin + 8;
+                    trayReserveH = th + margin + 8;
+                }
 
-                int targetHeight = (int)((screenHeight - (margin * 2)) * (percentage / 100.0f));
-                int finalHeight = Math.Clamp(targetHeight, minLengthPx, screenHeight - (margin * 2));
+                int maxAvailableWidth = screenWidth - (margin * 2) - trayReserveW;
+                int targetWidth = AutoFitTaskbar
+                    ? CalculateAutoFitMainLength(isVertical: false, taskbarSize, useSplit)
+                    : (int)((screenWidth - (margin * 2)) * (percentage / 100.0f));
+                int finalWidth = Math.Clamp(targetWidth, AutoFitTaskbar ? 80 : minLengthPx, Math.Max(minLengthPx, maxAvailableWidth));
+
+                int offsetX = (screenWidth - finalWidth) / 2;
+                if (useSplit && (offsetX + finalWidth > screenWidth - trayReserveW))
+                {
+                    offsetX = Math.Max(margin, screenWidth - trayReserveW - finalWidth);
+                }
+
+                int maxAvailableHeight = screenHeight - (margin * 2) - trayReserveH;
+                int targetHeight = AutoFitTaskbar
+                    ? CalculateAutoFitMainLength(isVertical: true, taskbarSize, useSplit)
+                    : (int)((screenHeight - (margin * 2)) * (percentage / 100.0f));
+                int finalHeight = Math.Clamp(targetHeight, AutoFitTaskbar ? 80 : minLengthPx, Math.Max(minLengthPx, maxAvailableHeight));
+
                 int offsetY = (screenHeight - finalHeight) / 2;
+                if (useSplit && (offsetY + finalHeight > screenHeight - trayReserveH))
+                {
+                    offsetY = Math.Max(margin, screenHeight - trayReserveH - finalHeight);
+                }
 
                 switch (edge)
                 {
@@ -1596,7 +1838,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 bool isPositionChange = !string.IsNullOrEmpty(_lastPosition) && _lastPosition != _currentPosition;
                 _lastPosition = _currentPosition;
 
-                bool isResizing = !isPositionChange && (_lastW != 0 && _lastH != 0) && (_lastW != w || _lastH != h);
+                bool isResizing = !AutoFitTaskbar && !isPositionChange && (_lastW != 0 && _lastH != 0) && (_lastW != w || _lastH != h);
 
                 if (isResizing)
                 {
@@ -1608,18 +1850,11 @@ namespace EvolveOS_ShellEnhancer.Views
                 _lastW = w;
                 _lastH = h;
 
-                if (_currentStyle == "Floating")
+                if (_currentStyle == "Floating" || useSplit || AutoFitTaskbar)
                 {
-                    if (TaskbarCornerRadius <= 4)
-                    {
-                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUNDSMALL);
-                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(TaskbarCornerRadius);
-                    }
-                    else
-                    {
-                        Win32Helper.SetCornerPreference(_hWnd, Win32Helper.DWMWCP_ROUND);
-                        if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(TaskbarCornerRadius);
-                    }
+                    int cornerPref = TaskbarCornerRadius <= 4 ? Win32Helper.DWMWCP_ROUNDSMALL : Win32Helper.DWMWCP_ROUND;
+                    Win32Helper.SetCornerPreference(_hWnd, cornerPref);
+                    if (TaskbarBorder != null) TaskbarBorder.CornerRadius = new CornerRadius(Math.Max((useSplit || AutoFitTaskbar) ? 4 : 0, TaskbarCornerRadius));
                 }
                 else
                 {
@@ -1693,8 +1928,13 @@ namespace EvolveOS_ShellEnhancer.Views
                     SHAppBarMessage(ABM_SETPOS, ref abd);
                 }
 
-                string savedAlignment = TaskbarManager.CurrentAlignment;
-                SetAlignment(savedAlignment, animate: false);
+                if (useSplit && _companionTrayIsland != null)
+                {
+                    _companionTrayIsland._currentStyle = _currentStyle;
+                    _companionTrayIsland._currentPosition = _currentPosition;
+                    _companionTrayIsland.UpdateSizes();
+                    _companionTrayIsland.ShowDock();
+                }
             }
             catch (Exception ex)
             {
@@ -1704,6 +1944,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
         public void HideDock()
         {
+            if (IsTrayOnlyIsland)
+            {
+                _appWindow.Hide();
+                return;
+            }
+            _companionTrayIsland?.HideDock();
+
             _appWindow.Hide();
             Win32Helper.ShowNativeTaskbar();
 
@@ -1907,6 +2154,7 @@ namespace EvolveOS_ShellEnhancer.Views
         public void SetStyle(string style)
         {
             _currentStyle = style;
+            _companionTrayIsland?.SetStyle(style);
             if (_appWindow.IsVisible)
             {
                 ShowDock();
@@ -1916,6 +2164,7 @@ namespace EvolveOS_ShellEnhancer.Views
         public void ApplySizeChanges()
         {
             UpdateSizes();
+            _companionTrayIsland?.ApplySizeChanges();
             if (_appWindow.IsVisible)
             {
                 ShowDock();
@@ -1927,6 +2176,9 @@ namespace EvolveOS_ShellEnhancer.Views
             _currentPosition = position;
             try
             {
+                // Forward position changes to the companion Tray Island if one exists
+                _companionTrayIsland?.SetPosition(position);
+
                 bool isVertical = (position == "Left" || position == "Right");
                 Orientation orientation = isVertical ? Orientation.Vertical : Orientation.Horizontal;
 
@@ -1974,31 +2226,46 @@ namespace EvolveOS_ShellEnhancer.Views
                     clockSp.HorizontalAlignment = HorizontalAlignment.Center;
                 }
 
-                foreach (var child in PinnedAppsPanel!.Children)
+                if (!IsTrayOnlyIsland && PinnedAppsPanel != null)
                 {
-                    if (child is Border card && card.Child is Grid iconGrid)
+                    foreach (var child in PinnedAppsPanel.Children)
                     {
-                        if (iconGrid.Children.Count > 1 && iconGrid.Children[1] is Rectangle indicator)
+                        if (child is Border card && card.Child is Grid iconGrid)
                         {
-                            if (isVertical)
+                            if (iconGrid.Children.Count > 1 && iconGrid.Children[1] is Rectangle indicator)
                             {
-                                indicator.Width = 3;
-                                indicator.Height = 17;
-                                indicator.HorizontalAlignment = (position == "Left") ? HorizontalAlignment.Left : HorizontalAlignment.Right;
-                                indicator.VerticalAlignment = VerticalAlignment.Center;
-                            }
-                            else
-                            {
-                                indicator.Width = 17;
-                                indicator.Height = 3;
-                                indicator.HorizontalAlignment = HorizontalAlignment.Center;
-                                indicator.VerticalAlignment = (position == "Top") ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+                                if (isVertical)
+                                {
+                                    indicator.Width = 3;
+                                    indicator.Height = 17;
+                                    indicator.HorizontalAlignment = (position == "Left") ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+                                    indicator.VerticalAlignment = VerticalAlignment.Center;
+                                }
+                                else
+                                {
+                                    indicator.Width = 17;
+                                    indicator.Height = 3;
+                                    indicator.HorizontalAlignment = HorizontalAlignment.Center;
+                                    indicator.VerticalAlignment = (position == "Top") ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+                                }
                             }
                         }
                     }
                 }
 
-                if (isVertical)
+                if (IsTrayOnlyIsland)
+                {
+                    if (LeftPanel != null) LeftPanel.Visibility = Visibility.Collapsed;
+                    if (CenterPanel != null) CenterPanel.Visibility = Visibility.Collapsed;
+                    if (RightPanel != null)
+                    {
+                        RightPanel.Visibility = Visibility.Visible;
+                        RightPanel.HorizontalAlignment = HorizontalAlignment.Center;
+                        RightPanel.VerticalAlignment = VerticalAlignment.Center;
+                        RightPanel.Margin = isVertical ? new Thickness(0, 6, 0, 6) : new Thickness(6, 0, 6, 0);
+                    }
+                }
+                else if (isVertical)
                 {
                     if (LeftPanel != null)
                     {
@@ -2041,7 +2308,7 @@ namespace EvolveOS_ShellEnhancer.Views
                     }
                 }
 
-                if (IsPrimaryMonitor)
+                if (IsPrimaryMonitor && !IsTrayOnlyIsland)
                 {
                     Win32Helper.SetNativeTaskbarPosition(position);
                 }
@@ -2172,7 +2439,11 @@ namespace EvolveOS_ShellEnhancer.Views
             try
             {
                 UpdateClock();
-                UpdateAppIndicators();
+
+                if (!IsTrayOnlyIsland)
+                {
+                    UpdateAppIndicators();
+                }
             }
             catch (Exception ex)
             {

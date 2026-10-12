@@ -662,6 +662,24 @@ namespace EvolveOS_ShellEnhancer
                         CustomTaskbarWindow.TriggerPowerPlanVisibilityUpdate();
                         break;
 
+                    case "Taskbar_SplitMode":
+                        if (bool.TryParse(value, out bool splitMode))
+                        {
+                            SettingsEngine.Shell_TaskbarSplitMode = splitMode;
+                            CustomTaskbarWindow.SplitTaskbarMode = splitMode;
+                            TaskbarManager.UpdateSplitModeAll(splitMode);
+                        }
+                        break;
+
+                    case "Taskbar_AutoFit":
+                        if (bool.TryParse(value, out bool autoFit))
+                        {
+                            SettingsEngine.Shell_TaskbarAutoFit = autoFit;
+                            CustomTaskbarWindow.AutoFitTaskbar = autoFit;
+                            TaskbarManager.ResizeAll();
+                        }
+                        break;
+
                     case "Shell_EnableEfficiencyMode":
                         if (bool.TryParse(value, out bool effMode))
                         {

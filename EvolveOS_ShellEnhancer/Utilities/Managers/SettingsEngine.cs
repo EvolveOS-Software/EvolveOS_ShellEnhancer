@@ -48,6 +48,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
             ["Shell_AcrylicLuminosity"] = 0.5,
             ["Shell_TaskbarEnabled"] = false,
             ["Shell_TaskbarStyle"] = "Standard",
+            ["Shell_TaskbarSplitMode"] = false,
+            ["Shell_TaskbarAutoFit"] = false,
             ["Shell_TaskbarLength"] = 100,
             ["Shell_TaskbarCornerRadius"] = 8,
             ["Shell_TaskbarPreviewButtons"] = true,
@@ -111,6 +113,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Managers
         internal static double Shell_AcrylicLuminosity { get => Convert.ToDouble(_cachedSettings["Shell_AcrylicLuminosity"]); set => ChangingParameters("Shell_AcrylicLuminosity", value); }
         internal static bool Shell_TaskbarEnabled { get => (bool)_cachedSettings["Shell_TaskbarEnabled"]; set => ChangingParameters("Shell_TaskbarEnabled", value); }
         internal static string Shell_TaskbarStyle { get => (string)_cachedSettings["Shell_TaskbarStyle"]; set => ChangingParameters("Shell_TaskbarStyle", value); }
+        internal static bool Shell_TaskbarSplitMode { get => (bool)_cachedSettings["Shell_TaskbarSplitMode"]; set => ChangingParameters("Shell_TaskbarSplitMode", value); }
+        internal static bool Shell_TaskbarAutoFit { get => (bool)_cachedSettings["Shell_TaskbarAutoFit"]; set => ChangingParameters("Shell_TaskbarAutoFit", value); }
         internal static int Shell_TaskbarLength { get => (int)_cachedSettings["Shell_TaskbarLength"]; set => ChangingParameters("Shell_TaskbarLength", value); }
         internal static int Shell_TaskbarCornerRadius { get => (int)_cachedSettings["Shell_TaskbarCornerRadius"]; set => ChangingParameters("Shell_TaskbarCornerRadius", value); }
         internal static bool Shell_TaskbarPreviewButtons { get => (bool)_cachedSettings["Shell_TaskbarPreviewButtons"]; set => ChangingParameters("Shell_TaskbarPreviewButtons", value); }
