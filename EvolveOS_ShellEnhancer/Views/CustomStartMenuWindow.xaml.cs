@@ -529,7 +529,7 @@ namespace EvolveOS_ShellEnhancer.Views
             int windowWidth = (int)Math.Round((isGroupedStyle ? 920 : 780) * scale);
             int windowHeight = (int)Math.Round((isGroupedStyle ? 720 : 680) * scale);
 
-            int taskbarOffset = (int)Math.Round(60 * scale);
+            int taskbarOffset = (int)Math.Round((CustomTaskbarWindow.TaskbarSize + 14) * scale);
             int margin = (int)Math.Round(16 * scale);
 
             int x = 0; int y = 0;
@@ -563,11 +563,13 @@ namespace EvolveOS_ShellEnhancer.Views
 
             if (EnableAnimations)
             {
+                int slideOffset = (int)Math.Round(10 * scale);
                 int startX = x, startY = y;
-                if (targetPos == "Top") startY = y - windowHeight - 15;
-                else if (targetPos == "Left") startX = x - windowWidth - 15;
-                else if (targetPos == "Right") startX = x + windowWidth + 15;
-                else startY = y + windowHeight + 15;
+
+                if (targetPos == "Top") startY = y - slideOffset;
+                else if (targetPos == "Left") startX = x - slideOffset;
+                else if (targetPos == "Right") startX = x + slideOffset;
+                else startY = y + slideOffset;
 
                 _appWindow.MoveAndResize(new RectInt32(x, y, windowWidth, windowHeight));
                 _appWindow.MoveAndResize(new RectInt32(startX, startY, windowWidth, windowHeight));
@@ -642,12 +644,15 @@ namespace EvolveOS_ShellEnhancer.Views
                 int targetY = startY;
 
                 var displayArea = ResolveLiveDisplayArea();
+                double scale = GetDisplayScale(displayArea);
                 string targetPos = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
 
-                if (targetPos == "Top") targetY = startY - height - 15;
-                else if (targetPos == "Left") targetX = startX - width - 15;
-                else if (targetPos == "Right") targetX = startX + width + 15;
-                else targetY = startY + height + 15;
+                int slideOffset = (int)Math.Round(10 * scale);
+
+                if (targetPos == "Top") targetY = startY - slideOffset;
+                else if (targetPos == "Left") targetX = startX - slideOffset;
+                else if (targetPos == "Right") targetX = startX + slideOffset;
+                else targetY = startY + slideOffset;
 
                 FactoryAnimation.PlayStartMenuAnimation(
                     _appWindow, AnimationStyle, AnimationSpeed, false,

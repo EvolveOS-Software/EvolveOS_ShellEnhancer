@@ -31,6 +31,9 @@ namespace EvolveOS_ShellEnhancer.Views
         private const int SlotMargin = 10;
         private const int HighlightPaddingX = 5;
 
+        private const int TaskbarClearance = 14;
+        private const int SlideTravelPx = 6;
+
         private readonly SolidColorBrush _hoverBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 255, 255, 255));
         private readonly SolidColorBrush _transparentBrush = new SolidColorBrush(Colors.Transparent);
         private readonly SolidColorBrush _hitTestBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(1, 0, 0, 0));
@@ -247,7 +250,8 @@ namespace EvolveOS_ShellEnhancer.Views
             double t = elapsed / _animDuration;
             if (t >= 1.0) t = 1.0;
 
-            double easeBounds = CalculateEasing(t, AnimationStyle);
+            string activeStyle = (_currentAnimState == AnimState.Exit) ? "Standard" : AnimationStyle;
+            double easeBounds = CalculateEasing(t, activeStyle);
             double easeOpacity = CalculateEasing(t, "Standard");
 
             if (t >= 1.0)
@@ -443,24 +447,26 @@ namespace EvolveOS_ShellEnhancer.Views
             int screenRight = screenLeft + displayArea.OuterBounds.Width;
             int screenBottom = screenTop + displayArea.OuterBounds.Height;
 
+            int taskbarThickness = CustomTaskbarWindow.TaskbarSize + 6;
+
             switch (position)
             {
                 case "Top":
                     x = cardScreenX - (totalWidth / 2) + (cardWidth / 2);
-                    y = cardScreenY + cardHeight + SlotMargin;
+                    y = Math.Max(cardScreenY + cardHeight + TaskbarClearance, screenTop + taskbarThickness + TaskbarClearance);
                     break;
                 case "Left":
-                    x = cardScreenX + cardWidth + SlotMargin;
+                    x = Math.Max(cardScreenX + cardWidth + TaskbarClearance, screenLeft + taskbarThickness + TaskbarClearance);
                     y = cardScreenY - (totalHeight / 2) + (cardHeight / 2);
                     break;
                 case "Right":
-                    x = cardScreenX - totalWidth - SlotMargin;
+                    x = Math.Min(cardScreenX - totalWidth - TaskbarClearance, screenRight - taskbarThickness - totalWidth - TaskbarClearance);
                     y = cardScreenY - (totalHeight / 2) + (cardHeight / 2);
                     break;
                 case "Bottom":
                 default:
                     x = cardScreenX - (totalWidth / 2) + (cardWidth / 2);
-                    y = cardScreenY - totalHeight - SlotMargin;
+                    y = Math.Min(cardScreenY - totalHeight - TaskbarClearance, screenBottom - taskbarThickness - totalHeight - TaskbarClearance);
                     break;
             }
 
@@ -476,10 +482,10 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 if (EnableAnimations && AnimationStyle != "Fade")
                 {
-                    if (position == "Top") startY = y - totalHeight - 15;
-                    else if (position == "Left") { startY = y; startX = x - totalWidth - 15; }
-                    else if (position == "Right") { startY = y; startX = x + totalWidth + 15; }
-                    else startY = y + totalHeight + 15;
+                    if (position == "Top") startY = y - SlideTravelPx;
+                    else if (position == "Left") { startY = y; startX = x - SlideTravelPx; }
+                    else if (position == "Right") { startY = y; startX = x + SlideTravelPx; }
+                    else startY = y + SlideTravelPx;
                 }
 
                 _rootStackPanel.Opacity = 0;
@@ -720,7 +726,6 @@ namespace EvolveOS_ShellEnhancer.Views
             }
 
             _validationTimer.Start();
-
         }
 
         private void SafeToggleAeroPeek(bool enable, IntPtr targetHwnd)
@@ -880,10 +885,10 @@ namespace EvolveOS_ShellEnhancer.Views
                     var displayArea = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Nearest);
                     string position = TaskbarManager.GetPositionForDisplay(displayArea.DisplayId.Value.ToString());
 
-                    if (position == "Top") targetY = _startY - _startH - 15;
-                    else if (position == "Left") targetX = _startX - _startW - 15;
-                    else if (position == "Right") targetX = _startX + _startW + 15;
-                    else targetY = _startY + _startH + 15;
+                    if (position == "Top") targetY = _startY - SlideTravelPx;
+                    else if (position == "Left") targetX = _startX - SlideTravelPx;
+                    else if (position == "Right") targetX = _startX + SlideTravelPx;
+                    else targetY = _startY + SlideTravelPx;
                 }
 
                 _targetX = targetX;

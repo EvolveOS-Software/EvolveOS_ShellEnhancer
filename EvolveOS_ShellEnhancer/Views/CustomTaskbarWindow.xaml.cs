@@ -653,6 +653,7 @@ namespace EvolveOS_ShellEnhancer.Views
             {
                 bool isScrollMode = UnpinnedDisplayMode.Equals("Scroll", StringComparison.OrdinalIgnoreCase);
                 var cardsToRemove = new List<UIElement>();
+                var displayedProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (var child in PinnedAppsPanel.Children)
                 {
@@ -668,7 +669,9 @@ namespace EvolveOS_ShellEnhancer.Views
                         }
 
                         bool isUnpinned = tagStr.StartsWith("UNPINNED:");
-                        string processName = isUnpinned ? tagStr.Substring("UNPINNED:".Length) : ViewModel.GetProcessNameFromShortcut(tagStr);
+                        string processName = isUnpinned
+                            ? tagStr.Substring("UNPINNED:".Length)
+                            : ViewModel.GetProcessNameFromShortcut(tagStr);
 
                         var handles = GetAppWindowHandles(processName);
                         if (handles.Count == 0)
@@ -677,6 +680,10 @@ namespace EvolveOS_ShellEnhancer.Views
                             {
                                 cardsToRemove.Add(card);
                             }
+                        }
+                        else if (!string.IsNullOrWhiteSpace(processName))
+                        {
+                            displayedProcesses.Add(ViewModel.NormalizeProcessName(processName));
                         }
                     }
                 }
@@ -699,15 +706,36 @@ namespace EvolveOS_ShellEnhancer.Views
                 {
                     var shortcuts = ViewModel.GetPinnedTaskbarApps();
                     var pinnedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    bool needsReload = false;
+
                     foreach (string lnk in shortcuts)
                     {
-                        pinnedNames.Add(ViewModel.GetProcessNameFromShortcut(lnk));
+                        string pName = ViewModel.GetProcessNameFromShortcut(lnk);
+                        if (string.IsNullOrWhiteSpace(pName)) continue;
+
+                        string normPinned = ViewModel.NormalizeProcessName(pName);
+                        pinnedNames.Add(normPinned);
+
+                        if (isScrollMode && _showingAllRunningView && !displayedProcesses.Contains(normPinned))
+                        {
+                            if (GetAppWindowHandles(pName).Count > 0)
+                            {
+                                needsReload = true;
+                            }
+                        }
                     }
 
-                    int currentUnpinnedCount = GetUnpinnedRunningApps(pinnedNames).Count;
-                    if (currentUnpinnedCount != _lastUnpinnedCount)
+                    var unpinnedOnMonitor = GetUnpinnedRunningApps(pinnedNames);
+                    if (unpinnedOnMonitor.Count != _lastUnpinnedCount ||
+                        unpinnedOnMonitor.Any(u => !displayedProcesses.Contains(u.processName)))
                     {
-                        _lastUnpinnedCount = currentUnpinnedCount;
+                        needsReload = true;
+                    }
+
+                    _lastUnpinnedCount = unpinnedOnMonitor.Count;
+
+                    if (needsReload)
+                    {
                         _ = LoadPinnedAppsAsync();
                     }
                 }
@@ -1544,7 +1572,7 @@ namespace EvolveOS_ShellEnhancer.Views
         {
             if (IsTrayOnlyIsland) return;
 
-            bool useSplit = SplitTaskbarMode && IsPrimaryMonitor;
+            bool useSplit = SplitTaskbarMode;
 
             if (RightPanel != null)
             {
@@ -1581,6 +1609,10 @@ namespace EvolveOS_ShellEnhancer.Views
         private (int width, int height) CalculateTrayIslandSize(bool isVertical, int taskbarSize)
         {
             double scale = (this.Content?.XamlRoot != null) ? this.Content.XamlRoot.RasterizationScale : 1.0;
+
+            int minW = IsPrimaryMonitor ? 185 : 88;
+            int minH = IsPrimaryMonitor ? 170 : 64;
+
             if (RightPanel != null)
             {
                 RightPanel.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -1588,57 +1620,73 @@ namespace EvolveOS_ShellEnhancer.Views
                 if (isVertical)
                 {
                     int h = (int)Math.Ceiling((desired.Height + 20) * scale);
-                    return (taskbarSize, Math.Max(h, (int)(170 * scale)));
+                    return (taskbarSize, Math.Max(h, (int)(minH * scale)));
                 }
                 else
                 {
                     int w = (int)Math.Ceiling((desired.Width + 20) * scale);
-                    return (Math.Max(w, (int)(185 * scale)), taskbarSize);
+                    return (Math.Max(w, (int)(minW * scale)), taskbarSize);
                 }
             }
 
             return isVertical
-                ? (taskbarSize, (int)(180 * scale))
-                : ((int)(195 * scale), taskbarSize);
+                ? (taskbarSize, (int)(minH * scale))
+                : ((int)(minW * scale), taskbarSize);
         }
 
         private int CalculateAutoFitMainLength(bool isVertical, int taskbarSize, bool useSplit)
         {
             double scale = (this.Content?.XamlRoot != null) ? this.Content.XamlRoot.RasterizationScale : 1.0;
 
+            if (PinnedAppsPanel != null)
+            {
+                PinnedAppsPanel.Width = double.NaN;
+                PinnedAppsPanel.Height = double.NaN;
+                PinnedAppsPanel.InvalidateMeasure();
+            }
+            LeftPanel?.InvalidateMeasure();
+            CenterPanel?.InvalidateMeasure();
+
             var inf = new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity);
-            double totalLogicalLength = 0;
+            double measuredLogical = 0;
 
             if (LeftPanel != null && LeftPanel.Visibility == Visibility.Visible && LeftPanel.Children.Count > 0)
             {
                 LeftPanel.Measure(inf);
-                totalLogicalLength += isVertical ? LeftPanel.DesiredSize.Height : LeftPanel.DesiredSize.Width;
+                measuredLogical += isVertical ? LeftPanel.DesiredSize.Height : LeftPanel.DesiredSize.Width;
             }
 
             if (CenterPanel != null && CenterPanel.Visibility == Visibility.Visible && CenterPanel.Children.Count > 0)
             {
                 CenterPanel.Measure(inf);
-                totalLogicalLength += isVertical ? CenterPanel.DesiredSize.Height : CenterPanel.DesiredSize.Width;
+                measuredLogical += isVertical ? CenterPanel.DesiredSize.Height : CenterPanel.DesiredSize.Width;
             }
 
             int appCount = PinnedAppsPanel != null ? PinnedAppsPanel.Children.Count : 0;
-            double fallbackLogical = ((1 + appCount) * ((TaskbarSize - 8) + 8));
-            if (totalLogicalLength < fallbackLogical)
+            double panelSpacing = PinnedAppsPanel != null ? PinnedAppsPanel.Spacing : 4.0;
+            double cardSlotSize = (taskbarSize - 8) + 4 + panelSpacing;
+            double startBtnSlotSize = (taskbarSize - 8) + 8;
+
+            double exactAppsLogical = startBtnSlotSize + (appCount * cardSlotSize);
+
+            double totalLogicalLength = Math.Max(measuredLogical, exactAppsLogical);
+            if (_showingAllRunningView)
             {
-                totalLogicalLength = fallbackLogical;
+                totalLogicalLength = exactAppsLogical;
             }
 
             if (!useSplit && RightPanel != null && RightPanel.Visibility == Visibility.Visible)
             {
+                RightPanel.InvalidateMeasure();
                 RightPanel.Measure(inf);
                 double trayLogical = isVertical ? RightPanel.DesiredSize.Height : RightPanel.DesiredSize.Width;
-                totalLogicalLength += trayLogical + 16;
+                totalLogicalLength += trayLogical + 20;
             }
 
-            totalLogicalLength += 32;
+            totalLogicalLength += 36;
 
             int physicalLength = (int)Math.Ceiling(totalLogicalLength * scale);
-            int minFloor = (int)Math.Ceiling((taskbarSize + 32) * scale);
+            int minFloor = (int)Math.Ceiling((taskbarSize + 36) * scale);
             return Math.Max(physicalLength, minFloor);
         }
 
@@ -1653,7 +1701,7 @@ namespace EvolveOS_ShellEnhancer.Views
                 int screenHeight = liveMonitor.OuterBounds.Height;
 
                 int taskbarSize = TaskbarSize;
-                bool useSplit = SplitTaskbarMode && IsPrimaryMonitor;
+                bool useSplit = SplitTaskbarMode;
 
                 int margin = (_currentStyle == "Floating" || useSplit || IsTrayOnlyIsland) ? 5 : 0;
                 int reservedSpace = taskbarSize + (margin * 2);

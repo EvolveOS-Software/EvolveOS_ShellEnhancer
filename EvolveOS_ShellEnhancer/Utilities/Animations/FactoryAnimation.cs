@@ -394,16 +394,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
         #endregion
 
         #region Start Menu Native Animations
-
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
-        private const uint SWP_NOSIZE = 0x0001;
-        private const uint SWP_NOZORDER = 0x0004;
-        private const uint SWP_NOACTIVATE = 0x0010;
-        private const uint SWP_ASYNCWINDOWPOS = 0x4000;
-
         private static bool _isSmAnimating = false;
+        private static bool _smIsEntrance = true;
         private static System.Diagnostics.Stopwatch _smStopwatch = new System.Diagnostics.Stopwatch();
         private static double _smAnimDuration;
         private static AppWindow? _smAppWindow;
@@ -425,12 +417,13 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             _smAppWindow = appWindow;
             _smHwnd = Win32Interop.GetWindowFromWindowId(appWindow.Id);
 
+            _smIsEntrance = isEntrance;
             _smAnimStyle = animStyle;
             _smStartX = startX; _smStartY = startY; _smStartW = startW; _smStartH = startH;
             _smTargetX = targetX; _smTargetY = targetY; _smTargetW = targetW; _smTargetH = targetH;
             _smOnComplete = onComplete;
 
-            int baseDuration = isEntrance ? 300 : 250;
+            int baseDuration = isEntrance ? 300 : 220;
             _smAnimDuration = baseDuration / Math.Max(0.1, animSpeed);
 
             _smStopwatch.Restart();
@@ -460,7 +453,8 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
             double t = elapsed / _smAnimDuration;
             if (t >= 1.0) t = 1.0;
 
-            double easeBounds = CalculateSmEasing(t, _smAnimStyle);
+            string activeStyle = _smIsEntrance ? _smAnimStyle : "Standard";
+            double easeBounds = CalculateSmEasing(t, activeStyle);
             if (t >= 1.0) easeBounds = 1.0;
 
             int curX = (int)Math.Round(_smStartX + (_smTargetX - _smStartX) * easeBounds);
@@ -572,9 +566,10 @@ namespace EvolveOS_ShellEnhancer.Utilities.Animations
 
             await tcs.Task;
 
-            await updateTask();
-
             pinnedAppsPanel.Width = double.NaN;
+            pinnedAppsPanel.Height = double.NaN;
+
+            await updateTask();
 
             if (rootElement != null && centerPanel != null && leftPanel != null)
             {
